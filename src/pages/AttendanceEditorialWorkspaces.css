@@ -133,8 +133,9 @@
 }
 
 [data-editorial-page="calendar"] .attendance-editorial-heading h1 {
-  font-size: clamp(2.1rem, 7.4vw, 7.85rem) !important;
-  white-space: nowrap;
+  font-size: clamp(2.1rem, 6.9vw, 7.85rem) !important;
+  white-space: normal;
+  text-wrap: balance;
 }
 
 [data-editorial-page="calendar"] .attendance-editorial-heading__metrics {
@@ -264,6 +265,21 @@ html body .attendance-site .attendance-workspace-page .attendance-shell.is-stand
   justify-self: stretch !important;
   width: auto !important;
   max-width: none !important;
+}
+
+/* A schedule row grows with its longest cell, including multiple teachers. */
+.attendance-site [data-editorial-page="calendar"] .attendance-daily-class-row > .attendance-daily-class-row__teacher {
+  display: block;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
+}
+
+.attendance-site [data-editorial-page="calendar"] .attendance-daily-class-row b {
+  display: block;
+  overflow: visible;
+  text-overflow: clip;
+  -webkit-line-clamp: unset;
 }
 
 .attendance-shell[data-editorial-page="calendar"] .attendance-daily-class-row__class {
@@ -686,8 +702,48 @@ html body .attendance-site .attendance-workspace-page .attendance-shell[data-edi
   gap: 6px 26px;
 }
 
+.attendance-site [data-editorial-page="history"] .attendance-editorial-history .ahv3__audit-actor-panel__grid > div {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .attendance-site [data-editorial-page="history"] .attendance-editorial-history .ahv3__actions > button svg {
   flex: 0 0 auto;
+}
+
+/* Editorial history owns its layout; legacy compact cards clipped these details. */
+.attendance-site [data-editorial-page="history"] .attendance-editorial-history :is(
+  .ahv3__card-copy > small,
+  .ahv3__card-copy > time,
+  .ahv3__info-grid article > div > b,
+  .ahv3__audit-actor-panel__grid b,
+  .ahv3__stat-grid article > small,
+  .attendance-absent-list small,
+  .attendance-late-list small
+) {
+  display: block;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  -webkit-line-clamp: unset;
+}
+
+.attendance-site [data-editorial-page="history"] .attendance-editorial-history :is(.ahv3__absent-section, .ahv3__late-section) {
+  height: auto !important;
+  max-height: none;
+  overflow: visible;
+}
+
+.attendance-site [data-editorial-page="history"] .attendance-editorial-history :is(.attendance-absent-list, .attendance-late-list) {
+  min-width: 0;
+  max-width: 100%;
+  align-self: start;
+}
+
+.attendance-site [data-editorial-page="history"] .attendance-editorial-history :is(.attendance-absent-list, .attendance-late-list) :is(b, em) {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 /* Supplemental classes */

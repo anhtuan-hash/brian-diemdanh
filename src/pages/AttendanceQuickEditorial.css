@@ -720,6 +720,8 @@
   font-weight: 800 !important;
   text-transform: none !important;
   letter-spacing: -.025em !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
 }
 
 .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-rollcall .attendance-roster > .att-m3-roster-entry {
