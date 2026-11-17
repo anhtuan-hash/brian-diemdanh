@@ -487,7 +487,7 @@
   flex-wrap: wrap;
 }
 
-.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-rollcall-head h2 {
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-rollcall-head :is(h1, h2) {
   margin: 0 !important;
   font-size: clamp(24px, 3.55vw, 52px) !important;
   line-height: 1.06 !important;
@@ -502,6 +502,51 @@
   border-inline-start: 1px solid var(--attendance-ink) !important;
   color: var(--attendance-red) !important;
   font-size: clamp(17px, 2.2vw, 31px) !important;
+}
+
+/* The calendar opens one roll call. Its full-width form uses the same editorial controls. */
+.attendance-shell[data-editorial-quick] .attendance-return-to-calendar {
+  justify-self: start;
+  min-height: 42px;
+  padding: 8px 0;
+  color: var(--attendance-ink);
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.attendance-return-to-calendar span {
+  margin-inline-end: 6px;
+  color: var(--attendance-red);
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] [data-calendar-roll-call] .attendance-rollcall {
+  padding-inline: 0 !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] [data-calendar-roll-call] .attendance-rollcall-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 31%);
+  gap: 15px 20px;
+  align-items: center !important;
+  padding-block: 10px 14px !important;
+}
+
+[data-calendar-roll-call] .attendance-editorial-metric strong {
+  font-size: clamp(24px, 3.1vw, 44px);
+}
+
+[data-calendar-roll-call] .attendance-editorial-metric span {
+  display: block;
+  font-size: clamp(.75rem, 1.12vw, 1rem);
+}
+
+@media (max-width: 700px) {
+  .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] [data-calendar-roll-call] .attendance-rollcall-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-session-controls {

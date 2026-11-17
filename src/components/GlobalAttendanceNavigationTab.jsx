@@ -249,6 +249,9 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
     const candidate = new URLSearchParams(window.location.hash.split('?')[1] || '').get('tab');
     return ['quick','calendar','manage','history','report','archive'].includes(candidate) ? candidate : 'calendar';
   });
+  const isCalendarRollCall = view === 'calendar-class';
+  const isQuickView = view === 'quick' || isCalendarRollCall;
+  const activeTab = isCalendarRollCall ? 'calendar' : view;
   const workspaceVisible = open || standalone;
   const editorialView = standalone && ['manage', 'archive', 'report'].includes(view);
   const attendanceTabsRef = useRef(null);
@@ -283,6 +286,8 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
   const [attendanceDate, setAttendanceDate] = useState(today);
   const [sessionTeacher, setSessionTeacher] = useState('');
   const [daySession, setDaySession] = useState(null);
+  const [dayLookup, setDayLookup] = useState(null);
+  const daySessionRequest = useRef(0);
   const [calendarDate, setCalendarDate] = useState(today);
   const [calendarRoomFilter, setCalendarRoomFilter] = useState('all');
   const [calendarLoading, setCalendarLoading] = useState(false);
@@ -427,7 +432,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
 
   useEffect(() => {
     if (!workspaceVisible || !allowed || !firstAllowedView) return;
-    const canOpenCurrentView = view === 'quick' ? canOpenQuickView : view === 'archive' ? canOpenArchive : canAccessAttendanceView(view);
+    const canOpenCurrentView = isQuickView ? canOpenQuickView : view === 'archive' ? canOpenArchive : canAccessAttendanceView(view);
     if (!canOpenCurrentView) setView(firstAllowedView);
   }, [workspaceVisible, allowed, firstAllowedView, view, currentUser?.permissions, systemRole, canOpenQuickView]);
 
@@ -677,6 +682,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
         setLessonPeriods(Number(session.lesson_periods || 1));
         setTeachingRoom(session.room || '');
         setTeachingTimeRange([session.start_time, session.end_time].filter(Boolean).join(' - '));
+        daySessionRequest.current += 1;
         setDaySession({ ...session, id: sessionId, note: session.session_note || '' });
         setDayRecords(participants.map((participant) => ({
           member_key: participant.canonicalStudentKey || participant.studentId || participant.id,
@@ -714,31 +720,41 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
   }, [standalone, allowed, runtime.ready, runtime.session?.user?.id, initialLoadSettled]);
 
   async function loadDaySession(classId = selectedClassId, dateValue = attendanceDate) {
+    const request = ++daySessionRequest.current;
     if (!client || !classId || !dateValue || !allowed) {
       setDaySession(null);
       setDayRecords([]);
+      setDayLookup(null);
       return null;
     }
+    const key = String(classId) + ':' + dateValue;
+    setDayLookup({ key, status: 'loading' });
     const { data, error: dayError } = await client.from('bes_extra_attendance_sessions')
       .select(SESSION_COLUMNS)
       .eq('class_id', classId)
       .eq('attendance_date', dateValue)
       .limit(1);
+    if (request !== daySessionRequest.current) return null;
     if (dayError) {
+      setDayLookup({ key, status: 'error' });
       setError(dayError.message || 'Không thể kiểm tra trạng thái điểm danh theo ngày.');
       return null;
     }
     const found = data?.[0] || null;
-    setDaySession(found);
-    if (found?.session_status === 'completed') {
-      const { data: detailRows, error: detailError } = await client.from('bes_extra_attendance_records')
+    const details = found?.session_status === 'completed'
+      ? await client.from('bes_extra_attendance_records')
         .select(RECORD_COLUMNS)
         .eq('session_id', found.id)
-        .order('student_full_name', { ascending: true });
-      if (detailError) setError(detailError.message || 'Không thể tải chi tiết điểm danh đã chốt.');
-      setDayRecords(detailRows || []);
+        .order('student_full_name', { ascending: true })
+      : null;
+    if (request !== daySessionRequest.current) return null;
+    setDaySession(found);
+    setDayRecords(details?.data || []);
+    if (details?.error) {
+      setDayLookup({ key, status: 'error' });
+      setError(details.error.message || 'Không thể tải chi tiết điểm danh đã chốt.');
     } else {
-      setDayRecords([]);
+      setDayLookup({ key, status: 'ready' });
     }
     return found;
   }
@@ -785,12 +801,12 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
     if (!workspaceVisible || !allowed || !selectedClassId || !attendanceDate) return;
     if (String(selectedClassId || '').startsWith('supplemental:')) return;
     loadDaySession(selectedClassId, attendanceDate);
-  }, [workspaceVisible, allowed, selectedClassId, attendanceDate]);
+  }, [workspaceVisible, allowed, selectedClassId, attendanceDate, isCalendarRollCall]);
 
   useEffect(() => {
-    if (!workspaceVisible || !allowed || !attendanceDate || view !== 'quick') return;
+    if (!workspaceVisible || !allowed || !attendanceDate || !isQuickView) return;
     loadTeacherDaySessions(attendanceDate);
-  }, [workspaceVisible, allowed, attendanceDate, view]);
+  }, [workspaceVisible, allowed, attendanceDate, isQuickView]);
 
   useEffect(() => {
     const next = buildAttendanceDraft(selectedMembers);
@@ -1690,9 +1706,22 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
                 </section>
   ) : null;
 
-  const useEditorialQuick = standalone && view === 'quick';
+  const useEditorialQuick = standalone && isQuickView;
+  const showClassPicker = canUseQuickAttendance && !isCalendarRollCall;
+  const selectedDayLookup = dayLookup?.key === String(selectedClassId) + ':' + attendanceDate ? dayLookup : null;
   const isCancelledSession = daySession?.session_status === 'cancelled';
   const presentDisplay = daySession ? `${daySession.present_count}/${daySession.total_students}` : `${summary.present}/${summary.total}`;
+
+  const editorialRollCallMetrics = !loading && selectedClass && (!isCalendarRollCall || selectedDayLookup?.status === 'ready') ? <div className="attendance-editorial-metrics" aria-live="polite" aria-label="Tóm tắt điểm danh">
+    <div className="attendance-editorial-metric is-primary" data-compact-value={presentDisplay.length > 4 || undefined}>
+      <strong>{isCancelledSession ? '0' : presentDisplay}</strong>
+      <span>{isCancelledSession ? 'Tiết · đã hủy' : 'Có mặt'}</span>
+    </div>
+    {!isCancelledSession ? <>
+      <div className="attendance-editorial-metric"><strong>{daySession ? attendanceSummary(dayRecords).late : summary.late}</strong><span>Đi trễ</span></div>
+      <div className="attendance-editorial-metric"><strong>{daySession?.absent_count ?? summary.absent}</strong><span>Vắng</span></div>
+    </> : null}
+  </div> : null;
 
   const subjectFilters = <div className="att-m3-subject-hub" aria-label="Phân loại lớp theo bộ môn">
     {ATTENDANCE_SUBJECT_HUB.map((item) => <button key={item.key} type="button" className={`is-subject-${item.key} ${subjectFilter === item.key ? 'is-active' : ''}`} aria-pressed={subjectFilter === item.key} onClick={() => setSubjectFilter(item.key)}><span>{item.label}</span><b>{item.key === 'all' ? activeClasses.length : (subjectCounts.get(item.key) || 0)}</b></button>)}
@@ -1708,12 +1737,12 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
         aria-label="Điểm danh lớp phụ đạo và bồi dưỡng học sinh giỏi">
         {!editorialView && !showEditorialPage && <header className="attendance-topbar">
           <div className="attendance-title"><span><Icon name="attendance" size={28} /></span><div><small>{standalone ? "ESL BRIAN · ỨNG DỤNG ĐIỂM DANH" : "QUẢN LÝ CHUYÊN CẦN"}</small><strong>Điểm danh lớp phụ đạo & bồi dưỡng</strong></div></div>
-          <div className="attendance-top-actions"><button type="button" className="attendance-icon-button" onClick={() => { loadAll(); if (view === 'quick') { loadDaySession(); loadTeacherDaySessions(); } if (view === 'calendar') loadCalendarSessions(calendarDate); if (view === 'archive') loadArchive(); }} title="Làm mới"><Icon name="refresh" /></button>{!standalone ? <button type="button" className="attendance-icon-button" onClick={() => setOpen(false)} aria-label="Đóng"><Icon name="close" /></button> : null}</div>
+          <div className="attendance-top-actions"><button type="button" className="attendance-icon-button" onClick={() => { loadAll(); if (isQuickView) { loadDaySession(); loadTeacherDaySessions(); } if (view === 'calendar') loadCalendarSessions(calendarDate); if (view === 'archive') loadArchive(); }} title="Làm mới"><Icon name="refresh" /></button>{!standalone ? <button type="button" className="attendance-icon-button" onClick={() => setOpen(false)} aria-label="Đóng"><Icon name="close" /></button> : null}</div>
         </header>}
 
         <nav ref={attendanceTabsRef} className="attendance-tabs" aria-label="Phân hệ điểm danh">
           {navigationTabs.map((item) => (
-            <button key={item.id} type="button" className={view === item.tab ? 'is-active' : ''} aria-current={view === item.tab ? 'page' : undefined} onClick={() => {
+            <button key={item.id} type="button" className={activeTab === item.tab ? 'is-active' : ''} aria-current={activeTab === item.tab ? 'page' : undefined} onClick={() => {
               if (item.tab !== view) {
                 setNotice('');
                 setError('');
@@ -1751,25 +1780,24 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
               }} />
           </> : null}
 
-          {useEditorialQuick ? <header className="attendance-editorial-masthead">
+          {useEditorialQuick && !isCalendarRollCall ? <header className="attendance-editorial-masthead">
             <h1>Điểm danh</h1>
-            {!loading && selectedClass ? <div className="attendance-editorial-metrics" aria-live="polite" aria-label="Tóm tắt điểm danh">
-              <div className="attendance-editorial-metric is-primary" data-compact-value={presentDisplay.length > 4 || undefined}>
-                <strong>{isCancelledSession ? '0' : presentDisplay}</strong>
-                <span>{isCancelledSession ? 'Tiết · đã hủy' : 'Có mặt'}</span>
-              </div>
-              {!isCancelledSession ? <>
-                <div className="attendance-editorial-metric"><strong>{daySession ? attendanceSummary(dayRecords).late : summary.late}</strong><span>Đi trễ</span></div>
-                <div className="attendance-editorial-metric"><strong>{daySession?.absent_count ?? summary.absent}</strong><span>Vắng</span></div>
-              </> : null}
-            </div> : null}
+            {editorialRollCallMetrics}
           </header> : null}
 
           {loading ? <div className="attendance-loading">Đang đồng bộ dữ liệu điểm danh…</div> : null}
 
-          {!loading && canOpenQuickView && view === 'quick' ? (
-            <div className="attendance-quick-layout" data-no-class-list={!canUseQuickAttendance || undefined} style={canUseQuickAttendance ? undefined : { gridTemplateColumns: 'minmax(0, 1fr)' }}>
-              {canUseQuickAttendance ? <aside className="attendance-class-list">
+          {isCalendarRollCall ? <button className="attendance-return-to-calendar" type="button" onClick={() => {
+            setNotice('');
+            setError('');
+            setView('calendar');
+          }}><span aria-hidden="true">←</span> Về lịch điểm danh</button> : null}
+
+          {!loading && canOpenQuickView && isQuickView ? (
+            <div className="attendance-quick-layout" data-no-class-list={!showClassPicker || undefined}
+              data-calendar-roll-call={isCalendarRollCall || undefined}
+              style={showClassPicker ? undefined : { gridTemplateColumns: 'minmax(0, 1fr)' }}>
+              {showClassPicker ? <aside className="attendance-class-list">
                 <header><strong>Lớp đang hoạt động</strong><span>{filteredActiveClasses.length === activeClasses.length && useEditorialQuick ? activeClasses.length : `${filteredActiveClasses.length}/${activeClasses.length}`} lớp</span></header>
                 <div className="att-m3-class-discovery" data-bes-keep-search="true">
                   <label className="att-m3-class-search">
@@ -1796,10 +1824,15 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
                 data-bes-attendance-session-id={attendanceSource === 'supplemental' ? (selectedSessionId || daySession?.id || '') : (daySession?.id || '')}
               >
                 {selectedClass ? <>
-                  <header className="attendance-rollcall-head"><div><span>{extraClassTypeLabel(selectedClass.class_type)}</span><div className="attendance-rollcall-title-row"><h2>{selectedClass.class_name}</h2>{roomForExtraClass(selectedClass) ? <span className="attendance-room-chip is-large">{roomForExtraClass(selectedClass)}</span> : null}</div><p>{selectedClass.subject || 'Chưa ghi môn'} · GV phân công: {teachersForClass(selectedClass)}</p></div>{!useEditorialQuick ? <div className="attendance-summary"><b>{daySession?.session_status === 'cancelled' ? 'Đã hủy' : daySession ? `${daySession.present_count}/${daySession.total_students}` : `${summary.present}/${summary.total}`}</b><span>{daySession?.session_status === 'cancelled' ? 'Buổi học' : 'Có mặt'}</span><em>{daySession?.session_status === 'cancelled' ? '0 tiết' : `${daySession ? daySession.absent_count : summary.absent} vắng`}</em></div> : null}</header>
+                  <header className="attendance-rollcall-head"><div><span>{extraClassTypeLabel(selectedClass.class_type)}</span><div className="attendance-rollcall-title-row">{isCalendarRollCall ? <h1>{selectedClass.class_name}</h1> : <h2>{selectedClass.class_name}</h2>}{roomForExtraClass(selectedClass) ? <span className="attendance-room-chip is-large">{roomForExtraClass(selectedClass)}</span> : null}</div><p>{selectedClass.subject || 'Chưa ghi môn'} · GV phân công: {teachersForClass(selectedClass)}</p></div>{isCalendarRollCall ? editorialRollCallMetrics : !useEditorialQuick ? <div className="attendance-summary"><b>{daySession?.session_status === 'cancelled' ? 'Đã hủy' : daySession ? `${daySession.present_count}/${daySession.total_students}` : `${summary.present}/${summary.total}`}</b><span>{daySession?.session_status === 'cancelled' ? 'Buổi học' : 'Có mặt'}</span><em>{daySession?.session_status === 'cancelled' ? '0 tiết' : `${daySession ? daySession.absent_count : summary.absent} vắng`}</em></div> : null}</header>
 
+                  {isCalendarRollCall && selectedDayLookup?.status !== 'ready' ? (
+                    <p className="attendance-loading" role="status">
+                      {selectedDayLookup?.status === 'error' ? 'Chưa tải được phiếu điểm danh. Hãy thử làm mới.' : 'Đang tải phiếu điểm danh…'}
+                    </p>
+                  ) : <>
                   <div className="attendance-session-controls">
-                    <label className="attendance-session-date"><span>Ngày điểm danh</span><input type="date" lang="vi-VN" value={attendanceDate} max={today} onChange={(event) => { setAttendanceDate(event.target.value); setNotice(''); setError(''); }} /></label>
+                    <label className="attendance-session-date"><span>Ngày điểm danh</span><input type="date" lang="vi-VN" value={attendanceDate} max={today} onChange={(event) => { if (isCalendarRollCall && !event.target.value) return; setAttendanceDate(event.target.value); setNotice(''); setError(''); }} /></label>
                     <label className="is-teacher"><span>Giáo viên dạy hôm nay</span><select value={sessionTeacher} disabled={isDayLocked || !selectedTeacherOptions.length} onChange={(event) => setSessionTeacher(event.target.value)}><option value="">Chọn giáo viên</option>{selectedTeacherOptions.map((name) => { const usage = teacherUsageForDate.get(fold(name)); const blocked = Boolean(usage && String(usage.class_id) !== String(selectedClassId)); return <option key={name} value={name} disabled={blocked}>{blocked ? `${name} — đã điểm danh: ${usage.class_name}` : name}</option>; })}</select></label>
                     <label className="attendance-session-room"><span>Phòng học</span><input value={teachingRoom} disabled={isDayLocked} onChange={(event) => setTeachingRoom(event.target.value)} placeholder="Ví dụ P.203" /></label>
                     <label className="attendance-session-time"><span>Thời gian dạy</span><input value={teachingTimeRange} disabled={isDayLocked} onChange={(event) => setTeachingTimeRange(event.target.value)} placeholder="Ví dụ 14:00–15:30" /></label>
@@ -1837,6 +1870,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
                   </section>
                   <footer className="attendance-confirm-bar"><label><span>Ghi chú buổi học</span><input disabled={isDayLocked} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Không bắt buộc" /></label><div className="att-m3-session-actions"><button className="att-m3-cancel-button" type="button" disabled={busy || isDayLocked || isFutureDate} onClick={() => setShowCancelSession((value) => !value)}>Hủy buổi học</button><button type="button" disabled={busy || !draft.length || isDayLocked || isFutureDate || !sessionTeacher || isTeacherBlocked || !teachingRoom.trim() || !teachingTimeRange.trim() || invalidAbsentRows.length > 0} onClick={confirmAttendance}><Icon name="check" size={18} />{isDayLocked ? (daySession.session_status === 'cancelled' ? 'Đã hủy' : `Đã chốt ${formatDate(daySession.attendance_date)}`) : busy ? 'Đang lưu…' : 'Xác nhận điểm danh'}</button></div></footer>
                   {showCancelSession && !isDayLocked ? <div className="att-m3-cancel-surface"><label><span>Lý do hủy *</span><input value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value)} placeholder="Ví dụ: Giáo viên bận công tác" autoFocus /></label><button type="button" onClick={() => { setShowCancelSession(false); setCancellationReason(''); }}>Không hủy</button><button className="is-confirm" type="button" disabled={busy || !cancellationReason.trim()} onClick={cancelClassSession}>{busy ? 'Đang lưu…' : 'Xác nhận hủy'}</button></div> : null}
+                  </>}
                 </> : <div className="attendance-empty is-large">Chọn một lớp để bắt đầu điểm danh.</div>}
               </section>
             </div>
@@ -1865,11 +1899,16 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
                     openSessionFromCalendar(session);
                     return;
                   }
+                  if (!canUseQuickAttendance) {
+                    setNotice('Bạn chưa có quyền điểm danh buổi học này.');
+                    return;
+                  }
+                  setDayLookup(null);
                   setSelectedClassId(String(classRow.id));
                   setAttendanceDate(calendarDate);
                   setNotice('');
                   setError('');
-                  setView('quick');
+                  setView(standalone ? 'calendar-class' : 'quick');
                 }}
               />
             </div>
