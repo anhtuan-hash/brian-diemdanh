@@ -272,9 +272,11 @@ html body .attendance-site .attendance-workspace-page .attendance-shell.is-stand
   height: auto !important;
 }
 
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] :is(.attendance-daily-table-header__time, .attendance-daily-class-row__teacher, .attendance-daily-class-row__meta.is-time) {
+  display: block !important;
+}
+
 .attendance-site [data-editorial-page="calendar"] .attendance-daily-class-row > .attendance-daily-class-row__teacher {
-  display: block;
-  min-height: 0;
   max-height: none;
   overflow: visible;
 }
@@ -304,6 +306,11 @@ html body .attendance-site .attendance-workspace-page .attendance-shell.is-stand
 .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row__status.is-completed { color: #176345 !important; }
 .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row__status.is-missing { color: #86560d !important; }
 .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row__status.is-cancelled { color: var(--attendance-red) !important; }
+
+.attendance-site [data-editorial-page="calendar"] .attendance-daily-class-row:is(:hover, :focus-visible) .attendance-daily-class-row__status-label {
+  opacity: 1;
+  transform: none;
+}
 
 .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-floor-group {
   display: block !important;
@@ -1134,11 +1141,39 @@ html body .attendance-site .attendance-workspace-page .attendance-shell[data-edi
   }
 
   .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row {
-    grid-template-columns: minmax(0, 1fr) minmax(0, max-content) !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-areas:
+      "class class"
+      "teacher teacher"
+      "room time"
+      "status status";
+    align-items: start !important;
+    gap: 4px 12px !important;
+    padding-block: 10px !important;
   }
 
-  .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row__class-shell {
-    grid-column: 1 / -1;
+  .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row > .attendance-daily-class-row__class-shell {
+    grid-area: class !important;
+  }
+
+  .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row > .attendance-daily-class-row__teacher {
+    grid-area: teacher !important;
+  }
+
+  .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row > .attendance-daily-class-row__meta.is-room {
+    grid-area: room !important;
+  }
+
+  .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row > .attendance-daily-class-row__meta.is-time {
+    grid-area: time !important;
+  }
+
+  .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row > .attendance-daily-class-row__status {
+    grid-area: status !important;
+  }
+
+  .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row > span {
+    min-height: 0 !important;
   }
 
   .attendance-site .attendance-shell .attendance-editorial-history .ahv3__stat-grid > article {
