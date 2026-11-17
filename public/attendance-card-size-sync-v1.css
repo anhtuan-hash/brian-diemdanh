@@ -1,0 +1,534 @@
+/* Attendance cross-tab sizing V1 — History is the visual source of truth. */
+
+.attendance-shell,
+.bes-supplemental-dialog {
+  --attendance-session-card-min-height: 80px;
+  --attendance-session-card-radius: 15px;
+  --attendance-session-card-pad-y: 10px;
+  --attendance-session-card-pad-x: 12px;
+  --attendance-tab-height: 46px;
+  --attendance-tab-radius: 13px;
+}
+
+/* Navigation tabs keep the same physical rhythm in every pane, not only History. */
+.attendance-shell .attendance-tabs > button {
+  min-height: var(--attendance-tab-height) !important;
+  padding: 0 16px !important;
+  border-radius: var(--attendance-tab-radius) !important;
+  box-sizing: border-box !important;
+}
+
+/* Comparable class/session cards share the approved History dimensions. */
+.attendance-shell .ahv3__items > button,
+.attendance-shell .attendance-daily-class-row,
+.attendance-shell .attendance-class-list > div:last-child > button,
+.attendance-shell .attendance-manage-classes > button,
+.attendance-shell .bes-supplemental-daily-card,
+.bes-supplemental-dialog .bes-supplemental-daily-card,
+.attendance-shell .att-report-m3__teacher-grid > article {
+  min-height: var(--attendance-session-card-min-height, 80px) !important;
+  border-radius: var(--attendance-session-card-radius, 15px) !important;
+  box-sizing: border-box !important;
+}
+
+/* The current daily schedule used a fixed 58px row; release that fixed height so it can
+   adopt the same 80px minimum as History without clipping its teacher/room/status columns. */
+.attendance-shell .attendance-daily-class-row {
+  height: auto !important;
+  padding: var(--attendance-session-card-pad-y) var(--attendance-session-card-pad-x) !important;
+}
+
+/* Floor containers belong to the same geometry system while remaining content-height. */
+.attendance-shell .attendance-daily-floor-card {
+  border-radius: var(--attendance-session-card-radius) !important;
+}
+
+/* Non-History cards use the same inner breathing room; History keeps its tuned arrow gutter. */
+.attendance-shell .attendance-class-list > div:last-child > button,
+.attendance-shell .attendance-manage-classes > button,
+.attendance-shell .bes-supplemental-daily-card,
+.bes-supplemental-dialog .bes-supplemental-daily-card,
+.attendance-shell .att-report-m3__teacher-grid > article {
+  padding: var(--attendance-session-card-pad-y) var(--attendance-session-card-pad-x) !important;
+}
+
+/* Supplemental rows/history cards follow the same corner and padding system without forcing
+   a fixed height when their content is naturally multi-line. */
+.attendance-shell .bes-supplemental-row,
+.bes-supplemental-dialog .bes-supplemental-row,
+.attendance-shell .bes-supplemental-history-card,
+.bes-supplemental-dialog .bes-supplemental-history-card {
+  border-radius: var(--attendance-session-card-radius, 15px) !important;
+  padding: var(--attendance-session-card-pad-y, 10px) var(--attendance-session-card-pad-x, 12px) !important;
+  box-sizing: border-box !important;
+}
+
+/* Keep compact Manage cards visually aligned with History while preserving all metadata. */
+.attendance-shell .attendance-manage-classes > button {
+  gap: 8px !important;
+}
+
+.attendance-shell .attendance-manage-class-head {
+  margin-bottom: 2px !important;
+}
+
+.attendance-shell .attendance-manage-class-meta {
+  gap: 4px !important;
+}
+
+/* Report metric tiles are not session cards, but their geometry should belong to the same system. */
+.attendance-shell .att-report-m3__metrics > article {
+  border-radius: var(--attendance-session-card-radius) !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 900px) {
+  .attendance-shell .attendance-tabs > button {
+    min-height: 44px !important;
+    padding-inline: 13px !important;
+  }
+
+  /* Unified mobile modal frame -------------------------------------------------
+     This final layer is intentionally loaded after every Attendance visual skin.
+     The overlay owns the visual viewport; every Attendance shell then consumes only
+     the padded safe area. This prevents the old content-box + 100vw combination from
+     pushing dialogs to the right on iOS and keeps History on the exact same frame. */
+  html body .attendance-layer {
+    box-sizing: border-box !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    inset: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)) !important;
+    overflow: hidden !important;
+  }
+
+  html body .attendance-shell.attendance-shell,
+  html body .attendance-shell.ah-history-mockup {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 680px !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    margin: 0 auto !important;
+    overflow-x: hidden !important;
+    overflow-y: hidden !important;
+    border-radius: 22px !important;
+  }
+
+  html body .attendance-shell .attendance-topbar {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 76px !important;
+    gap: 10px !important;
+    padding: 12px 14px 10px !important;
+  }
+
+  html body .attendance-shell .attendance-title {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    gap: 10px !important;
+  }
+
+  html body .attendance-shell .attendance-title > span {
+    width: 44px !important;
+    height: 44px !important;
+    flex: 0 0 44px !important;
+    border-radius: 14px !important;
+  }
+
+  html body .attendance-shell .attendance-title > div {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  html body .attendance-shell .attendance-title small {
+    font-size: 9px !important;
+    line-height: 1.2 !important;
+  }
+
+  html body .attendance-shell .attendance-title strong {
+    max-width: 100% !important;
+    font-size: 17px !important;
+    line-height: 1.18 !important;
+    letter-spacing: -.02em !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  html body .attendance-shell .attendance-top-actions {
+    flex: 0 0 auto !important;
+    align-self: flex-start !important;
+    gap: 6px !important;
+  }
+
+  html body .attendance-shell .attendance-icon-button {
+    width: 40px !important;
+    height: 40px !important;
+    flex: 0 0 40px !important;
+    border-radius: 12px !important;
+  }
+
+  html body .attendance-shell .attendance-tabs {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 54px !important;
+    gap: 6px !important;
+    padding: 4px 10px 8px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    overscroll-behavior-x: contain !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  html body .attendance-shell .attendance-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html body .attendance-shell .attendance-tabs > button {
+    flex: 0 0 auto !important;
+    min-width: max-content !important;
+    min-height: 42px !important;
+    padding-inline: 12px !important;
+    white-space: nowrap !important;
+  }
+
+  html body .attendance-shell .attendance-banner {
+    box-sizing: border-box !important;
+    max-width: calc(100% - 20px) !important;
+    margin-inline: 10px !important;
+  }
+
+  html body .attendance-shell .attendance-content {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    padding: 10px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  html body .attendance-shell .attendance-content > *,
+  html body .attendance-shell .attendance-quick-layout,
+  html body .attendance-shell .attendance-history-layout,
+  html body .attendance-shell .attendance-manage-layout,
+  html body .attendance-shell .attendance-management-grid,
+  html body .attendance-shell .attendance-rollcall,
+  html body .attendance-shell .attendance-history-detail {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Daily schedule: the old phone rule forced four 125px flex items into one row.
+     That created the clipped “Đã hủy” metric shown in production. Keep all four
+     metrics visible with a stable 2x2 grid and no horizontal scrollbar. */
+  html body .attendance-shell .attendance-daily-summary {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+  }
+
+  html body .attendance-shell .attendance-daily-summary-item {
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    width: auto !important;
+    max-width: 100% !important;
+    flex: none !important;
+    border-left: 0 !important;
+  }
+
+  html body .attendance-shell .attendance-daily-summary-item:nth-child(odd) {
+    border-right: 1px solid #dce5f0 !important;
+  }
+
+  html body .attendance-shell .attendance-daily-summary-item:nth-child(n + 3) {
+    border-top: 1px solid #dce5f0 !important;
+  }
+
+  /* Class management: a later mobile cascade could collapse the new tile contents,
+     leaving only the icon and class-type chip. Reassert the current workspace contract
+     in the final Attendance layer so title, subject, room, schedule and teacher stay visible. */
+  html body .attendance-shell .attendance-manage-overview {
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html body .attendance-shell .attendance-manage-tile-grid {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  html body .attendance-shell .attendance-manage-class-tile {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 148px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 12px 13px 12px 15px !important;
+    overflow: hidden !important;
+  }
+
+  html body .attendance-shell .attendance-manage-tile__topline {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    visibility: visible !important;
+  }
+
+  html body .attendance-shell .attendance-manage-tile__title {
+    display: -webkit-box !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin-top: 7px !important;
+    min-height: 0 !important;
+    color: #0f2238 !important;
+    font-size: 15px !important;
+    font-weight: 900 !important;
+    line-height: 1.25 !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+  }
+
+  html body .attendance-shell .attendance-manage-tile__subtitle {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin-top: 3px !important;
+    color: #62758b !important;
+    font-size: 10.5px !important;
+    line-height: 1.3 !important;
+  }
+
+  html body .attendance-shell .attendance-manage-tile__meta {
+    display: grid !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 5px 10px !important;
+    margin-top: 8px !important;
+    padding-top: 0 !important;
+  }
+
+  html body .attendance-shell .attendance-manage-tile__meta > span {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-width: 0 !important;
+    color: #455b73 !important;
+    font-size: 9.5px !important;
+    line-height: 1.25 !important;
+  }
+
+  html body .attendance-shell .attendance-manage-tile__teacher {
+    grid-column: 1 / -1 !important;
+  }
+
+  /* History: list-first on mobile. The production regression came from reserving 40–42%
+     of the viewport for filters/list before a session existed, which left no room for
+     actual session cards and wasted the rest on an empty detail illustration. */
+  html body .attendance-shell .ahv3__shell {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    overflow: hidden !important;
+  }
+
+  html body .attendance-shell .ahv3__list,
+  html body .attendance-shell .ahv3__detail {
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  html body .attendance-shell .ahv3__detail {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-y: auto !important;
+  }
+
+  html body .attendance-shell .ahv3__list-head {
+    position: static !important;
+    z-index: 5 !important;
+    background: #fff !important;
+  }
+
+  html body .attendance-shell .ahv3__items {
+    min-height: 0 !important;
+  }
+
+  /* No selected session: filters + real session list receive the complete History pane. */
+  html body .attendance-shell .ahv3__shell:not(:has(.ahv3__items > button.is-selected)) {
+    display: block !important;
+    height: 100% !important;
+    overflow: hidden !important;
+  }
+
+  html body .attendance-shell .ahv3__shell:not(:has(.ahv3__items > button.is-selected)) .ahv3__detail {
+    display: none !important;
+  }
+
+  html body .attendance-shell .ahv3__shell:not(:has(.ahv3__items > button.is-selected)) .ahv3__list {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  html body .attendance-shell .ahv3__shell:not(:has(.ahv3__items > button.is-selected)) .ahv3__list-head {
+    flex: 0 0 auto !important;
+    position: static !important;
+  }
+
+  html body .attendance-shell .ahv3__shell:not(:has(.ahv3__items > button.is-selected)) .ahv3__items {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Selected session: collapse the large filter header, keep a compact scrollable
+     session navigator above the detail, and devote most of the modal to detail. */
+  html body .attendance-shell .ahv3__shell:has(.ahv3__items > button.is-selected) {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: minmax(92px, 24%) minmax(0, 1fr) !important;
+    gap: 8px !important;
+    height: 100% !important;
+    overflow: hidden !important;
+  }
+
+  html body .attendance-shell .ahv3__shell:has(.ahv3__items > button.is-selected) .ahv3__list {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html body .attendance-shell .ahv3__shell:has(.ahv3__items > button.is-selected) .ahv3__list-head {
+    display: none !important;
+  }
+
+  html body .attendance-shell .ahv3__shell:has(.ahv3__items > button.is-selected) .ahv3__items {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Supplemental-learning uses a sibling dialog class rather than attendance-shell.
+     Give it the same width and overflow contract so the whole attendance system feels
+     like one product on mobile. */
+  html body .bes-supplemental-dialog {
+    box-sizing: border-box !important;
+    width: min(100%, 680px) !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    margin-inline: auto !important;
+    overflow-x: hidden !important;
+  }
+}
+
+@media (max-width: 520px) {
+  html body .attendance-layer {
+    padding-top: max(8px, env(safe-area-inset-top)) !important;
+    padding-right: max(8px, env(safe-area-inset-right)) !important;
+    padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    padding-left: max(8px, env(safe-area-inset-left)) !important;
+  }
+
+  html body .attendance-shell.attendance-shell,
+  html body .attendance-shell.ah-history-mockup {
+    max-width: none !important;
+    border-radius: 20px !important;
+  }
+
+  html body .attendance-shell .attendance-topbar {
+    min-height: 72px !important;
+    padding: 10px 12px 8px !important;
+  }
+
+  html body .attendance-shell .attendance-title > span {
+    width: 40px !important;
+    height: 40px !important;
+    flex-basis: 40px !important;
+  }
+
+  html body .attendance-shell .attendance-title strong {
+    font-size: 16px !important;
+  }
+
+  html body .attendance-shell .attendance-icon-button {
+    width: 38px !important;
+    height: 38px !important;
+    flex-basis: 38px !important;
+  }
+
+  html body .attendance-shell .attendance-tabs {
+    padding-inline: 8px !important;
+  }
+
+  html body .attendance-shell .attendance-content {
+    padding: 8px !important;
+  }
+
+  html body .attendance-shell .attendance-daily-summary-item {
+    min-height: 52px !important;
+    padding: 7px 8px !important;
+  }
+
+  html body .attendance-shell .attendance-manage-class-tile {
+    min-height: 154px !important;
+  }
+
+  html body .attendance-shell .attendance-manage-tile__meta {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  html body .attendance-shell .ahv3__shell:has(.ahv3__items > button.is-selected) {
+    grid-template-rows: minmax(88px, 22%) minmax(0, 1fr) !important;
+    gap: 7px !important;
+  }
+}

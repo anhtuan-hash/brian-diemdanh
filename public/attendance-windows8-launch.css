@@ -1,0 +1,386 @@
+/* Windows 8 / Metro-inspired launch motion for the Attendance workspace.
+   This effect is intentionally always-on for Attendance. */
+
+.attendance-layer {
+  perspective: 1400px;
+}
+
+.attendance-shell {
+  animation-name: attendance-win8-shell-in !important;
+  animation-duration: 420ms !important;
+  animation-timing-function: cubic-bezier(.10, .90, .20, 1) !important;
+  animation-fill-mode: both !important;
+  animation-iteration-count: 1 !important;
+  animation-play-state: running !important;
+  transform-origin: 50% 18%;
+  backface-visibility: hidden;
+  will-change: opacity, transform, filter;
+}
+
+@keyframes attendance-win8-shell-in {
+  0% {
+    opacity: .02;
+    transform: translate3d(0, 28px, -150px) scale(.82) rotateX(1.2deg);
+    filter: saturate(.9) brightness(1.035);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1) rotateX(0deg);
+    filter: none;
+  }
+}
+
+/* Large workspace proportions aligned with the approved History / Học bổ sung reference.
+   Header/tabs stay fixed; content always receives the remaining viewport height.
+   Flex is intentional here: notice/error banners are conditional children, so a fixed
+   four-row grid can otherwise put content in an auto row and destroy its scroll range. */
+.attendance-shell.attendance-shell {
+  width: min(1460px, calc(100vw - 54px)) !important;
+  height: min(910px, calc(100vh - 54px)) !important;
+  display: flex !important;
+  flex-direction: column !important;
+
+  /* History / Học bổ sung are the approved typography reference. Keep the shared
+     Attendance views on the same visual scale instead of the older, larger polish scale. */
+  --att-type-page-title: 21px;
+  --att-type-tab: 12.5px;
+  --att-type-section-title: 20px;
+  --att-type-card-title: 12.8px;
+  --att-type-body: 10.8px;
+  --att-type-control: 10.5px;
+  --att-type-label: 9.5px;
+  --att-type-meta: 9px;
+  --att-type-stat: 17px;
+
+  /* Bridge the legacy polish tokens so existing high-specificity rules inherit the
+     History scale without needing per-view one-off overrides. */
+  --att-type-title: var(--att-type-page-title);
+  --att-type-view-title: var(--att-type-section-title);
+  --att-type-section: var(--att-type-card-title);
+  --att-type-chip: var(--att-type-control);
+  --att-type-metric: var(--att-type-stat);
+}
+
+/* Shared typography parity. History keeps its own later pixel-match layer, while the
+   other Attendance tabs now resolve to the same hierarchy and text density. */
+.attendance-shell .attendance-title strong {
+  font-size: var(--att-type-page-title) !important;
+}
+
+.attendance-shell .attendance-tabs > button {
+  font-size: var(--att-type-tab) !important;
+}
+
+.attendance-shell .attendance-rollcall-head h2,
+.attendance-shell .attendance-member-manager > header h2,
+.attendance-shell .att-report-m3__toolbar h2 {
+  font-size: var(--att-type-section-title) !important;
+}
+
+.attendance-shell .attendance-class-list button b,
+.attendance-shell .attendance-manage-classes > button > b,
+.attendance-shell .attendance-member-table b,
+.attendance-shell .att-report-m3__teacher-grid strong {
+  font-size: var(--att-type-card-title) !important;
+}
+
+.attendance-shell .attendance-title p,
+.attendance-shell .attendance-rollcall-head p,
+.attendance-shell .attendance-member-manager > header p,
+.attendance-shell .att-report-m3__toolbar p,
+.attendance-shell .att-report-m3__section-head p {
+  font-size: var(--att-type-body) !important;
+}
+
+.attendance-shell input,
+.attendance-shell select,
+.attendance-shell textarea,
+.attendance-shell button,
+.attendance-shell .attendance-day-open,
+.attendance-shell .attendance-day-lock {
+  font-size: var(--att-type-control) !important;
+}
+
+.attendance-shell .attendance-session-controls label > span,
+.attendance-shell .att-m3-period-field > span,
+.attendance-shell .att-m3-class-search > span,
+.attendance-shell .attendance-confirm-bar label > span,
+.attendance-shell .attendance-add-student label > span,
+.attendance-shell .att-report-m3__filters label span,
+.attendance-shell .att-report-m3__export-meta label span,
+.attendance-shell .attendance-teacher-field > label,
+.attendance-shell .attendance-class-list > header span,
+.attendance-shell .attendance-manage-classes > header span {
+  font-size: var(--att-type-label) !important;
+}
+
+.attendance-shell .attendance-class-list button small,
+.attendance-shell .attendance-class-list button em,
+.attendance-shell .attendance-class-list button time,
+.attendance-shell .attendance-manage-classes button small,
+.attendance-shell .attendance-calendar-day small,
+.attendance-shell .attendance-calendar-day em,
+.attendance-shell .att-report-m3__teacher-grid span,
+.attendance-shell .att-report-m3__teacher-grid small,
+.attendance-shell .att-report-m3 td {
+  font-size: var(--att-type-meta) !important;
+}
+
+.attendance-shell .att-report-m3__metrics article b {
+  font-size: var(--att-type-stat) !important;
+}
+
+.attendance-shell.attendance-shell > .attendance-topbar,
+.attendance-shell.attendance-shell > .attendance-tabs,
+.attendance-shell.attendance-shell > .attendance-banner {
+  flex: 0 0 auto !important;
+}
+
+.attendance-shell.attendance-shell > .attendance-content {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+.attendance-content {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(63, 95, 144, .58) transparent;
+}
+
+.attendance-content::-webkit-scrollbar { width: 10px; }
+.attendance-content::-webkit-scrollbar-track { background: transparent; }
+.attendance-content::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(63, 95, 144, .48);
+  background-clip: padding-box;
+}
+.attendance-content::-webkit-scrollbar-thumb:hover { background-color: rgba(63, 95, 144, .72); }
+
+/* Quick Attendance redesign: the whole right pane is one readable vertical flow.
+   The grid row and right pane are explicitly bounded so overflow belongs to the pane,
+   while the roster itself keeps its natural height and never creates a nested scroller. */
+.attendance-quick-layout {
+  grid-template-rows: minmax(0, 1fr) !important;
+  overflow: hidden !important;
+}
+
+/* Match/beat the high-specificity polish rule that previously forced overflow:hidden.
+   This is the actual wheel/touch scroll surface for the complete roll-call flow. */
+html body .attendance-shell .attendance-rollcall.attendance-rollcall {
+  display: flex !important;
+  flex-direction: column !important;
+  align-content: initial !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  gap: 12px !important;
+  padding: 18px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scrollbar-gutter: stable;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(63, 95, 144, .58) transparent;
+  background: #f8faff !important;
+}
+
+.attendance-rollcall.attendance-rollcall > * {
+  flex: 0 0 auto !important;
+}
+
+.attendance-rollcall::-webkit-scrollbar { width: 10px; }
+.attendance-rollcall::-webkit-scrollbar-track { background: transparent; }
+.attendance-rollcall::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(63, 95, 144, .48);
+  background-clip: padding-box;
+}
+.attendance-rollcall::-webkit-scrollbar-thumb:hover { background-color: rgba(63, 95, 144, .72); }
+
+.attendance-rollcall .attendance-rollcall-head.attendance-rollcall-head {
+  min-height: 92px !important;
+  margin: 0 !important;
+  padding: 16px 18px !important;
+  border: 1px solid #dce6f5 !important;
+  border-radius: 20px !important;
+  background: linear-gradient(135deg, #ffffff 0%, #f5f9ff 100%) !important;
+  box-shadow: 0 5px 18px rgba(48, 76, 120, .07) !important;
+}
+
+.attendance-rollcall .attendance-rollcall-head h2 {
+  margin-top: 3px !important;
+  font-size: var(--att-type-section-title) !important;
+  line-height: 1.08 !important;
+}
+
+.attendance-rollcall .attendance-summary.attendance-summary {
+  min-width: 126px !important;
+  padding: 12px 16px !important;
+  border: 1px solid rgba(23, 107, 71, .12) !important;
+  border-radius: 18px !important;
+  box-shadow: none !important;
+}
+
+.attendance-rollcall .attendance-session-controls.attendance-session-controls {
+  display: grid !important;
+  grid-template-columns: repeat(3,minmax(0,1fr)) !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.attendance-rollcall .attendance-session-controls > label,
+.attendance-rollcall .attendance-session-controls > .attendance-day-lock,
+.attendance-rollcall .attendance-session-controls > .attendance-day-open,
+.attendance-rollcall .attendance-session-controls > .att-m3-period-field {
+  min-height: 74px !important;
+  border: 1px solid #e1e8f3 !important;
+  border-radius: 16px !important;
+  background: #f1f5fb !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.8) !important;
+}
+
+.attendance-rollcall .attendance-session-controls input,
+.attendance-rollcall .attendance-session-controls select {
+  min-height: 36px !important;
+  background: #fff !important;
+  border: 1px solid #e6ebf3 !important;
+}
+
+.attendance-rollcall .attendance-roster-head {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: minmax(0,1fr) 140px 76px !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 49px 20px 10px 64px !important;
+  border: 1px solid #dbe5f4 !important;
+  border-bottom: 0 !important;
+  border-radius: 18px 18px 0 0 !important;
+  background: #f3f6fc !important;
+}
+
+.attendance-rollcall .attendance-roster-head::before {
+  content: 'Danh sách học sinh';
+  position: absolute;
+  top: 13px;
+  left: 18px;
+  color: #17263b;
+  font-size: var(--att-type-card-title) !important;
+  font-weight: 900;
+  letter-spacing: -.01em;
+  text-transform: none;
+}
+
+.attendance-rollcall .attendance-roster-head::after {
+  content: 'Điểm danh học sinh trong lớp';
+  position: absolute;
+  top: 31px;
+  left: 18px;
+  color: #718096;
+  font-size: var(--att-type-meta) !important;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.attendance-rollcall .attendance-roster.attendance-roster {
+  flex: none !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  margin: 0 0 2px !important;
+  border: 1px solid #dbe5f4 !important;
+  border-top: 0 !important;
+  border-radius: 0 0 18px 18px !important;
+  background: #fff !important;
+}
+
+.attendance-rollcall .att-m3-roster-entry > label {
+  min-height: 48px !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+
+.attendance-rollcall .att-m3-roster-entry:nth-child(even) {
+  background: #fbfcff !important;
+}
+
+.attendance-rollcall .att-m3-proof-card.att-m3-proof-card {
+  margin: 0 !important;
+  padding: 14px !important;
+  border: 1px dashed #aac4ef !important;
+  border-radius: 18px !important;
+  background: #f6f9ff !important;
+  box-shadow: none !important;
+}
+
+.attendance-rollcall .att-m3-proof-picker {
+  min-height: 48px !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+}
+
+.attendance-rollcall .attendance-confirm-bar.attendance-confirm-bar {
+  min-height: 72px !important;
+  margin: 0 !important;
+  padding: 12px 14px !important;
+  border: 1px solid #e1e7f0 !important;
+  border-radius: 18px !important;
+  background: #f2f5fa !important;
+  box-shadow: none !important;
+}
+
+.attendance-rollcall .attendance-confirm-bar input {
+  min-height: 38px !important;
+  background: #fff !important;
+}
+
+.attendance-rollcall .attendance-confirm-bar button {
+  min-height: 40px !important;
+}
+
+@media (max-width: 1180px) {
+  .attendance-rollcall .attendance-session-controls.attendance-session-controls {
+    grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .attendance-rollcall.attendance-rollcall {
+    padding: 10px !important;
+    gap: 9px !important;
+  }
+
+  .attendance-rollcall .attendance-session-controls.attendance-session-controls {
+    grid-template-columns: 1fr !important;
+  }
+
+  .attendance-rollcall .attendance-roster-head {
+    grid-template-columns: minmax(0,1fr) 68px 48px !important;
+    padding-left: 48px !important;
+  }
+
+  .attendance-rollcall .attendance-confirm-bar.attendance-confirm-bar {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .attendance-layer { padding: 10px !important; }
+  .attendance-shell {
+    width: calc(100vw - 20px) !important;
+    height: calc(100vh - 20px) !important;
+  }
+}

@@ -1,0 +1,375 @@
+.attendance-class-info-card {
+  margin: 0;
+  padding: 14px 18px 16px;
+  border: 0;
+  border-top: 1px solid #e7ecef;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.attendance-class-info-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.attendance-class-info-head > div {
+  min-width: 0;
+}
+
+.attendance-class-info-head span,
+.attendance-class-edit-form label > span,
+.attendance-class-teacher-editor > span,
+.attendance-weekday-editor > span,
+.attendance-member-edit-row label small {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--att-m3-on-variant, #45464f);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.attendance-class-info-head strong {
+  display: block;
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.attendance-class-info-head p {
+  margin: 5px 0 0;
+  color: var(--att-m3-on-variant, #45464f);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.attendance-class-info-head > button,
+.attendance-class-edit-form footer button,
+.attendance-member-row-actions button,
+.attendance-member-edit-actions button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--att-m3-secondary-container, #dae2f9);
+  color: var(--att-m3-on-primary-container, #0b1b33);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.attendance-class-info-head > button:disabled,
+.attendance-class-edit-form footer button:disabled,
+.attendance-member-row-actions button:disabled,
+.attendance-member-edit-actions button:disabled {
+  cursor: default;
+  opacity: .55;
+}
+
+.attendance-class-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.attendance-class-info-grid article {
+  min-width: 0;
+  padding: 11px 12px;
+  border-radius: 14px;
+  background: var(--att-m3-surface, #fbf8ff);
+}
+
+.attendance-class-info-grid article.is-wide {
+  grid-column: span 2;
+}
+
+.attendance-class-info-grid article span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--att-m3-on-variant, #45464f);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.attendance-class-info-grid article b {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.attendance-class-edit-form {
+  display: grid;
+  gap: 12px;
+}
+
+.attendance-class-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.attendance-class-edit-grid label.is-wide {
+  grid-column: span 2;
+}
+
+.attendance-class-edit-grid input,
+.attendance-class-edit-grid select,
+.attendance-class-teacher-add input,
+.attendance-member-edit-row input,
+.attendance-member-edit-row select {
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  box-sizing: border-box;
+  border: 1px solid var(--att-m3-outline-variant, #c7c6d0);
+  border-radius: 11px;
+  background: var(--att-m3-surface, #fbf8ff);
+  color: var(--att-m3-on-surface, #1b1b20);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0 10px;
+}
+
+.attendance-class-edit-grid input:focus,
+.attendance-class-edit-grid select:focus,
+.attendance-class-teacher-add input:focus,
+.attendance-member-edit-row input:focus,
+.attendance-member-edit-row select:focus {
+  outline: 2px solid color-mix(in srgb, var(--att-m3-primary, #3f5f90) 28%, transparent);
+  outline-offset: 1px;
+  border-color: var(--att-m3-primary, #3f5f90);
+}
+
+.attendance-class-teacher-editor {
+  padding: 11px 12px 12px;
+  border: 1px solid color-mix(in srgb, var(--att-m3-primary, #3f5f90) 16%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--att-m3-primary-container, #d6e3ff) 24%, var(--att-m3-surface, #fbf8ff));
+}
+
+.attendance-class-teacher-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  min-height: 31px;
+  align-items: center;
+}
+
+.attendance-class-teacher-chips > em {
+  color: var(--att-m3-on-variant, #45464f);
+  font-size: 10.5px;
+  font-style: normal;
+}
+
+.attendance-class-teacher-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-height: 30px;
+  padding: 0 4px 0 10px;
+  border-radius: 999px;
+  background: var(--att-m3-primary-container, #d6e3ff);
+  color: var(--att-m3-on-primary-container, #0b1b33);
+}
+
+.attendance-class-teacher-chip b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10.5px;
+}
+
+.attendance-class-teacher-chip button {
+  width: 25px;
+  height: 25px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.attendance-class-teacher-chip button:hover:not(:disabled),
+.attendance-class-teacher-chip button:focus-visible {
+  background: color-mix(in srgb, var(--att-m3-primary, #3f5f90) 14%, transparent);
+}
+
+.attendance-class-teacher-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.attendance-class-teacher-add input {
+  height: 36px;
+}
+
+.attendance-class-teacher-add button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 11px;
+  background: var(--att-m3-secondary-container, #dae2f9);
+  color: var(--att-m3-on-primary-container, #0b1b33);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.attendance-class-teacher-add button:disabled,
+.attendance-class-teacher-chip button:disabled {
+  cursor: default;
+  opacity: .5;
+}
+
+.attendance-class-teacher-editor > small {
+  display: block;
+  margin-top: 7px;
+  color: var(--att-m3-on-variant, #45464f);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.attendance-weekday-editor {
+  padding: 11px 12px 12px;
+  border-radius: 14px;
+  background: var(--att-m3-surface, #fbf8ff);
+}
+
+.attendance-weekday-editor > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.attendance-weekday-editor button {
+  min-height: 33px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 11px;
+  background: var(--att-m3-surface-container-high, #e9e7ef);
+  color: var(--att-m3-on-variant, #45464f);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.attendance-weekday-editor button.is-active {
+  background: var(--att-m3-primary, #3f5f90);
+  color: var(--att-m3-on-primary, #fff);
+}
+
+.attendance-class-edit-form footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.attendance-class-edit-form footer button.is-primary,
+.attendance-member-edit-actions button.is-primary {
+  background: var(--att-m3-primary, #3f5f90);
+  color: var(--att-m3-on-primary, #fff);
+}
+
+.attendance-member-row-actions,
+.attendance-member-edit-actions {
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.attendance-member-row-actions button:first-child {
+  background: var(--att-m3-secondary-container, #dae2f9);
+}
+
+.attendance-member-row-actions button:last-child {
+  background: var(--att-m3-danger-container, #ffdad6);
+  color: var(--att-m3-danger, #ba1a1a);
+}
+
+.attendance-member-edit-row {
+  background: color-mix(in srgb, var(--att-m3-primary-container, #d6e3ff) 45%, var(--att-m3-surface, #fbf8ff)) !important;
+  align-items: center;
+}
+
+.attendance-member-edit-fields {
+  display: grid !important;
+  grid-template-columns: minmax(88px, .55fr) minmax(160px, 1.45fr);
+  gap: 7px;
+}
+
+.attendance-member-edit-row label {
+  display: block;
+  min-width: 0;
+}
+
+.attendance-member-edit-row label small {
+  margin-bottom: 3px;
+}
+
+.attendance-member-edit-row input,
+.attendance-member-edit-row select {
+  height: 34px;
+}
+
+@media (max-width: 980px) {
+  .attendance-class-info-grid,
+  .attendance-class-edit-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .attendance-class-info-grid article.is-wide,
+  .attendance-class-edit-grid label.is-wide {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 680px) {
+  .attendance-class-info-head {
+    flex-direction: column;
+  }
+
+  .attendance-class-info-head > button {
+    width: 100%;
+  }
+
+  .attendance-class-info-grid,
+  .attendance-class-edit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .attendance-class-info-grid article.is-wide,
+  .attendance-class-edit-grid label.is-wide {
+    grid-column: auto;
+  }
+
+  .attendance-class-teacher-add {
+    grid-template-columns: 1fr;
+  }
+
+  .attendance-class-teacher-add button {
+    width: 100%;
+  }
+
+  .attendance-member-edit-fields {
+    grid-template-columns: 1fr;
+  }
+}

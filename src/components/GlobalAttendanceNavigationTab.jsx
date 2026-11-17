@@ -1,0 +1,1924 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { AttendanceFeatureDeck } from './attendance/AttendanceWorkspaceUI.jsx';
+import { createPortal } from 'react-dom';
+import { readSheet } from 'read-excel-file/browser';
+import { getRuntimeClient } from '../services/runtime/core.js';
+import { useRuntimeCore } from '../services/runtime/useRuntimeCore.js';
+import { normalizeSystemRole, SYSTEM_ROLES } from '../utils/roles.js';
+import {
+  ATTENDANCE_PERMISSION_IDS,
+  ATTENDANCE_PERMISSION_ITEMS,
+  getFirstAllowedAttendanceTab,
+  hasAnyAttendanceAccess,
+  hasAttendanceTabAccess,
+  hasExplicitPermissionId,
+} from '../utils/permissions.js';
+import {
+  ABSENCE_REASON_OPTIONS,
+  ATTENDANCE_STATUS,
+  ATTENDANCE_SUBJECT_HUB,
+  attendanceStatusLabel,
+  attendanceSubjectKey,
+  attendanceSummary,
+  buildAttendanceDraft,
+  normalizeAttendanceStatus,
+  extraClassTypeLabel,
+  EXTRA_CLASS_LESSON_PERIOD_OPTIONS,
+  defaultLessonPeriodsForExtraClass,
+  lessonPeriodOptionsForExtraClass,
+  memberKey,
+  parseExtraClassRosterRows,
+  sortMembersByName,
+} from '../utils/extraClassAttendance.js';
+import { isExtraClassScheduledOnDate, roomForExtraClass } from '../utils/extraClassSchedule2026.js';
+import {
+  giftedAssignmentForClass,
+  teachersForGiftedAssignment,
+} from '../utils/giftedTeacherCatalog2026.js';
+import './GlobalAttendanceNavigationTab.css';
+import './GlobalAttendanceDailyCalendar.css';
+import './GlobalAttendanceManualTeacher.css';
+import AttendanceMonthlyReport from './attendance/AttendanceMonthlyReport.jsx';
+import AttendanceClassManagementWorkspace from './attendance/AttendanceClassManagementWorkspace.jsx';
+import AttendanceDailySchedule from './attendance/AttendanceDailySchedule.jsx';
+import AttendanceArchivePanel from './attendance/AttendanceArchivePanel.jsx';
+import { ATTENDANCE_PROOF_BUCKET, buildAttendanceProofPath, prepareAttendanceProofImage } from '../utils/attendanceProofImage.js';
+import { filterAndSortAttendanceHistory } from '../utils/attendanceHistoryFilters.js';
+import {
+  DEFAULT_ATTENDANCE_GLOBAL_SETTINGS,
+  loadAttendanceGlobalSettings,
+  saveAttendanceTeacherPeriodSelection,
+  subscribeAttendanceGlobalSettings,
+} from '../utils/attendanceGlobalSettings.js';
+import { canManageSupplementalLearning } from '../supplementalAccess.js';
+import { attachSupplementalProof, beginSupplementalAttendance, cancelSupplementalSession, confirmSupplementalAttendance, loadSupplementalAttendanceActivities, loadSupplementalSessionTeachers } from '../attendance/supplementalLearningApi.js';
+import { archiveAttendanceHistory, listAttendanceArchive, requestAttendanceArchiveDelete, restoreAttendanceArchive, reviewAttendanceArchiveDelete } from '../attendance/attendanceArchiveApi.js';
+import { archiveExtraClass, finalizeExtraClassArchiveDelete, listExtraClassArchive, requestExtraClassArchiveDelete, restoreExtraClassArchive, reviewExtraClassArchiveDelete } from '../attendance/extraClassArchiveApi.js';
+import './attendance/AttendanceMaterial3.css';
+import './attendance/AttendanceHistoryV2.css';
+// Shared typography is loaded after feature styles so every tab follows one scale.
+import './attendance/AttendanceTypography.css';
+import './attendance/AttendanceTypographyViews.css';
+// Shared visual foundation for all seven attendance views. No functional changes.
+import './attendance/AttendanceUnifiedDesign.css';
+
+const CLASS_COLUMNS = 'id,class_type,class_name,subject,teacher_id,teacher_name,teacher_email,active,source_key,school_year,grade_level,expected_student_count,periods_per_week,room,weekdays,time_range,created_by,updated_by,created_at,updated_at';
+const MEMBER_COLUMNS = 'id,class_id,member_key,student_code,student_full_name,school_class_name,teacher_note,active,joined_at,left_at,created_by,updated_by,removed_by,removal_reason,created_at,updated_at';
+const CLASS_TEACHER_COLUMNS = 'id,class_id,teacher_id,teacher_name,teacher_email,position,source_key,created_at,updated_at';
+const SESSION_COLUMNS = 'id,class_id,class_type,class_name,subject,teacher_id,teacher_name,teacher_email,attendance_date,checked_at,checked_by,checked_by_name,total_students,present_count,absent_count,note,session_status,lesson_periods,cancellation_reason,teaching_room,teaching_time_range,proof_path,created_at';
+const RECORD_COLUMNS = 'id,session_id,class_id,member_id,member_key,student_code,student_full_name,school_class_name,status,recorded_at,absence_reason_code,absence_note';
+const VIETNAM_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+
+const PATHS = {
+  attendance: 'M19 3h-1V1h-2v2H8V1H6v2H5a2 2 0 0 0-2 2v16h18V5a2 2 0 0 0-2-2Zm0 16H5V8h14v11Zm-8.3-2.2-3.1-3.1 1.4-1.4 1.7 1.7 4.3-4.3 1.4 1.4-5.7 5.7Z',
+  close: 'm6.4 5 5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5Z',
+  back: 'M20 11H7.8l5.6-5.6L12 4 4 12l8 8 1.4-1.4L7.8 13H20v-2Z',
+  upload: 'M11 16h2V8l3.5 3.5 1.4-1.4L12 4.2l-5.9 5.9 1.4 1.4L11 8v8Zm-6 4h14v-2H5v2Z',
+  add: 'M11 5h2v6h6v2h6v2h-6v6h-2v-6H5v-2h6V5Z',
+  people: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7-1a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM9 13c-4.4 0-8 2.2-8 5v3h16v-3c0-2.8-3.6-5-8-5Zm7 0c-.7 0-1.4.1-2 .2 2.4 1.2 4 2.9 4 4.8v3h5v-2.6c0-3-3.1-5.4-7-5.4Z',
+  history: 'M13 3a9 9 0 1 0 8.5 12h-2.2A7 7 0 1 1 17 7.1V10h2V3h-2v1.7A8.9 8.9 0 0 0 13 3Zm-1 5v5.2l4 2.4 1-1.7-3-1.8V8h-2Z',
+  trash: 'M7 21a2 2 0 0 1-2-2V7h14v12a2 2 0 0 1-2 2H7Zm1-11v8h2v-8H8Zm6 0v8h2v-8h-2ZM8 4l1-1h6l1 1h4v2H4V4h4Z',
+  check: 'm9.2 17.2-5-5 1.4-1.4 3.6 3.6 8.9-8.9 1.4 1.4-10.3 10.3Z',
+  refresh: 'M18.4 5.6A8 8 0 1 0 20 14h-2.1a6 6 0 1 1-1-6.8L14 10h7V3l-2.6 2.6Z',
+  calendar: 'M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v15h18V6a2 2 0 0 0-2-2Zm0 15H5V9h14v10ZM7 11h4v4H7v-4Z',
+  teacher: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Zm6.5-8.5 2 2 2-2-2-2-2 2Z',
+  book: 'M4 4.5A2.5 2.5 0 0 1 6.5 2H20v16H7a3 3 0 0 0-3 3V4.5Zm3 11.5h11V4H6.5A.5.5 0 0 0 6 4.5v11.9c.3-.2.6-.4 1-.4Zm0 2a1 1 0 0 0 0 2h13v-2H7Z',
+  clock: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm1-13h-2v6l5 3 1-1.7-4-2.3V7Z',
+  room: 'M12 2a7 7 0 0 0-7 7c0 5.1 7 13 7 13s7-7.9 7-13a7 7 0 0 0-7-7Zm0 10.5A3.5 3.5 0 1 1 12 5a3.5 3.5 0 0 1 0 7.5Z',
+  periods: 'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm1 5h12V6H6v2Zm0 5h12v-2H6v2Zm0 5h8v-2H6v2Z',
+  late: 'M12 2a10 10 0 1 0 9.5 13h-2.2A8 8 0 1 1 12 4v8l5 3-1 1.7-6-3.6V4.3A8 8 0 0 1 12 4V2Zm8 1v6h-2V3h2Zm0 8a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6Z',
+  absent: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.4 0-8 2.2-8 5v3h12.2a6.5 6.5 0 0 1-.2-1.5c0-2.2 1.1-4.2 2.8-5.4A15 15 0 0 0 9 13Zm10 1.6 1.4 1.4-1.9 1.9 1.9 1.9-1.4 1.4-1.9-1.9-1.9 1.9-1.4-1.4 1.9-1.9-1.9-1.9 1.4-1.4 1.9 1.9 1.9-1.9Z',
+  camera: 'M9 4 7.5 6H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2.5L15 4H9Zm3 13a4 4 0 1 1 0-8 4 4 0 0 1 0 8Zm0-2a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z',
+};
+
+const ATTENDANCE_TAB_ICONS = {
+  quick: 'check',
+  calendar: 'calendar',
+  manage: 'people',
+  history: 'history',
+  report: 'history',
+  archive: 'trash',
+};
+
+function Icon({ name, size = 20 }) {
+  return <svg className="attendance-icon" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true"><path d={PATHS[name] || PATHS.attendance} /></svg>;
+}
+
+function fold(value) {
+  return String(value || '').trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+}
+
+function attendanceSelectionStorageKey(user) {
+  const identity = String(user?.id || user?.authId || user?.email || 'guest').trim().toLowerCase();
+  return `bes-attendance-recent-class-v1:${identity}`;
+}
+
+function readAttendanceSelection(user) {
+  if (typeof window === 'undefined') return '';
+  try { return window.localStorage.getItem(attendanceSelectionStorageKey(user)) || ''; } catch { return ''; }
+}
+
+function persistAttendanceSelection(user, classId) {
+  if (typeof window === 'undefined') return;
+  const value = String(classId || '').trim();
+  if (!value || value.startsWith('supplemental:')) return;
+  try { window.localStorage.setItem(attendanceSelectionStorageKey(user), value); } catch { /* best effort */ }
+}
+
+function vietnamDateString(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: VIETNAM_TIME_ZONE,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(date);
+  const map = Object.fromEntries(parts.filter((part) => part.type !== 'literal').map((part) => [part.type, part.value]));
+  return `${map.year}-${map.month}-${map.day}`;
+}
+
+function formatDate(value) {
+  const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : '';
+}
+
+function formatDateTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('vi-VN', {
+    timeZone: VIETNAM_TIME_ZONE,
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit',
+  }).format(date);
+}
+
+function sameClassIdentity(row, group) {
+  return row?.class_type === group?.class_type
+    && fold(row?.class_name) === fold(group?.class_name)
+    && fold(row?.subject) === fold(group?.subject);
+}
+
+function isSupplementalHistorySession(session) {
+  return session?.attendance_source === 'supplemental' || session?.class_type === 'supplemental';
+}
+
+function historyClassTypeLabel(session) {
+  return isSupplementalHistorySession(session) ? 'Học bổ sung' : extraClassTypeLabel(session?.class_type);
+}
+
+function normalizeSupplementalHistorySessions(rows = []) {
+  return (Array.isArray(rows) ? rows : []).map((row) => {
+    const sourceId = String(row?.id || '');
+    const participants = Array.isArray(row?.participants) ? row.participants : [];
+    const tardyCount = Number(row?.tardyCount || 0);
+    const presentCount = Number(row?.presentCount || 0);
+    return {
+      id: 'supplemental:' + sourceId,
+      class_id: row?.groupId ? 'supplemental-group:' + row.groupId : '',
+      class_type: 'supplemental',
+      class_name: row?.groupName || row?.title || 'Học bổ sung',
+      subject: row?.subject || '',
+      teacher_id: null,
+      teacher_name: row?.teacherName || '',
+      teacher_email: '',
+      attendance_date: row?.date || '',
+      checked_at: row?.attendanceConfirmedAt || null,
+      checked_by: null,
+      checked_by_name: row?.checkedByName || '',
+      total_students: Number(row?.totalStudents || participants.length || 0),
+      present_count: presentCount + tardyCount,
+      absent_count: Number(row?.absentCount || 0),
+      tardy_count: tardyCount,
+      note: row?.sessionNote || '',
+      session_status: row?.status === 'cancelled' ? 'cancelled' : 'completed',
+      lesson_periods: Number(row?.lessonPeriods ?? row?.lesson_periods ?? 1) || 1,
+      cancellation_reason: row?.cancellationReason || '',
+      teaching_room: row?.room || '',
+      teaching_time_range: row?.timeRange || '',
+      proof_path: row?.proofPath || '',
+      created_at: null,
+      attendance_source: 'supplemental',
+      supplemental_session_id: sourceId,
+      history_records: participants.map((participant, index) => ({
+        id: 'supplemental-record:' + sourceId + ':' + (participant?.studentId || index),
+        session_id: 'supplemental:' + sourceId,
+        class_id: row?.groupId ? 'supplemental-group:' + row.groupId : '',
+        member_id: participant?.studentId || null,
+        member_key: participant?.canonicalStudentKey || '',
+        student_code: participant?.studentCode || '',
+        student_full_name: participant?.fullName || '',
+        school_class_name: participant?.schoolClassName || '',
+        status: participant?.status === 'tardy' ? ATTENDANCE_STATUS.LATE : normalizeAttendanceStatus(participant?.status, participant?.status !== 'absent'),
+        recorded_at: null,
+        absence_reason_code: participant?.absenceReasonCode || '',
+        absence_note: participant?.absenceNote || '',
+      })),
+    };
+  });
+}
+
+export default function GlobalAttendanceNavigationTab({ currentUser, standalone = false, language = 'vi' }) {
+  const runtime = useRuntimeCore();
+  const client = getRuntimeClient();
+  const today = vietnamDateString();
+  const [host, setHost] = useState(null);
+  const [open, setOpen] = useState(false);
+  const [initialLoadSettled, setInitialLoadSettled] = useState(false);
+  const supplementalRouteHandledRef = useRef('');
+  const [view, setView] = useState(() => {
+    if (!standalone || typeof window === 'undefined') return 'quick';
+    const candidate = new URLSearchParams(window.location.hash.split('?')[1] || '').get('tab');
+    return ['quick','calendar','manage','history','report','archive'].includes(candidate) ? candidate : 'quick';
+  });
+  const workspaceVisible = open || standalone;
+  const [classes, setClasses] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [classTeachers, setClassTeachers] = useState([]);
+  const [sessions, setSessions] = useState([]);
+  const [supplementalHistorySessions, setSupplementalHistorySessions] = useState([]);
+  const [archiveItems, setArchiveItems] = useState([]);
+  const [classArchiveItems, setClassArchiveItems] = useState([]);
+  const [archiveLoading, setArchiveLoading] = useState(false);
+  const [records, setRecords] = useState([]);
+  const [calendarSessions, setCalendarSessions] = useState([]);
+  const [teacherDaySessions, setTeacherDaySessions] = useState([]);
+  const [dayRecords, setDayRecords] = useState([]);
+  const [selectedClassId, setSelectedClassId] = useState(() => readAttendanceSelection(currentUser));
+  const [selectedSessionId, setSelectedSessionId] = useState('');
+  const [attendanceDate, setAttendanceDate] = useState(today);
+  const [sessionTeacher, setSessionTeacher] = useState('');
+  const [daySession, setDaySession] = useState(null);
+  const [calendarDate, setCalendarDate] = useState(today);
+  const [calendarRoomFilter, setCalendarRoomFilter] = useState('all');
+  const [calendarLoading, setCalendarLoading] = useState(false);
+  const [draft, setDraft] = useState([]);
+  const [note, setNote] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState('');
+  const [error, setError] = useState('');
+  const [importReport, setImportReport] = useState(null);
+  const [historyQuery, setHistoryQuery] = useState('');
+  const [historyType, setHistoryType] = useState('all');
+  const [historySort, setHistorySort] = useState('desc');
+  const [historyDateFrom, setHistoryDateFrom] = useState('');
+  const [historyDateTo, setHistoryDateTo] = useState('');
+  const [historySelectionMode, setHistorySelectionMode] = useState(false);
+  const [selectedHistorySessionIds, setSelectedHistorySessionIds] = useState([]);
+  const [memberQuery, setMemberQuery] = useState('');
+  const [classQuery, setClassQuery] = useState('');
+  const [subjectFilter, setSubjectFilter] = useState('all');
+  const [addForm, setAddForm] = useState({ student_code: '', student_full_name: '', school_class_name: '' });
+  const [showAddStudent, setShowAddStudent] = useState(false);
+  const [showAddTeacher, setShowAddTeacher] = useState(false);
+  const [newTeacherName, setNewTeacherName] = useState('');
+  const [lessonPeriods, setLessonPeriods] = useState(1);
+  const [attendanceGlobalSettings, setAttendanceGlobalSettings] = useState(DEFAULT_ATTENDANCE_GLOBAL_SETTINGS);
+  const [periodPolicySaving, setPeriodPolicySaving] = useState(false);
+  const [teachingRoom, setTeachingRoom] = useState('');
+  const [teachingTimeRange, setTeachingTimeRange] = useState('');
+  const [showCancelSession, setShowCancelSession] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState('');
+  const [reportMonth, setReportMonth] = useState(today.slice(0, 7));
+  const [proofFile, setProofFile] = useState(null);
+  const [proofPreviewUrl, setProofPreviewUrl] = useState('');
+  const [historyProofUrl, setHistoryProofUrl] = useState('');
+  const [historyProofLoading, setHistoryProofLoading] = useState(false);
+  const fileRef = useRef(null);
+  const proofInputRef = useRef(null);
+
+  const systemRole = normalizeSystemRole(runtime.role || currentUser?.role, SYSTEM_ROLES.GUEST);
+  const isAttendanceAdmin = systemRole === SYSTEM_ROLES.ADMIN;
+  const canAccessAttendanceView = (tabId) => isAttendanceAdmin || hasAttendanceTabAccess(currentUser, tabId);
+  const canDeleteAttendanceHistory = isAttendanceAdmin
+    || hasExplicitPermissionId(currentUser, ATTENDANCE_PERMISSION_IDS.delete)
+    || String(currentUser?.email || '').trim().toLowerCase() === 'hongtham@accounts.brianenglish.studio';
+  const canUseAttendanceHistoryArchive = canDeleteAttendanceHistory;
+  const canUseClassArchive = isAttendanceAdmin || hasAttendanceTabAccess(currentUser, 'manage');
+  const canOpenArchive = canUseAttendanceHistoryArchive || canUseClassArchive;
+  const hasAttendanceReportOverride = isAttendanceAdmin || hasAttendanceTabAccess(currentUser, 'report');
+  const canUseQuickAttendance = isAttendanceAdmin || hasAttendanceTabAccess(currentUser, 'quick') || hasAttendanceReportOverride;
+  const archiveTab = { id: 'attendance:archive', tab: 'archive', titleVi: 'Kho lưu trữ' };
+  const availableAttendanceTabs = [
+    ...ATTENDANCE_PERMISSION_ITEMS.filter((item) => item.tab === 'quick' ? canUseQuickAttendance : canAccessAttendanceView(item.tab)),
+    ...(canOpenArchive ? [archiveTab] : []),
+  ];
+  const archiveCount = archiveItems.length + classArchiveItems.length;
+  const firstAllowedView = canUseQuickAttendance ? 'quick' : getFirstAllowedAttendanceTab(currentUser);
+  const allowed = Boolean(currentUser?.id && (isAttendanceAdmin || hasAnyAttendanceAccess(currentUser)));
+  const canSeeSupplementalHistory = canManageSupplementalLearning(runtime);
+  const allowTeacherPeriodSelection = attendanceGlobalSettings.allowTeacherPeriodSelection === true;
+
+  useEffect(() => {
+    if (!client || !runtime.ready || !currentUser?.id) return undefined;
+    let active = true;
+
+    loadAttendanceGlobalSettings(client)
+      .then((settings) => {
+        if (active) setAttendanceGlobalSettings(settings);
+      })
+      .catch(() => {
+        if (active) setAttendanceGlobalSettings(DEFAULT_ATTENDANCE_GLOBAL_SETTINGS);
+      });
+
+    const unsubscribe = subscribeAttendanceGlobalSettings(client, (settings) => {
+      if (active) setAttendanceGlobalSettings(settings);
+    });
+
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
+  }, [client, runtime.ready, currentUser?.id]);
+
+  async function updateTeacherPeriodSelectionPolicy(enabled) {
+    if (!isAttendanceAdmin || !client || periodPolicySaving) return;
+    setPeriodPolicySaving(true);
+    setError('');
+    try {
+      const actor = runtime?.profile?.id || runtime?.session?.user?.id || currentUser?.id || currentUser?.email || '';
+      const next = await saveAttendanceTeacherPeriodSelection(client, enabled, actor);
+      setAttendanceGlobalSettings(next);
+      setNotice(enabled
+        ? 'Đã bật tùy chọn số tiết cho toàn bộ giáo viên.'
+        : 'Đã khóa số tiết giáo viên theo loại lớp: Phụ đạo 1,5 tiết · Bồi dưỡng 2 tiết.');
+    } catch (settingsError) {
+      setError(settingsError?.message || 'Không thể cập nhật quyền tùy chọn số tiết.');
+    } finally {
+      setPeriodPolicySaving(false);
+    }
+  }
+
+  useEffect(() => {
+    if (standalone || typeof document === 'undefined') return undefined;
+    const findHost = () => setHost(document.querySelector('.bes-top-chrome .brian-nav__primary'));
+    findHost();
+    const observer = new MutationObserver(findHost);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [standalone]);
+
+  useEffect(() => {
+    if (!open || standalone) return undefined;
+    document.documentElement.classList.add('bes-attendance-open');
+    return () => document.documentElement.classList.remove('bes-attendance-open');
+  }, [open, standalone]);
+
+  useEffect(() => {
+    if (!selectedClassId) return;
+    persistAttendanceSelection(currentUser, selectedClassId);
+  }, [selectedClassId, currentUser?.id, currentUser?.authId, currentUser?.email]);
+
+  useEffect(() => {
+    const openQuickAttendance = () => {
+      if (!allowed || !canUseQuickAttendance) return;
+      if (!standalone) {
+        window.location.hash = '#/attendance?tab=quick';
+        return;
+      }
+      setError('');
+      setView('quick');
+      window.history.replaceState(null, '', '#/attendance?tab=quick');
+    };
+    window.addEventListener('bes-attendance-quick-open', openQuickAttendance);
+    return () => window.removeEventListener('bes-attendance-quick-open', openQuickAttendance);
+  }, [allowed, canUseQuickAttendance]);
+
+  useEffect(() => {
+    if (!workspaceVisible || !allowed || !firstAllowedView) return;
+    const canOpenCurrentView = view === 'quick' ? canUseQuickAttendance : view === 'archive' ? canOpenArchive : canAccessAttendanceView(view);
+    if (!canOpenCurrentView) setView(firstAllowedView);
+  }, [workspaceVisible, allowed, firstAllowedView, view, currentUser?.permissions, systemRole, canUseQuickAttendance]);
+
+  async function loadAll({ keepSelection = true } = {}) {
+    if (!client || !runtime.ready || !runtime.session || !allowed) return;
+    setLoading(true);
+    setError('');
+    try {
+      const supplementalHistoryPromise = canSeeSupplementalHistory && canAccessAttendanceView('history')
+        ? client.rpc('bes_list_supplemental_history', { p_from: '2000-01-01', p_to: today, p_query: '' })
+        : Promise.resolve({ data: [], error: null });
+      const [classResult, memberResult, classTeacherResult, sessionResult, supplementalHistoryResult] = await Promise.all([
+        client.from('bes_extra_classes').select(CLASS_COLUMNS).order('class_name', { ascending: true }),
+        client.from('bes_extra_class_members').select(MEMBER_COLUMNS).order('student_full_name', { ascending: true }),
+        client.from('bes_extra_class_teachers').select(CLASS_TEACHER_COLUMNS).order('position', { ascending: true }),
+        client.from('bes_extra_attendance_sessions').select(SESSION_COLUMNS).order('checked_at', { ascending: false }).limit(400),
+        supplementalHistoryPromise,
+      ]);
+      const firstError = classResult.error || memberResult.error || classTeacherResult.error || sessionResult.error || supplementalHistoryResult.error;
+      if (firstError) throw firstError;
+      const nextClasses = classResult.data || [];
+      setClasses(nextClasses);
+      setMembers(memberResult.data || []);
+      setClassTeachers(classTeacherResult.data || []);
+      setSessions(sessionResult.data || []);
+      setSupplementalHistorySessions(normalizeSupplementalHistorySessions(supplementalHistoryResult.data || []));
+      if (!keepSelection || !nextClasses.some((row) => String(row.id) === String(selectedClassId))) {
+        setSelectedClassId(nextClasses.find((row) => row.active)?.id || '');
+      }
+    } catch (loadError) {
+      setError(loadError?.message?.includes('does not exist')
+        ? 'Phân hệ Điểm danh chưa được cài đặt đầy đủ trên Supabase. Hãy chạy migration điểm danh mới nhất.'
+        : (loadError?.message || 'Không thể tải dữ liệu điểm danh.'));
+    } finally {
+      setLoading(false);
+      setInitialLoadSettled(true);
+    }
+  }
+
+  async function loadArchive({ silent = false } = {}) {
+    if (!client || !runtime.ready || !runtime.session || !canOpenArchive) return;
+    if (!silent) setArchiveLoading(true);
+    try {
+      const [attendanceItems, extraClassItems] = await Promise.all([
+        canUseAttendanceHistoryArchive ? listAttendanceArchive(client) : Promise.resolve([]),
+        canUseClassArchive ? listExtraClassArchive(client) : Promise.resolve([]),
+      ]);
+      setArchiveItems(attendanceItems);
+      setClassArchiveItems(extraClassItems);
+    } catch (archiveError) {
+      setError(archiveError?.message || 'Không thể tải Kho lưu trữ.');
+    } finally {
+      if (!silent) setArchiveLoading(false);
+    }
+  }
+
+  async function refreshHistoryData() {
+    if (!client || !runtime.ready || !runtime.session || !allowed) return;
+    const supplementalHistoryPromise = canSeeSupplementalHistory && canAccessAttendanceView('history')
+      ? client.rpc('bes_list_supplemental_history', { p_from: '2000-01-01', p_to: today, p_query: '' })
+      : Promise.resolve({ data: [], error: null });
+    const [sessionResult, supplementalHistoryResult] = await Promise.all([
+      client.from('bes_extra_attendance_sessions').select(SESSION_COLUMNS).order('checked_at', { ascending: false }).limit(400),
+      supplementalHistoryPromise,
+    ]);
+    const firstError = sessionResult.error || supplementalHistoryResult.error;
+    if (firstError) throw firstError;
+    setSessions(sessionResult.data || []);
+    setSupplementalHistorySessions(normalizeSupplementalHistorySessions(supplementalHistoryResult.data || []));
+  }
+
+  useEffect(() => {
+    if (workspaceVisible && allowed && !String(selectedClassId || '').startsWith('supplemental:')) loadAll();
+  }, [workspaceVisible, allowed, runtime.ready, runtime.session?.user?.id]);
+
+  useEffect(() => {
+    if (open && canOpenArchive) loadArchive();
+    else if (standalone && canOpenArchive) loadArchive();
+  }, [workspaceVisible, canOpenArchive, runtime.ready, runtime.session?.user?.id]);
+
+  const activeClasses = useMemo(() => classes.filter((row) => row.active !== false), [classes]);
+  const selectedClass = useMemo(() => classes.find((row) => String(row.id) === String(selectedClassId)) || null, [classes, selectedClassId]);
+  const attendanceSource = String(selectedClassId || '').startsWith('supplemental:') ? 'supplemental' : 'extra';
+  const lessonPeriodOptions = useMemo(() => {
+    if (attendanceSource === 'supplemental') return EXTRA_CLASS_LESSON_PERIOD_OPTIONS;
+    if (!isAttendanceAdmin && !allowTeacherPeriodSelection && daySession?.lesson_periods != null) {
+      const storedPeriods = Number(daySession.lesson_periods);
+      const storedOption = EXTRA_CLASS_LESSON_PERIOD_OPTIONS.find((option) => option.value === storedPeriods);
+      if (storedOption) return [storedOption];
+    }
+    return lessonPeriodOptionsForExtraClass(selectedClass?.class_type, {
+      isAdmin: isAttendanceAdmin,
+      allowTeacherSelection: allowTeacherPeriodSelection,
+    });
+  }, [attendanceSource, selectedClass?.class_type, isAttendanceAdmin, allowTeacherPeriodSelection, daySession?.lesson_periods]);
+  const selectedMembers = useMemo(() => sortMembersByName(members.filter((row) => String(row.class_id) === String(selectedClassId) && row.active !== false)), [members, selectedClassId]);
+  const allSelectedMembers = useMemo(() => sortMembersByName(members.filter((row) => String(row.class_id) === String(selectedClassId))), [members, selectedClassId]);
+  const memberCounts = useMemo(() => {
+    const map = new Map();
+    members.forEach((row) => {
+      if (row.active === false) return;
+      map.set(String(row.class_id), (map.get(String(row.class_id)) || 0) + 1);
+    });
+    return map;
+  }, [members]);
+  const classTeacherNames = useMemo(() => {
+    const map = new Map();
+    classTeachers.forEach((row) => {
+      const key = String(row.class_id);
+      const current = map.get(key) || [];
+      if (row.teacher_name && !current.some((name) => fold(name) === fold(row.teacher_name))) current.push(row.teacher_name);
+      map.set(key, current);
+    });
+    return map;
+  }, [classTeachers]);
+  const lastSessionByClass = useMemo(() => {
+    const map = new Map();
+    sessions.forEach((session) => { if (!map.has(String(session.class_id))) map.set(String(session.class_id), session); });
+    return map;
+  }, [sessions]);
+
+  function assignedTeachersForClass(classRow) {
+    const normalized = classTeacherNames.get(String(classRow?.id)) || [];
+    const authoritative = normalized.length ? [] : teachersForGiftedAssignment({
+      sourceKey: classRow?.source_key,
+      subject: classRow?.subject,
+      gradeLevel: classRow?.grade_level,
+      className: classRow?.class_name,
+    });
+    const fallback = normalized.length ? [] : String(classRow?.teacher_name || '').split(/\s*,\s*/).map((name) => name.trim()).filter(Boolean);
+    const merged = [];
+    [...normalized, ...authoritative, ...fallback].forEach((name) => {
+      const clean = String(name || '').trim();
+      if (clean && !merged.some((current) => fold(current) === fold(clean))) merged.push(clean);
+    });
+    return merged;
+  }
+
+  function teachersForClass(classRow) {
+    const names = assignedTeachersForClass(classRow);
+    return names.length ? names.join(', ') : 'Chưa phân công GV';
+  }
+
+  function teacherForSession(session) {
+    if (session?.session_status === 'cancelled') return '—';
+    return session?.teacher_name || 'Chưa ghi giáo viên';
+  }
+
+  const subjectCounts = useMemo(() => {
+    const map = new Map();
+    activeClasses.forEach((classRow) => {
+      const key = attendanceSubjectKey(classRow.subject);
+      map.set(key, (map.get(key) || 0) + 1);
+    });
+    return map;
+  }, [activeClasses]);
+
+  const filteredActiveClasses = useMemo(() => activeClasses.filter((classRow) => {
+    const subjectKey = attendanceSubjectKey(classRow.subject);
+    if (subjectFilter !== 'all' && subjectKey !== subjectFilter) return false;
+    if (!classQuery.trim()) return true;
+    const haystack = fold(`${classRow.class_name} ${classRow.subject} ${teachersForClass(classRow)}`);
+    return haystack.includes(fold(classQuery));
+  }), [activeClasses, classQuery, subjectFilter, classTeacherNames]);
+
+  const selectedTeacherOptions = useMemo(() => assignedTeachersForClass(selectedClass), [selectedClass, classTeacherNames]);
+  const teacherUsageForDate = useMemo(() => {
+    const map = new Map();
+    teacherDaySessions.forEach((session) => {
+      const key = fold(session.teacher_name);
+      if (key && !map.has(key)) map.set(key, session);
+    });
+    return map;
+  }, [teacherDaySessions]);
+  const blockedTeacherUsage = sessionTeacher ? teacherUsageForDate.get(fold(sessionTeacher)) : null;
+  const isTeacherBlocked = Boolean(blockedTeacherUsage && String(blockedTeacherUsage.class_id) !== String(selectedClassId));
+
+  useEffect(() => {
+    setShowAddTeacher(false);
+    setNewTeacherName('');
+  }, [selectedClassId]);
+
+  useEffect(() => {
+    if (!client || !allowed || !canManageSupplementalLearning(runtime)) return undefined;
+
+    const openSupplementalRollcall = async (event) => {
+      const sessionId = String(event?.detail?.sessionId || '').trim();
+      if (!sessionId) return;
+      if (!standalone) {
+        const params = new URLSearchParams({tab:'quick',supplementalSession:sessionId});
+        const classId = String(event?.detail?.classId || '').trim();
+        if (classId) params.set('classId',classId);
+        window.location.hash = '#/attendance?' + params.toString();
+        return;
+      }
+      try {
+        setBusy(true);
+        setError('');
+        setNotice('');
+        const [payload, supplementalTeacherRows] = await Promise.all([
+          beginSupplementalAttendance(client, sessionId),
+          loadSupplementalSessionTeachers(client, sessionId),
+        ]);
+        const session = payload?.session || {};
+        const sourceClassId = String(event?.detail?.classId || session.group_id || sessionId);
+        const syntheticClassId = 'supplemental:' + sourceClassId;
+        const participants = Array.isArray(payload?.participants) ? payload.participants : [];
+        const assignedTeacherNames = [];
+        [...(Array.isArray(supplementalTeacherRows) ? supplementalTeacherRows : []).map((row) => row?.fullName || row?.teacherName || ''), session.teacher_name || ''].forEach((name) => {
+          const clean = String(name || '').trim();
+          if (clean && !assignedTeacherNames.some((current) => fold(current) === fold(clean))) assignedTeacherNames.push(clean);
+        });
+        const sessionTeacherName = String(session.teacher_name || '').trim();
+        const initialTeacher = assignedTeacherNames.find((name) => fold(name) === fold(sessionTeacherName))
+          || (assignedTeacherNames.length === 1 ? assignedTeacherNames[0] : '');
+        const syntheticClass = {
+          id: syntheticClassId,
+          class_type: 'supplemental',
+          class_name: session.group_name || session.title || 'Học bổ sung',
+          subject: session.subject || '',
+          teacher_name: assignedTeacherNames.join(', '),
+          room: session.room || '',
+          time_range: [session.start_time, session.end_time].filter(Boolean).join(' - '),
+          active: true,
+        };
+        const syntheticMembers = participants.map((participant) => ({
+          id: participant.id,
+          class_id: syntheticClassId,
+          member_key: participant.canonicalStudentKey || participant.studentId || participant.id,
+          student_code: participant.studentCode || '',
+          student_full_name: participant.fullName || '',
+          school_class_name: participant.schoolClassName || '',
+          active: true,
+        }));
+        setClasses((current) => [...current.filter((row) => String(row.id) !== syntheticClassId), syntheticClass]);
+        setMembers((current) => [...current.filter((row) => String(row.class_id) !== syntheticClassId), ...syntheticMembers]);
+        setSelectedClassId(syntheticClassId);
+        setSelectedSessionId(sessionId);
+        setAttendanceDate(String(session.attendance_date || today).slice(0, 10));
+        setSessionTeacher(initialTeacher);
+        setLessonPeriods(Number(session.lesson_periods || 1));
+        setTeachingRoom(session.room || '');
+        setTeachingTimeRange([session.start_time, session.end_time].filter(Boolean).join(' - '));
+        setDaySession({ ...session, id: sessionId, note: session.session_note || '' });
+        setDayRecords(participants.map((participant) => ({
+          member_key: participant.canonicalStudentKey || participant.studentId || participant.id,
+          status: participant.status === 'tardy' ? ATTENDANCE_STATUS.LATE : (participant.status || ATTENDANCE_STATUS.PRESENT),
+          absence_reason_code: participant.absenceReasonCode || '',
+          absence_note: participant.absenceNote || '',
+        })));
+        setView('quick');
+      } catch (openError) {
+        setError(openError?.message || 'Không thể mở điểm danh Học bổ sung.');
+      } finally {
+        setBusy(false);
+      }
+    };
+
+    window.addEventListener('bes-supplemental-open-rollcall', openSupplementalRollcall);
+    window.addEventListener('bes-open-supplemental-attendance', openSupplementalRollcall);
+    return () => {
+      window.removeEventListener('bes-supplemental-open-rollcall', openSupplementalRollcall);
+      window.removeEventListener('bes-open-supplemental-attendance', openSupplementalRollcall);
+    };
+  }, [client, allowed, runtime, standalone]);
+
+  // In-app navigation unmounts the old navigation component, so an incoming
+  // supplemental session is reopened after initial class loading completes.
+  useEffect(() => {
+    if (!standalone || !allowed || !runtime.ready || !initialLoadSettled || !canManageSupplementalLearning(runtime)) return;
+    const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
+    const sessionId = String(params.get('supplementalSession') || '').trim();
+    if (!sessionId || supplementalRouteHandledRef.current === sessionId) return;
+    supplementalRouteHandledRef.current = sessionId;
+    window.dispatchEvent(new CustomEvent('bes-supplemental-open-rollcall', {
+      detail: {sessionId,classId:params.get('classId') || ''},
+    }));
+  }, [standalone, allowed, runtime.ready, runtime.session?.user?.id, initialLoadSettled]);
+
+  async function loadDaySession(classId = selectedClassId, dateValue = attendanceDate) {
+    if (!client || !classId || !dateValue || !allowed) {
+      setDaySession(null);
+      setDayRecords([]);
+      return null;
+    }
+    const { data, error: dayError } = await client.from('bes_extra_attendance_sessions')
+      .select(SESSION_COLUMNS)
+      .eq('class_id', classId)
+      .eq('attendance_date', dateValue)
+      .limit(1);
+    if (dayError) {
+      setError(dayError.message || 'Không thể kiểm tra trạng thái điểm danh theo ngày.');
+      return null;
+    }
+    const found = data?.[0] || null;
+    setDaySession(found);
+    if (found?.session_status === 'completed') {
+      const { data: detailRows, error: detailError } = await client.from('bes_extra_attendance_records')
+        .select(RECORD_COLUMNS)
+        .eq('session_id', found.id)
+        .order('student_full_name', { ascending: true });
+      if (detailError) setError(detailError.message || 'Không thể tải chi tiết điểm danh đã chốt.');
+      setDayRecords(detailRows || []);
+    } else {
+      setDayRecords([]);
+    }
+    return found;
+  }
+
+  async function loadTeacherDaySessions(dateValue = attendanceDate) {
+    if (!client || !dateValue || !allowed) {
+      setTeacherDaySessions([]);
+      return [];
+    }
+    try {
+      const supplementalUsagePromise = canManageSupplementalLearning(runtime)
+        ? loadSupplementalAttendanceActivities(client, { from: dateValue, to: dateValue })
+        : Promise.resolve([]);
+      const [extraResult, supplementalActivities] = await Promise.all([
+        client.from('bes_extra_attendance_sessions')
+          .select('id,class_id,class_name,teacher_name,attendance_date,session_status')
+          .eq('attendance_date', dateValue)
+          .eq('session_status', 'completed')
+          .order('checked_at', { ascending: true }),
+        supplementalUsagePromise,
+      ]);
+      if (extraResult.error) throw extraResult.error;
+      const supplementalRows = (Array.isArray(supplementalActivities) ? supplementalActivities : [])
+        .filter((row) => String(row.status || '').toLowerCase() === 'confirmed')
+        .map((row) => ({
+          id: row.id,
+          class_id: 'supplemental:' + row.id,
+          class_name: row.title || 'Học bổ sung',
+          teacher_name: row.teacherName || '',
+          attendance_date: row.date || dateValue,
+          session_status: 'completed',
+        }));
+      const rows = [...(extraResult.data || []), ...supplementalRows];
+      setTeacherDaySessions(rows);
+      return rows;
+    } catch (usageError) {
+      setError(usageError?.message || 'Không thể kiểm tra giáo viên đã điểm danh trong ngày.');
+      setTeacherDaySessions([]);
+      return [];
+    }
+  }
+
+  useEffect(() => {
+    if (!workspaceVisible || !allowed || !selectedClassId || !attendanceDate) return;
+    if (String(selectedClassId || '').startsWith('supplemental:')) return;
+    loadDaySession(selectedClassId, attendanceDate);
+  }, [workspaceVisible, allowed, selectedClassId, attendanceDate]);
+
+  useEffect(() => {
+    if (!workspaceVisible || !allowed || !attendanceDate) return;
+    loadTeacherDaySessions(attendanceDate);
+  }, [workspaceVisible, allowed, attendanceDate]);
+
+  useEffect(() => {
+    const next = buildAttendanceDraft(selectedMembers);
+    if (daySession?.session_status === 'completed' && dayRecords.length) {
+      const recordMap = new Map(dayRecords.map((record) => [record.member_key, record]));
+      next.forEach((row) => {
+        const record = recordMap.get(row.member_key);
+        if (!record) return;
+        row.status = normalizeAttendanceStatus(record.status);
+        row.present = row.status !== ATTENDANCE_STATUS.ABSENT;
+        row.absence_reason_code = record.absence_reason_code || '';
+        row.absence_note = record.absence_note || '';
+      });
+    }
+    setDraft(next);
+    setNote(daySession?.note || '');
+  }, [selectedClassId, selectedMembers, attendanceDate, daySession?.id, dayRecords]);
+
+  useEffect(() => {
+    if (daySession) {
+      setSessionTeacher(daySession.teacher_name || '');
+      setLessonPeriods(attendanceSource === 'supplemental'
+        ? Number(daySession.lesson_periods || 1)
+        : (daySession.session_status === 'cancelled' ? 0 : Number(daySession.lesson_periods || 1)));
+      setTeachingRoom(attendanceSource === 'supplemental' ? (daySession.room || '') : (daySession.teaching_room || ''));
+      setTeachingTimeRange(attendanceSource === 'supplemental'
+        ? [daySession.start_time, daySession.end_time].filter(Boolean).join(' - ')
+        : (daySession.teaching_time_range || ''));
+      setNote(attendanceSource === 'supplemental' ? (daySession.session_note || '') : (daySession.note || ''));
+      setShowCancelSession(false);
+      setCancellationReason(daySession.cancellation_reason || '');
+      return;
+    }
+    const defaultPeriods = attendanceSource === 'extra' && !isAttendanceAdmin
+      ? defaultLessonPeriodsForExtraClass(selectedClass?.class_type)
+      : 1;
+    setLessonPeriods(defaultPeriods);
+    setTeachingRoom(roomForExtraClass(selectedClass));
+    setTeachingTimeRange(String(selectedClass?.time_range || '').trim());
+    setShowCancelSession(false);
+    setCancellationReason('');
+    const soleTeacher = selectedTeacherOptions.length === 1 ? selectedTeacherOptions[0] : '';
+    const soleUsage = soleTeacher ? teacherUsageForDate.get(fold(soleTeacher)) : null;
+    const soleBlocked = Boolean(soleUsage && String(soleUsage.class_id) !== String(selectedClassId));
+    if (soleTeacher && !soleBlocked) setSessionTeacher(soleTeacher);
+    else setSessionTeacher('');
+  }, [daySession?.id, selectedClassId, selectedClass?.class_type, selectedClass?.room, selectedClass?.time_range, selectedClass?.weekdays, attendanceSource, isAttendanceAdmin, selectedTeacherOptions.join('|'), teacherUsageForDate]);
+
+  useEffect(() => {
+    if (attendanceSource !== 'extra' || isAttendanceAdmin || allowTeacherPeriodSelection || daySession) return;
+    setLessonPeriods(defaultLessonPeriodsForExtraClass(selectedClass?.class_type));
+  }, [attendanceSource, isAttendanceAdmin, allowTeacherPeriodSelection, selectedClass?.class_type, daySession?.id]);
+
+  const summary = useMemo(() => attendanceSummary(draft), [draft]);
+  const isFutureDate = attendanceDate > today;
+  const supplementalSessionStatus = String(daySession?.status || daySession?.session_status || '').toLowerCase();
+  const isDayLocked = attendanceSource === 'supplemental'
+    ? Boolean(daySession && ['confirmed', 'cancelled'].includes(supplementalSessionStatus))
+    : Boolean(daySession);
+  const invalidAbsentRows = useMemo(() => draft.filter((row) => row.status === ATTENDANCE_STATUS.ABSENT && (
+    !row.absence_reason_code || (row.absence_reason_code === 'other' && !String(row.absence_note || '').trim())
+  )), [draft]);
+
+  useEffect(() => {
+    if (proofPreviewUrl) URL.revokeObjectURL(proofPreviewUrl);
+    setProofFile(null);
+    setProofPreviewUrl('');
+    if (proofInputRef.current) proofInputRef.current.value = '';
+  }, [selectedClassId, attendanceDate]);
+
+  useEffect(() => () => {
+    if (proofPreviewUrl) URL.revokeObjectURL(proofPreviewUrl);
+  }, [proofPreviewUrl]);
+
+  function setAttendanceStatus(memberKeyValue, nextStatus) {
+    if (isDayLocked) return;
+    setDraft((current) => current.map((row) => {
+      if (row.member_key !== memberKeyValue) return row;
+      const status = normalizeAttendanceStatus(nextStatus);
+      const absent = status === ATTENDANCE_STATUS.ABSENT;
+      return {
+        ...row,
+        status,
+        present: !absent,
+        absence_reason_code: absent ? row.absence_reason_code : '',
+        absence_note: absent ? row.absence_note : '',
+      };
+    }));
+  }
+
+  function updateAbsenceField(memberKeyValue, patch) {
+    if (isDayLocked) return;
+    setDraft((current) => current.map((row) => row.member_key === memberKeyValue ? { ...row, ...patch } : row));
+  }
+
+  function clearProofSelection() {
+    if (proofPreviewUrl) URL.revokeObjectURL(proofPreviewUrl);
+    setProofFile(null);
+    setProofPreviewUrl('');
+    if (proofInputRef.current) proofInputRef.current.value = '';
+  }
+
+  function chooseProofFile(file) {
+    if (!file) return;
+    if (!String(file.type || '').startsWith('image/')) {
+      setError('Vui lòng chọn một tệp hình ảnh để làm minh chứng.');
+      return;
+    }
+    if (proofPreviewUrl) URL.revokeObjectURL(proofPreviewUrl);
+    setProofFile(file);
+    setProofPreviewUrl(URL.createObjectURL(file));
+    setError('');
+  }
+
+  async function uploadAttendanceProof(session) {
+    if (!proofFile || !session?.id || !client) return '';
+    const prepared = await prepareAttendanceProofImage(proofFile);
+    const proofPath = buildAttendanceProofPath(session.id);
+    const { error: uploadError } = await client.storage
+      .from(ATTENDANCE_PROOF_BUCKET)
+      .upload(proofPath, prepared, { contentType: 'image/jpeg', upsert: false });
+    if (uploadError) throw uploadError;
+
+    let attachError = null;
+    if (attendanceSource === 'supplemental') {
+      try { await attachSupplementalProof(client, session.id, proofPath); } catch (error) { attachError = error; }
+    } else {
+      const result = await client.rpc('bes_set_extra_attendance_proof', { p_session_id: session.id, p_proof_path: proofPath });
+      attachError = result.error;
+    }
+    if (attachError) {
+      await client.storage.from(ATTENDANCE_PROOF_BUCKET).remove([proofPath]);
+      throw attachError;
+    }
+    clearProofSelection();
+    return proofPath;
+  }
+
+  async function removeAttendanceProofPaths(paths) {
+    const cleanPaths = Array.from(new Set((paths || []).map((value) => String(value || '').trim()).filter(Boolean)));
+    if (!client || !cleanPaths.length) return;
+    const { error: removeError } = await client.storage.from(ATTENDANCE_PROOF_BUCKET).remove(cleanPaths);
+    if (removeError) console.warn('Không thể dọn ảnh minh chứng điểm danh:', removeError.message || removeError);
+  }
+
+  async function confirmSupplementalSharedAttendance() {
+    if (!selectedClass || busy || !client || isDayLocked) return;
+    if (!attendanceDate || isFutureDate) {
+      setError('Ngày điểm danh không được ở tương lai theo giờ Việt Nam.');
+      return;
+    }
+    if (!sessionTeacher) {
+      setError('Vui lòng chọn giáo viên dạy hôm nay.');
+      return;
+    }
+    if (isTeacherBlocked) {
+      setError(`Giáo viên ${sessionTeacher} đã được điểm danh tại lớp ${blockedTeacherUsage.class_name} ngày ${formatDate(attendanceDate)}.`);
+      setSessionTeacher('');
+      return;
+    }
+    if (!teachingRoom.trim()) {
+      setError('Vui lòng nhập phòng học.');
+      return;
+    }
+    if (!teachingTimeRange.trim()) {
+      setError('Vui lòng nhập thời gian dạy.');
+      return;
+    }
+    if (invalidAbsentRows.length) {
+      const first = invalidAbsentRows[0];
+      setError(first.absence_reason_code === 'other'
+        ? `Vui lòng ghi chú lý do “Khác” cho ${first.student_full_name}.`
+        : `Vui lòng chọn lý do vắng cho ${first.student_full_name}.`);
+      return;
+    }
+    const [startTime = '', endTime = ''] = String(teachingTimeRange || '').split(/\s*[-–—]\s*/, 2);
+    if (!startTime.trim() || !endTime.trim()) {
+      setError('Vui lòng nhập thời gian dạy.');
+      return;
+    }
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      const created = await confirmSupplementalAttendance(client, {
+        sessionId: selectedSessionId || daySession?.id,
+        participants: draft.map((row) => ({
+          participantId: row.id || row.member_id || row.member_key,
+          status: row.status === ATTENDANCE_STATUS.LATE ? 'tardy' : row.status,
+          absenceReasonCode: row.absence_reason_code || '',
+          absenceNote: row.absence_note || '',
+        })),
+        sessionNote: note,
+        lessonPeriods,
+        teacherName: sessionTeacher,
+        room: teachingRoom.trim(),
+        startTime: startTime.trim(),
+        endTime: endTime.trim(),
+      });
+      const confirmedSession = created?.session || created || daySession;
+      setDaySession(confirmedSession);
+      if (proofFile && confirmedSession?.id) await uploadAttendanceProof(confirmedSession);
+      clearProofSelection();
+      setNotice('Đã chốt điểm danh Học bổ sung.');
+      window.dispatchEvent(new CustomEvent('bes-supplemental-attendance-changed', { detail: { sessionId: selectedSessionId || daySession?.id } }));
+      await refreshHistoryData();
+    } catch (confirmError) {
+      setError(confirmError?.message || 'Không thể chốt điểm danh Học bổ sung.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirmAttendance() {
+    if (attendanceSource === 'supplemental') return confirmSupplementalSharedAttendance();
+    if (!selectedClass || busy || !client || isDayLocked) return;
+    if (!attendanceDate || isFutureDate) {
+      setError('Ngày điểm danh không được ở tương lai theo giờ Việt Nam.');
+      return;
+    }
+    if (!sessionTeacher) {
+      setError('Vui lòng chọn giáo viên dạy hôm nay.');
+      return;
+    }
+    if (isTeacherBlocked) {
+      setError(`Giáo viên ${sessionTeacher} đã được điểm danh tại lớp ${blockedTeacherUsage.class_name} ngày ${formatDate(attendanceDate)}.`);
+      setSessionTeacher('');
+      return;
+    }
+    if (!isAttendanceAdmin && !allowTeacherPeriodSelection) {
+      const requiredPeriods = defaultLessonPeriodsForExtraClass(selectedClass.class_type);
+      if (Number(lessonPeriods) !== requiredPeriods) {
+        setLessonPeriods(requiredPeriods);
+        setError(`Số tiết của lớp ${extraClassTypeLabel(selectedClass.class_type)} được cố định ở ${String(requiredPeriods).replace('.', ',')} tiết.`);
+        return;
+      }
+    }
+    if (!teachingRoom.trim()) {
+      setError('Vui lòng nhập phòng học.');
+      return;
+    }
+    if (!teachingTimeRange.trim()) {
+      setError('Vui lòng nhập thời gian dạy.');
+      return;
+    }
+    if (invalidAbsentRows.length) {
+      const first = invalidAbsentRows[0];
+      setError(first.absence_reason_code === 'other'
+        ? `Vui lòng ghi chú lý do “Khác” cho ${first.student_full_name}.`
+        : `Vui lòng chọn lý do vắng cho ${first.student_full_name}.`);
+      return;
+    }
+    const absenceDetails = draft.filter((row) => row.status === ATTENDANCE_STATUS.ABSENT).map((row) => ({
+      member_key: row.member_key,
+      reason_code: row.absence_reason_code,
+      note: String(row.absence_note || '').trim(),
+    }));
+    const lateMemberKeys = draft
+      .filter((row) => row.status === ATTENDANCE_STATUS.LATE)
+      .map((row) => row.member_key);
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      const { data, error: confirmError } = await client.rpc('bes_confirm_extra_class_attendance', {
+        p_class_id: selectedClass.id,
+        p_attendance_date: attendanceDate,
+        p_teacher_name: sessionTeacher,
+        p_lesson_periods: lessonPeriods,
+        p_absence_details: absenceDetails,
+        p_note: note.trim(),
+        p_teaching_room: teachingRoom.trim(),
+        p_teaching_time_range: teachingTimeRange.trim(),
+        p_late_member_keys: lateMemberKeys,
+      });
+      if (confirmError) throw confirmError;
+      const created = Array.isArray(data) ? data[0] : data;
+      setDaySession(created || null);
+      let proofSaved = false;
+      let proofUploadFailure = '';
+      if (proofFile && created?.id) {
+        try {
+          await uploadAttendanceProof(created);
+          proofSaved = true;
+        } catch (proofError) {
+          proofUploadFailure = proofError?.message || 'Không thể tải ảnh minh chứng lên hệ thống.';
+          clearProofSelection();
+        }
+      }
+      await loadAll();
+      await loadDaySession();
+      await loadTeacherDaySessions();
+      await loadCalendarSessions(calendarDate);
+      setNotice(`Đã chốt điểm danh ${selectedClass.class_name} ngày ${formatDate(attendanceDate)} · GV ${sessionTeacher} · ${summary.present}/${summary.total} có mặt · ${summary.late} đi trễ.${proofSaved ? ' · Đã lưu ảnh minh chứng.' : ''}`);
+      if (proofUploadFailure) setError(`Điểm danh đã được chốt, nhưng ảnh minh chứng chưa được lưu: ${proofUploadFailure}`);
+    } catch (confirmError) {
+      setError(confirmError?.message || 'Không thể xác nhận điểm danh.');
+      await loadDaySession();
+      await loadTeacherDaySessions();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function cancelClassSession() {
+    if (!selectedClass || busy || !client || isDayLocked || isFutureDate) return;
+    const reason = cancellationReason.trim();
+    if (!reason) {
+      setError('Vui lòng nhập Lý do hủy buổi học.');
+      return;
+    }
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      if (attendanceSource === 'supplemental') {
+        const cancelled = await cancelSupplementalSession(client, selectedSessionId || daySession?.id, reason);
+        const created = cancelled?.session || cancelled || { ...daySession, status: 'cancelled', cancellation_reason: reason };
+        setDaySession(created);
+        setShowCancelSession(false);
+        clearProofSelection();
+        setNotice(`Đã hủy buổi học ${selectedClass.class_name} ngày ${formatDate(attendanceDate)}.`);
+        window.dispatchEvent(new CustomEvent('bes-supplemental-attendance-changed', { detail: { sessionId: selectedSessionId || daySession?.id } }));
+        await refreshHistoryData();
+        return;
+      }
+      const { data, error: cancelError } = await client.rpc('bes_cancel_extra_class_session', {
+        p_class_id: selectedClass.id,
+        p_attendance_date: attendanceDate,
+        p_cancellation_reason: reason,
+        p_teaching_room: teachingRoom.trim(),
+        p_teaching_time_range: teachingTimeRange.trim(),
+      });
+      if (cancelError) throw cancelError;
+      const created = Array.isArray(data) ? data[0] : data;
+      setDaySession(created || null);
+      setShowCancelSession(false);
+      clearProofSelection();
+      setNotice(`Đã hủy buổi học ${selectedClass.class_name} ngày ${formatDate(attendanceDate)}.`);
+      await loadAll();
+      await loadDaySession();
+      await loadCalendarSessions(calendarDate);
+    } catch (cancelError) {
+      setError(cancelError?.message || 'Không thể hủy buổi học.');
+      await loadDaySession();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function loadCalendarSessions(dateValue = calendarDate) {
+    if (!client || !dateValue || !allowed) {
+      setCalendarSessions([]);
+      setCalendarLoading(false);
+      return;
+    }
+    setCalendarLoading(true);
+    const { data, error: calendarError } = await client.from('bes_extra_attendance_sessions')
+      .select(SESSION_COLUMNS)
+      .eq('attendance_date', dateValue)
+      .order('checked_at', { ascending: true });
+    if (calendarError) {
+      setError(calendarError.message || 'Không thể tải lịch điểm danh theo ngày.');
+      setCalendarSessions([]);
+    } else {
+      setCalendarSessions(data || []);
+    }
+    setCalendarLoading(false);
+  }
+
+  useEffect(() => {
+    if (workspaceVisible && view === 'calendar') loadCalendarSessions(calendarDate);
+  }, [workspaceVisible, view, calendarDate]);
+
+  async function openSessionFromCalendar(session) {
+    if (!session) return;
+    if (!canAccessAttendanceView('history')) {
+      setNotice('Bạn có quyền xem Lịch tháng. Cần thêm quyền Lịch sử để mở chi tiết buổi học.');
+      return;
+    }
+    await loadSessionRecords(session.id);
+    setView('history');
+  }
+
+  async function importExcel(file) {
+    if (!file || busy || !client) return;
+    setBusy(true);
+    setError('');
+    setNotice('');
+    setImportReport(null);
+    try {
+      const rows = await readSheet(file);
+      const parsed = parseExtraClassRosterRows(rows);
+      let createdClasses = 0;
+      let addedMembers = 0;
+      let reactivatedMembers = 0;
+      let updatedMembers = 0;
+      const teacherWarnings = [];
+
+      for (const group of parsed.groups) {
+        let classRow = classes.find((row) => row.active !== false && sameClassIdentity(row, group));
+        const assignment = giftedAssignmentForClass({
+          sourceKey: classRow?.source_key,
+          subject: group.subject,
+          gradeLevel: classRow?.grade_level,
+          className: group.class_name,
+        });
+        const assignmentTeachers = assignment?.teachers || [];
+        const teacherSnapshot = assignmentTeachers.length ? assignmentTeachers.join(', ') : String(group.teacher_name || '').trim();
+        if (!teacherSnapshot) teacherWarnings.push(`${group.class_name}: chưa có giáo viên trong danh sách phân công hoặc trong file import.`);
+
+        const classPayload = {
+          class_type: group.class_type,
+          class_name: group.class_name,
+          subject: assignment?.subject || group.subject || '',
+          teacher_id: null,
+          teacher_name: teacherSnapshot,
+          teacher_email: '',
+          active: true,
+          source_key: classRow?.source_key || assignment?.sourceKey || null,
+          school_year: classRow?.school_year || (assignment ? '2026-2027' : ''),
+          grade_level: classRow?.grade_level || assignment?.gradeLevel || '',
+          updated_by: currentUser.id,
+          updated_at: new Date().toISOString(),
+        };
+
+        if (classRow) {
+          const { data, error: classUpdateError } = await client.from('bes_extra_classes').update(classPayload).eq('id', classRow.id).select(CLASS_COLUMNS).single();
+          if (classUpdateError) throw classUpdateError;
+          classRow = data;
+        } else {
+          const { data, error: classInsertError } = await client.from('bes_extra_classes').insert({ ...classPayload, created_by: currentUser.id }).select(CLASS_COLUMNS).single();
+          if (classInsertError) throw classInsertError;
+          classRow = data;
+          createdClasses += 1;
+        }
+
+        for (const entry of group.members) {
+          const existingActive = members.find((row) => String(row.class_id) === String(classRow.id) && row.member_key === entry.member_key && row.active !== false);
+          const existingInactive = [...members].reverse().find((row) => String(row.class_id) === String(classRow.id) && row.member_key === entry.member_key && row.active === false);
+          const memberPayload = {
+            student_code: entry.student_code || '', student_full_name: entry.student_full_name,
+            school_class_name: entry.school_class_name || '', member_key: entry.member_key,
+            updated_by: currentUser.id, updated_at: new Date().toISOString(),
+          };
+          if (existingActive) {
+            const { error: updateError } = await client.from('bes_extra_class_members').update(memberPayload).eq('id', existingActive.id);
+            if (updateError) throw updateError;
+            updatedMembers += 1;
+          } else if (existingInactive) {
+            const { error: reactivateError } = await client.from('bes_extra_class_members').update({
+              ...memberPayload, active: true, joined_at: new Date().toISOString(), left_at: null,
+              removed_by: null, removal_reason: '',
+            }).eq('id', existingInactive.id);
+            if (reactivateError) throw reactivateError;
+            reactivatedMembers += 1;
+          } else {
+            const { error: insertError } = await client.from('bes_extra_class_members').insert({
+              class_id: classRow.id, ...memberPayload, active: true, created_by: currentUser.id,
+            });
+            if (insertError) throw insertError;
+            addedMembers += 1;
+          }
+        }
+      }
+
+      setImportReport({ fileName: file.name, totalClasses: parsed.totalClasses, totalStudents: parsed.totalStudents, createdClasses, addedMembers, reactivatedMembers, updatedMembers, warnings: [...parsed.warnings, ...teacherWarnings] });
+      setNotice(`Đã xử lý ${parsed.totalStudents} học sinh từ ${file.name}. Danh sách hiện có được giữ nguyên nếu không xuất hiện trong tệp.`);
+      await loadAll({ keepSelection: false });
+    } catch (importError) {
+      setError(importError?.message || 'Không thể import danh sách lớp phụ đạo/bồi dưỡng.');
+    } finally {
+      setBusy(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  }
+
+  async function addStudent(event) {
+    event.preventDefault();
+    if (!selectedClass || busy || !client) return;
+    const payload = { student_code: addForm.student_code.trim(), student_full_name: addForm.student_full_name.trim(), school_class_name: addForm.school_class_name.trim() };
+    if (!payload.student_full_name || !payload.school_class_name) {
+      setError('Vui lòng nhập Họ và tên và Lớp chính khóa.');
+      return;
+    }
+    payload.member_key = memberKey(payload);
+    const duplicate = allSelectedMembers.find((row) => row.member_key === payload.member_key && row.active !== false);
+    if (duplicate) {
+      setError(`${duplicate.student_full_name} đang có trong lớp ${selectedClass.class_name}.`);
+      return;
+    }
+    const inactive = [...allSelectedMembers].reverse().find((row) => row.member_key === payload.member_key && row.active === false);
+    setBusy(true);
+    setError('');
+    try {
+      if (inactive) {
+        const { error: reactivateError } = await client.from('bes_extra_class_members').update({
+          ...payload, active: true, joined_at: new Date().toISOString(), left_at: null, removed_by: null, removal_reason: '', updated_by: currentUser.id, updated_at: new Date().toISOString(),
+        }).eq('id', inactive.id);
+        if (reactivateError) throw reactivateError;
+      } else {
+        const { error: insertError } = await client.from('bes_extra_class_members').insert({ class_id: selectedClass.id, ...payload, active: true, created_by: currentUser.id, updated_by: currentUser.id });
+        if (insertError) throw insertError;
+      }
+      setAddForm({ student_code: '', student_full_name: '', school_class_name: '' });
+      setShowAddStudent(false);
+      setNotice(`Đã thêm ${payload.student_full_name} vào lớp ${selectedClass.class_name}.`);
+      await loadAll();
+    } catch (addError) {
+      setError(addError?.message || 'Không thể thêm học sinh vào lớp.');
+    } finally { setBusy(false); }
+  }
+
+  async function addTeacher(event) {
+    event.preventDefault();
+    if (!selectedClass || busy || !client) return;
+    const teacherName = newTeacherName.trim();
+    if (!teacherName) {
+      setError('Vui lòng nhập họ tên giáo viên.');
+      return;
+    }
+    if (assignedTeachersForClass(selectedClass).some((name) => fold(name) === fold(teacherName))) {
+      setError(`${teacherName} đã có trong lớp ${selectedClass.class_name}.`);
+      return;
+    }
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      const { error: teacherError } = await client.rpc('bes_add_extra_class_teacher', {
+        p_class_id: selectedClass.id,
+        p_teacher_name: teacherName,
+      });
+      if (teacherError) throw teacherError;
+      setNewTeacherName('');
+      setShowAddTeacher(false);
+      setNotice(`Đã thêm giáo viên ${teacherName} vào lớp ${selectedClass.class_name}.`);
+      await loadAll();
+    } catch (teacherError) {
+      setError(teacherError?.message || 'Không thể thêm giáo viên vào lớp.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeStudent(member) {
+    if (!member || busy || !client) return;
+    const reason = window.prompt(`Xóa ${member.student_full_name} khỏi lớp ${selectedClass?.class_name}?\n\nCó thể nhập lý do. Lịch sử điểm danh cũ sẽ vẫn được giữ nguyên.`, 'Ra khỏi lớp');
+    if (reason === null) return;
+    setBusy(true);
+    setError('');
+    try {
+      const { error: removeError } = await client.from('bes_extra_class_members').update({ active: false, left_at: new Date().toISOString(), removed_by: currentUser.id, removal_reason: reason.trim(), updated_by: currentUser.id, updated_at: new Date().toISOString() }).eq('id', member.id);
+      if (removeError) throw removeError;
+      setNotice(`Đã xóa ${member.student_full_name} khỏi danh sách hiện tại. Các buổi điểm danh trước đây không thay đổi.`);
+      await loadAll();
+    } catch (removeError) { setError(removeError?.message || 'Không thể xóa học sinh khỏi lớp.'); }
+    finally { setBusy(false); }
+  }
+
+  async function deleteClass(classRow) {
+    if (!classRow || busy || !client || !canUseClassArchive) return;
+    const memberCount = members.filter((member) => String(member.class_id) === String(classRow.id)).length;
+    const teacherCount = classTeachers.filter((teacher) => String(teacher.class_id) === String(classRow.id)).length;
+    const sessionCount = sessions.filter((session) => String(session.class_id) === String(classRow.id)).length;
+    const confirmed = window.confirm(
+      `Đưa lớp “${classRow.class_name}” vào Kho lưu trữ?\n\n`
+      + `${memberCount} học sinh · ${teacherCount} giáo viên · ${sessionCount} buổi điểm danh sẽ được lưu cùng lớp.\n\n`
+      + 'Lớp có thể khôi phục sau này. Xóa vĩnh viễn vẫn phải được Admin duyệt.'
+    );
+    if (!confirmed) return;
+    setBusy(true); setError(''); setNotice('');
+    try {
+      const result = await archiveExtraClass(client, classRow.id);
+      if (String(selectedClassId) === String(classRow.id)) setSelectedClassId('');
+      setSelectedSessionId(''); setRecords([]); setDaySession(null); setCalendarSessions([]);
+      setNotice(`Đã đưa lớp “${result?.class_name || classRow.class_name}” vào Kho lưu trữ.`);
+      await loadAll({ keepSelection: false });
+      await loadArchive({ silent: true });
+      await loadTeacherDaySessions();
+    } catch (archiveError) { setError(archiveError?.message || 'Không thể đưa lớp vào Kho lưu trữ.'); }
+    finally { setBusy(false); }
+  }
+
+  function loadSupplementalSessionRecords(session) {
+    if (!session || !isSupplementalHistorySession(session)) return;
+    setSelectedSessionId(session.id);
+    setError('');
+    setRecords(Array.isArray(session.history_records) ? session.history_records : []);
+  }
+
+  async function loadSessionRecords(sessionId) {
+    if (!client || !sessionId) return;
+    const supplementalSession = supplementalHistorySessions.find((session) => String(session.id) === String(sessionId));
+    if (supplementalSession) {
+      loadSupplementalSessionRecords(supplementalSession);
+      return;
+    }
+    setSelectedSessionId(sessionId);
+    setError('');
+    const { data, error: recordError } = await client.from('bes_extra_attendance_records').select(RECORD_COLUMNS).eq('session_id', sessionId).order('student_full_name', { ascending: true });
+    if (recordError) setError(recordError.message);
+    else setRecords(data || []);
+  }
+  async function deleteAttendanceSession(session) {
+    if (!session || busy || !client || !canDeleteAttendanceHistory) return;
+    const confirmed = window.confirm(`Đưa buổi điểm danh của lớp “${session.class_name}” ngày ${formatDate(session.attendance_date)} vào Kho lưu trữ?\n\nBuổi này sẽ không còn xuất hiện trong Lịch sử/Báo cáo và có thể khôi phục lại sau.`);
+    if (!confirmed) return;
+    setBusy(true); setError(''); setNotice('');
+    try {
+      await archiveAttendanceHistory(client, session);
+      setSelectedSessionId(''); setRecords([]);
+      if (String(session.class_id) === String(selectedClassId) && session.attendance_date === attendanceDate) setDaySession(null);
+      setNotice(`Đã chuyển ${session.class_name} ngày ${formatDate(session.attendance_date)} vào Kho lưu trữ.`);
+      await loadAll();
+      await loadArchive({ silent: true });
+      await loadDaySession();
+      await loadTeacherDaySessions();
+      await loadCalendarSessions(calendarDate);
+    } catch (deleteError) { setError(deleteError?.message || 'Không thể đưa buổi điểm danh vào Kho lưu trữ.'); }
+    finally { setBusy(false); }
+  }
+
+  function toggleHistorySelectionMode() {
+    setHistorySelectionMode((current) => {
+      const next = !current;
+      if (!next) setSelectedHistorySessionIds([]);
+      return next;
+    });
+  }
+
+  function toggleHistoryBulkSelection(sessionId) {
+    const key = String(sessionId);
+    setSelectedHistorySessionIds((current) => (
+      current.some((id) => String(id) === key)
+        ? current.filter((id) => String(id) !== key)
+        : [...current, sessionId]
+    ));
+  }
+
+  function toggleAllFilteredHistorySelection() {
+    const filteredIds = filteredHistory.map((session) => session.id);
+    if (!filteredIds.length) return;
+    const filteredIdSet = new Set(filteredIds.map((id) => String(id)));
+    setSelectedHistorySessionIds((current) => {
+      const currentSet = new Set(current.map((id) => String(id)));
+      const allSelected = filteredIds.every((id) => currentSet.has(String(id)));
+      if (allSelected) return current.filter((id) => !filteredIdSet.has(String(id)));
+      return Array.from(new Map([...current, ...filteredIds].map((id) => [String(id), id])).values());
+    });
+  }
+
+  async function deleteSelectedHistorySessions() {
+    if (!selectedHistorySessionIds.length || busy || !client || !canDeleteAttendanceHistory) return;
+    const selectedIdSet = new Set(selectedHistorySessionIds.map((id) => String(id)));
+    const targets = combinedHistorySessions.filter((session) => selectedIdSet.has(String(session.id)));
+    if (!targets.length) {
+      setSelectedHistorySessionIds([]);
+      return;
+    }
+    const confirmed = window.confirm(`Đưa ${targets.length} buổi điểm danh đã chọn vào Kho lưu trữ?\n\nCác buổi này sẽ không còn xuất hiện trong Lịch sử/Báo cáo và có thể khôi phục lại sau.`);
+    if (!confirmed) return;
+    setBusy(true); setError(''); setNotice('');
+    const failed = [];
+    const deletedIds = new Set();
+    try {
+      for (const session of targets) {
+        try {
+          await archiveAttendanceHistory(client, session);
+          deletedIds.add(String(session.id));
+        } catch (archiveError) {
+          failed.push(`${session.class_name} ${formatDate(session.attendance_date)}: ${archiveError?.message || 'Lỗi không xác định'}`);
+        }
+      }
+      if (deletedIds.has(String(selectedSessionId))) {
+        setSelectedSessionId('');
+        setRecords([]);
+      }
+      if (daySession && deletedIds.has(String(daySession.id))) setDaySession(null);
+      setSelectedHistorySessionIds((current) => current.filter((id) => !deletedIds.has(String(id))));
+      if (!failed.length) setHistorySelectionMode(false);
+      if (deletedIds.size) setNotice(`Đã chuyển ${deletedIds.size} buổi điểm danh vào Kho lưu trữ.`);
+      if (failed.length) setError(`Không thể lưu trữ ${failed.length} buổi: ${failed.slice(0, 3).join(' · ')}${failed.length > 3 ? ` · và ${failed.length - 3} buổi khác` : ''}`);
+      await loadAll();
+      await loadArchive({ silent: true });
+      await loadDaySession();
+      await loadTeacherDaySessions();
+      await loadCalendarSessions(calendarDate);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function restoreArchivedClass(item) {
+    if (!item?.archive_id || busy || !client || !canUseClassArchive) return;
+    if (!window.confirm(`Khôi phục nguyên trạng lớp “${item.class_name || 'Lớp học'}” từ Kho lưu trữ?`)) return;
+    setBusy(true); setError(''); setNotice('');
+    try {
+      await restoreExtraClassArchive(client, item.archive_id);
+      setNotice(`Đã khôi phục lớp “${item.class_name || 'Lớp học'}” cùng danh sách học sinh, giáo viên và lịch sử điểm danh.`);
+      await loadAll({ keepSelection: false });
+      await loadArchive({ silent: true });
+      await loadTeacherDaySessions();
+    } catch (restoreError) { setError(restoreError?.message || 'Không thể khôi phục lớp.'); }
+    finally { setBusy(false); }
+  }
+
+  async function requestArchivedClassPermanentDelete(item) {
+    if (!item?.archive_id || busy || !client || !canUseClassArchive) return;
+    const reason = window.prompt(`Lý do yêu cầu xóa vĩnh viễn lớp “${item.class_name || 'Lớp học'}” (có thể để trống):`, '');
+    if (reason === null) return;
+    setBusy(true); setError(''); setNotice('');
+    try {
+      await requestExtraClassArchiveDelete(client, item.archive_id, reason);
+      setNotice('Đã gửi yêu cầu xóa vĩnh viễn lớp. Admin phải xác nhận trước khi dữ liệu bị xóa hẳn.');
+      await loadArchive({ silent: true });
+    } catch (requestError) { setError(requestError?.message || 'Không thể gửi yêu cầu xóa vĩnh viễn lớp.'); }
+    finally { setBusy(false); }
+  }
+
+  async function reviewArchivedClassPermanentDelete(item, approve) {
+    if (!isAttendanceAdmin || !item?.archive_id || busy || !client) return;
+    const retryApproved = approve && item.delete_request_status === 'approved';
+    const action = retryApproved ? 'HOÀN TẤT XÓA VĨNH VIỄN' : approve ? 'DUYỆT XÓA VĨNH VIỄN' : 'TỪ CHỐI yêu cầu xóa';
+    if (!window.confirm(`${action} lớp “${item.class_name || 'Lớp học'}”?${approve ? '\n\nSau khi hoàn tất, gói lớp và minh chứng sẽ không thể khôi phục.' : ''}`)) return;
+    const note = retryApproved ? '' : (window.prompt('Ghi chú Admin (có thể để trống):', '') ?? '');
+    setBusy(true); setError(''); setNotice('');
+    try {
+      if (retryApproved) {
+        await finalizeExtraClassArchiveDelete(client, item.archive_id, item.proof_paths);
+      } else {
+        await reviewExtraClassArchiveDelete(client, item.archive_id, approve, note);
+      }
+      setNotice(approve ? 'Đã hoàn tất xóa vĩnh viễn lớp.' : 'Đã từ chối yêu cầu xóa vĩnh viễn lớp.');
+      await loadArchive({ silent: true });
+    } catch (reviewError) { setError(reviewError?.message || 'Không thể xử lý yêu cầu xóa vĩnh viễn lớp.'); }
+    finally { setBusy(false); }
+  }
+
+  async function restoreArchivedSession(item) {
+    if (!item?.archive_id || busy || !client) return;
+    if (!window.confirm(`Khôi phục “${item.class_name || 'buổi điểm danh'}” ngày ${formatDate(item.attendance_date)} về Lịch sử điểm danh?`)) return;
+    setBusy(true); setError(''); setNotice('');
+    try {
+      await restoreAttendanceArchive(client, item.archive_id);
+      setNotice(`Đã khôi phục ${item.class_name || 'buổi điểm danh'} ngày ${formatDate(item.attendance_date)}.`);
+      await loadAll();
+      await loadArchive({ silent: true });
+      await loadTeacherDaySessions();
+      await loadCalendarSessions(calendarDate);
+    } catch (restoreError) {
+      setError(restoreError?.message || 'Không thể khôi phục buổi điểm danh.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function requestArchivedPermanentDelete(item) {
+    if (!item?.archive_id || busy || !client) return;
+    const reason = window.prompt('Nhập lý do yêu cầu Admin xóa vĩnh viễn (có thể để trống):', item.delete_request_reason || '');
+    if (reason === null) return;
+    setBusy(true); setError(''); setNotice('');
+    try {
+      await requestAttendanceArchiveDelete(client, item.archive_id, reason);
+      setNotice('Đã gửi yêu cầu xóa vĩnh viễn. Dữ liệu vẫn được giữ nguyên cho đến khi Admin duyệt.');
+      await loadArchive({ silent: true });
+    } catch (requestError) {
+      setError(requestError?.message || 'Không thể gửi yêu cầu xóa vĩnh viễn.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function reviewArchivedPermanentDelete(item, approve) {
+    if (!isAttendanceAdmin || !item?.archive_id || busy || !client) return;
+    const action = approve ? 'DUYỆT XÓA VĨNH VIỄN' : 'TỪ CHỐI yêu cầu xóa';
+    if (!window.confirm(`${action} “${item.class_name || 'buổi điểm danh'}” ngày ${formatDate(item.attendance_date)}?${approve ? '\n\nDữ liệu và ảnh minh chứng sẽ không thể khôi phục.' : ''}`)) return;
+    const note = window.prompt('Ghi chú của Admin (có thể để trống):', '') ?? '';
+    setBusy(true); setError(''); setNotice('');
+    try {
+      await reviewAttendanceArchiveDelete(client, item.archive_id, approve, note);
+      setNotice(approve ? 'Admin đã duyệt xóa vĩnh viễn mục lưu trữ.' : 'Admin đã từ chối yêu cầu xóa vĩnh viễn.');
+      await loadArchive({ silent: true });
+    } catch (reviewError) {
+      setError(reviewError?.message || 'Không thể xử lý yêu cầu xóa vĩnh viễn.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const combinedHistorySessions = useMemo(() => [...sessions, ...supplementalHistorySessions], [sessions, supplementalHistorySessions]);
+  const filteredHistory = useMemo(() => filterAndSortAttendanceHistory(combinedHistorySessions, {
+    query: historyQuery,
+    type: historyType,
+    dateFrom: historyDateFrom,
+    dateTo: historyDateTo,
+    sort: historySort,
+    getTeacher: teacherForSession,
+  }), [combinedHistorySessions, historyQuery, historyType, historyDateFrom, historyDateTo, historySort, classTeachers]);
+
+  const selectedHistorySessionIdSet = useMemo(() => new Set(selectedHistorySessionIds.map((id) => String(id))), [selectedHistorySessionIds]);
+  const allFilteredHistorySelected = filteredHistory.length > 0 && filteredHistory.every((session) => selectedHistorySessionIdSet.has(String(session.id)));
+  const historyDateRangeInvalid = Boolean(historyDateFrom && historyDateTo && historyDateFrom > historyDateTo);
+  const historyHasFilters = Boolean(historyQuery.trim() || historyType !== 'all' || historySort !== 'desc' || historyDateFrom || historyDateTo);
+
+  const filteredManagementMembers = useMemo(() => allSelectedMembers.filter((member) => {
+    if (!memberQuery.trim()) return true;
+    return fold(`${member.student_full_name} ${member.student_code} ${member.school_class_name}`).includes(fold(memberQuery));
+  }), [allSelectedMembers, memberQuery]);
+
+  const selectedSession = combinedHistorySessions.find((session) => String(session.id) === String(selectedSessionId)) || calendarSessions.find((session) => String(session.id) === String(selectedSessionId));
+
+  useEffect(() => {
+    let cancelled = false;
+    setHistoryProofUrl('');
+    if (!client || view !== 'history' || !canAccessAttendanceView('history') || !selectedSession?.proof_path) {
+      setHistoryProofLoading(false);
+      return undefined;
+    }
+    setHistoryProofLoading(true);
+    client.storage.from(ATTENDANCE_PROOF_BUCKET).createSignedUrl(selectedSession.proof_path, 300)
+      .then(({ data, error: signedUrlError }) => {
+        if (cancelled) return;
+        setHistoryProofLoading(false);
+        if (signedUrlError) {
+          setHistoryProofUrl('');
+          return;
+        }
+        setHistoryProofUrl(data?.signedUrl || '');
+      });
+    return () => { cancelled = true; };
+  }, [view, selectedSession?.id, selectedSession?.proof_path, currentUser?.permissions, systemRole]);
+
+  const selectedAbsentRecords = records.filter((record) => record.status === ATTENDANCE_STATUS.ABSENT);
+  const selectedLateRecords = records.filter((record) => record.status === ATTENDANCE_STATUS.LATE);
+  const selectedSessionAttendanceRate = selectedSession?.session_status === 'completed' && Number(selectedSession.total_students) > 0
+    ? Math.round((Number(selectedSession.present_count || 0) / Number(selectedSession.total_students)) * 100)
+    : 0;
+
+  if ((!standalone && !host) || !allowed) return null;
+
+  const tab = standalone ? null : createPortal(
+    <button type="button"
+      className="brian-nav__attendance-tab"
+      data-nav-key="attendance"
+      aria-label="Mở ứng dụng Điểm danh toàn trang"
+      onClick={() => { window.location.hash = '#/attendance'; }}>
+      <Icon name="attendance" size={18} /><span>Điểm danh</span>
+    </button>, host,
+  );
+
+  const workspace = (
+      <section className={standalone ? 'attendance-shell is-standalone' : 'attendance-shell'}
+        role={standalone ? 'region' : 'dialog'}
+        aria-modal={standalone ? undefined : 'true'}
+        aria-label="Điểm danh lớp phụ đạo và bồi dưỡng học sinh giỏi">
+        <header className="attendance-topbar">
+          <div className="attendance-title"><span><Icon name="attendance" size={28} /></span><div><small>{standalone ? "ESL BRIAN · ỨNG DỤNG ĐIỂM DANH" : "QUẢN LÝ CHUYÊN CẦN"}</small><strong>Điểm danh lớp phụ đạo & bồi dưỡng</strong></div></div>
+          <div className="attendance-top-actions"><button type="button" className="attendance-icon-button" onClick={() => { loadAll(); loadDaySession(); loadTeacherDaySessions(); if (view === 'calendar') loadCalendarSessions(calendarDate); if (view === 'archive') loadArchive(); }} title="Làm mới"><Icon name="refresh" /></button>{!standalone ? <button type="button" className="attendance-icon-button" onClick={() => setOpen(false)} aria-label="Đóng"><Icon name="close" /></button> : null}</div>
+        </header>
+
+        <nav className="attendance-tabs" aria-label="Phân hệ điểm danh">
+          {availableAttendanceTabs.map((item) => (
+            <button key={item.id} type="button" className={view === item.tab ? 'is-active' : ''} onClick={() => {
+              setView(item.tab);
+              if (standalone) window.history.replaceState(null, '', '#/attendance?tab=' + encodeURIComponent(item.tab));
+            }}>
+              <Icon name={ATTENDANCE_TAB_ICONS[item.tab] || 'attendance'} size={18} />{standalone && item.tab === 'quick' ? 'Điểm danh' : item.titleVi}{item.tab === 'archive' && archiveCount > 0 ? <span className="attendance-tab-badge">{archiveCount > 99 ? '99+' : archiveCount}</span> : null}
+            </button>
+          ))}
+        </nav>
+
+        {notice ? <div className="attendance-banner is-success">{notice}</div> : null}
+        {error ? <div className="attendance-banner is-error">{error}</div> : null}
+
+        <main className="attendance-content">
+          {standalone ? <>
+            <AttendanceFeatureDeck items={availableAttendanceTabs} showSupplemental={canSeeSupplementalHistory} activeView={view}
+              onNavigate={(nextView) => {
+                if (nextView === 'supplemental') {
+                  const launcher = document.querySelector('.attendance-tabs .bes-supplemental-nav-tab');
+                  if (launcher) launcher.click();
+                  else setError('Phân hệ Học bổ sung đang được khởi tạo. Vui lòng chọn lại sau khi tải xong.');
+                  return;
+                }
+                setView(nextView);
+                window.history.replaceState(null, '', '#/attendance?tab=' + encodeURIComponent(nextView));
+              }} />
+          </> : null}
+
+          {loading ? <div className="attendance-loading">Đang đồng bộ dữ liệu điểm danh…</div> : null}
+
+          {!loading && canUseQuickAttendance && view === 'quick' ? (
+            <div className="attendance-quick-layout">
+              <aside className="attendance-class-list">
+                <header><strong>Lớp đang hoạt động</strong><span>{filteredActiveClasses.length}/{activeClasses.length} lớp</span></header>
+                <div className="att-m3-class-discovery" data-bes-keep-search="true">
+                  <label className="att-m3-class-search"><span>Tìm nhanh lớp</span><input value={classQuery} onChange={(event) => setClassQuery(event.target.value)} placeholder="Tên lớp, môn hoặc giáo viên…" /></label>
+                  <div className="att-m3-subject-hub" aria-label="Phân loại lớp theo bộ môn">
+                    {ATTENDANCE_SUBJECT_HUB.map((item) => <button key={item.key} type="button" className={`is-subject-${item.key} ${subjectFilter === item.key ? 'is-active' : ''}`} onClick={() => setSubjectFilter(item.key)}><span>{item.label}</span><b>{item.key === 'all' ? activeClasses.length : (subjectCounts.get(item.key) || 0)}</b></button>)}
+                  </div>
+                </div>
+                <div>{filteredActiveClasses.map((classRow) => {
+                  const last = lastSessionByClass.get(String(classRow.id));
+                  const subjectKey = attendanceSubjectKey(classRow.subject);
+                  const scheduledForDate = isExtraClassScheduledOnDate(classRow, attendanceDate);
+                  const room = roomForExtraClass(classRow);
+                  return <button key={classRow.id} type="button" className={`is-subject-${subjectKey} ${String(selectedClassId) === String(classRow.id) ? 'is-selected ' : ''}${scheduledForDate ? '' : 'is-off-schedule'}`.trim()} title={scheduledForDate ? undefined : `Không có lịch học ngày ${formatDate(attendanceDate)}`} onClick={() => setSelectedClassId(classRow.id)}><span className={`attendance-type-dot is-${classRow.class_type}`} /><div><div className="attendance-class-name-row"><b>{classRow.class_name}</b>{room ? <span className="attendance-room-chip">{room}</span> : null}</div><small>{extraClassTypeLabel(classRow.class_type)} · <span className="attendance-subject-chip">{classRow.subject || 'Chưa ghi môn'}</span></small><em>{teachersForClass(classRow)}</em></div><span className="attendance-count">{memberCounts.get(String(classRow.id)) || 0}</span>{last ? <time>{formatDate(last.attendance_date)}</time> : <time>Chưa điểm danh</time>}</button>;
+                })}{!filteredActiveClasses.length ? <div className="attendance-empty">Không có lớp phù hợp bộ lọc.</div> : null}</div>
+              </aside>
+
+              <section
+                className="attendance-rollcall"
+                data-bes-attendance-source={attendanceSource}
+                data-bes-attendance-session-id={attendanceSource === 'supplemental' ? (selectedSessionId || daySession?.id || '') : (daySession?.id || '')}
+              >
+                {selectedClass ? <>
+                  <header className="attendance-rollcall-head"><div><span>{extraClassTypeLabel(selectedClass.class_type)}</span><div className="attendance-rollcall-title-row"><h2>{selectedClass.class_name}</h2>{roomForExtraClass(selectedClass) ? <span className="attendance-room-chip is-large">{roomForExtraClass(selectedClass)}</span> : null}</div><p>{selectedClass.subject || 'Chưa ghi môn'} · GV phân công: {teachersForClass(selectedClass)}</p></div><div className="attendance-summary"><b>{daySession?.session_status === 'cancelled' ? 'Đã hủy' : daySession ? `${daySession.present_count}/${daySession.total_students}` : `${summary.present}/${summary.total}`}</b><span>{daySession?.session_status === 'cancelled' ? 'Buổi học' : 'Có mặt'}</span><em>{daySession?.session_status === 'cancelled' ? '0 tiết' : `${daySession ? daySession.absent_count : summary.absent} vắng`}</em></div></header>
+
+                  <div className="attendance-session-controls">
+                    <label><span>Ngày điểm danh</span><input type="date" value={attendanceDate} max={today} onChange={(event) => { setAttendanceDate(event.target.value); setNotice(''); setError(''); }} /></label>
+                    <label className="is-teacher"><span>Giáo viên dạy hôm nay</span><select value={sessionTeacher} disabled={isDayLocked || !selectedTeacherOptions.length} onChange={(event) => setSessionTeacher(event.target.value)}><option value="">Chọn giáo viên</option>{selectedTeacherOptions.map((name) => { const usage = teacherUsageForDate.get(fold(name)); const blocked = Boolean(usage && String(usage.class_id) !== String(selectedClassId)); return <option key={name} value={name} disabled={blocked}>{blocked ? `${name} — đã điểm danh: ${usage.class_name}` : name}</option>; })}</select></label>
+                    <div className="att-m3-period-field">
+                      <span>Số tiết dạy</span>
+                      <div className={`att-m3-period-segment ${lessonPeriodOptions.length === 1 ? 'is-single' : ''}`}>
+                        {lessonPeriodOptions.map(({ value, label }) => <button key={value} type="button" disabled={isDayLocked || (!isAttendanceAdmin && !allowTeacherPeriodSelection && attendanceSource === 'extra')} className={lessonPeriods === value ? 'is-active' : ''} onClick={() => setLessonPeriods(value)}>{label}</button>)}
+                      </div>
+                      {attendanceSource === 'extra' && isAttendanceAdmin ? <label className="att-m3-period-policy">
+                        <input
+                          type="checkbox"
+                          checked={allowTeacherPeriodSelection}
+                          disabled={periodPolicySaving}
+                          onChange={(event) => updateTeacherPeriodSelectionPolicy(event.target.checked)}
+                        />
+                        <span><b>Cho phép giáo viên tùy chọn số tiết</b><small>Áp dụng cho toàn bộ lớp phụ đạo &amp; bồi dưỡng.</small></span>
+                      </label> : null}
+                      {attendanceSource === 'extra' && !isAttendanceAdmin && !allowTeacherPeriodSelection ? <small className="att-m3-period-fixed-note">
+                        {selectedClass?.class_type === 'gifted' ? 'Bồi dưỡng: cố định 2 tiết' : 'Phụ đạo: cố định 1,5 tiết'}
+                      </small> : null}
+                    </div>
+                    <label><span>Phòng học</span><input value={teachingRoom} disabled={isDayLocked} onChange={(event) => setTeachingRoom(event.target.value)} placeholder="Ví dụ P.203" /></label>
+                    <label><span>Thời gian dạy</span><input value={teachingTimeRange} disabled={isDayLocked} onChange={(event) => setTeachingTimeRange(event.target.value)} placeholder="Ví dụ 14:00–15:30" /></label>
+                    {isDayLocked ? <div className={`attendance-day-lock ${daySession.session_status === 'cancelled' ? 'is-cancelled' : ''}`}><Icon name="check" size={18} /><div><b>{daySession.session_status === 'cancelled' ? `Đã hủy ${formatDate(daySession.attendance_date)}` : `Đã điểm danh ${formatDate(daySession.attendance_date)}`}</b><span>{daySession.session_status === 'cancelled' ? `${daySession.cancellation_reason} · 0 tiết` : `GV ${daySession.teacher_name} · ${String(daySession.lesson_periods || 1).replace('.', ',')} tiết · ${formatDateTime(daySession.checked_at)}`}</span></div></div> : <div className="attendance-day-open"><b>Chưa chốt ngày này</b><span>{isFutureDate ? 'Không thể chọn ngày tương lai.' : 'Có thể điểm danh hoặc hủy buổi học.'}</span></div>}
+                  </div>
+
+                  <div className="attendance-roster-head"><span className="attendance-roster-head__index">STT</span><span>Học sinh</span><span>Lớp chính khóa</span><span>Trạng thái</span></div>
+                  <div className="attendance-roster">{draft.map((member, index) => <div key={member.id || member.member_key} className={`att-m3-roster-entry ${member.status === ATTENDANCE_STATUS.ABSENT ? 'is-absent' : member.status === ATTENDANCE_STATUS.LATE ? 'is-late' : 'is-present'}`}><label><span className="attendance-index">{String(index + 1).padStart(2, '0')}</span><div><b>{member.student_full_name}</b><small>{member.student_code || 'Không có mã HS'}</small></div><span className="attendance-school-class">{member.school_class_name || '—'}</span><div className="att-m3-attendance-status" role="group" aria-label={`Trạng thái ${member.student_full_name}`}>
+                          <button type="button" data-status="present" disabled={isDayLocked} className={member.status === ATTENDANCE_STATUS.PRESENT ? 'is-active is-present' : ''} onClick={() => setAttendanceStatus(member.member_key, ATTENDANCE_STATUS.PRESENT)}>Có mặt</button>
+                          <button type="button" data-status="late" disabled={isDayLocked} className={member.status === ATTENDANCE_STATUS.LATE ? 'is-active is-late' : ''} onClick={() => setAttendanceStatus(member.member_key, ATTENDANCE_STATUS.LATE)}>Đi trễ</button>
+                          <button type="button" data-status="absent" disabled={isDayLocked} className={member.status === ATTENDANCE_STATUS.ABSENT ? 'is-active is-absent' : ''} onClick={() => setAttendanceStatus(member.member_key, ATTENDANCE_STATUS.ABSENT)}>Vắng</button>
+                        </div></label>{member.status === ATTENDANCE_STATUS.ABSENT ? <div className="att-m3-absence-detail"><span>Lý do vắng</span><div className="att-m3-reason-chips">{ABSENCE_REASON_OPTIONS.map((reason) => <button key={reason.value} type="button" disabled={isDayLocked} className={member.absence_reason_code === reason.value ? 'is-active' : ''} onClick={() => updateAbsenceField(member.member_key, { absence_reason_code: reason.value, absence_note: reason.value === 'other' ? member.absence_note : member.absence_note })}>{reason.label}</button>)}</div><input disabled={isDayLocked} value={member.absence_note || ''} onChange={(event) => updateAbsenceField(member.member_key, { absence_note: event.target.value })} placeholder={member.absence_reason_code === 'other' ? 'Ghi rõ lý do khác *' : 'Ghi chú thêm (không bắt buộc)'} /></div> : null}</div>)}{!draft.length ? <div className="attendance-empty">Lớp này chưa có học sinh đang hoạt động.</div> : null}</div>
+                  <section className={`att-m3-proof-card ${isDayLocked ? 'is-locked' : ''}`}>
+                    <div className="att-m3-proof-card-head"><span aria-hidden="true">📷</span><div><strong>Minh chứng hình ảnh</strong><small>Không bắt buộc · 01 ảnh cho mỗi buổi điểm danh</small></div>{daySession?.proof_path ? <em>Đã lưu</em> : null}</div>
+                    <input ref={proofInputRef} type="file" accept="image/*" capture="environment" hidden disabled={isDayLocked} onChange={(event) => chooseProofFile(event.target.files?.[0])} />
+                    {proofPreviewUrl && !isDayLocked ? <div className="att-m3-proof-preview"><img src={proofPreviewUrl} alt="Ảnh minh chứng đang chọn" /><div><b>Ảnh đã sẵn sàng</b><span>Ảnh sẽ được nén và lưu khi xác nhận điểm danh.</span><p><button type="button" onClick={() => proofInputRef.current?.click()}>Đổi ảnh</button><button type="button" className="is-remove" onClick={clearProofSelection}>Xóa ảnh</button></p></div></div> : !isDayLocked ? <button className="att-m3-proof-picker" type="button" onClick={() => proofInputRef.current?.click()}><span aria-hidden="true">📷</span><b>Chụp ảnh / Chọn ảnh</b><small>Tùy chọn, không ảnh hưởng việc xác nhận điểm danh</small></button> : <div className="att-m3-proof-locked-note">{daySession?.proof_path ? 'Buổi này đã có ảnh minh chứng. Xem ảnh tại tab Lịch sử.' : 'Buổi này đã chốt và không có ảnh minh chứng.'}</div>}
+                  </section>
+                  <footer className="attendance-confirm-bar"><label><span>Ghi chú buổi học</span><input disabled={isDayLocked} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Không bắt buộc" /></label><div className="att-m3-session-actions"><button className="att-m3-cancel-button" type="button" disabled={busy || isDayLocked || isFutureDate} onClick={() => setShowCancelSession((value) => !value)}>Hủy buổi học</button><button type="button" disabled={busy || !draft.length || isDayLocked || isFutureDate || !sessionTeacher || isTeacherBlocked || !teachingRoom.trim() || !teachingTimeRange.trim() || invalidAbsentRows.length > 0} onClick={confirmAttendance}><Icon name="check" size={18} />{isDayLocked ? (daySession.session_status === 'cancelled' ? 'Đã hủy' : `Đã chốt ${formatDate(daySession.attendance_date)}`) : busy ? 'Đang lưu…' : 'Xác nhận điểm danh'}</button></div></footer>
+                  {showCancelSession && !isDayLocked ? <div className="att-m3-cancel-surface"><label><span>Lý do hủy *</span><input value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value)} placeholder="Ví dụ: Giáo viên bận công tác" autoFocus /></label><button type="button" onClick={() => { setShowCancelSession(false); setCancellationReason(''); }}>Không hủy</button><button className="is-confirm" type="button" disabled={busy || !cancellationReason.trim()} onClick={cancelClassSession}>{busy ? 'Đang lưu…' : 'Xác nhận hủy'}</button></div> : null}
+                </> : <div className="attendance-empty is-large">Chọn một lớp để bắt đầu điểm danh.</div>}
+              </section>
+            </div>
+          ) : null}
+
+          {!loading && canAccessAttendanceView('calendar') && view === 'calendar' ? (
+            <div className="attendance-calendar-layout">
+              <AttendanceDailySchedule
+                classes={activeClasses}
+                sessions={calendarSessions}
+                date={calendarDate}
+                maxDate={today}
+                loading={calendarLoading}
+                roomFilter={calendarRoomFilter}
+                onDateChange={(nextDate) => {
+                  if (!nextDate) return;
+                  setCalendarDate(nextDate);
+                  setNotice('');
+                  setError('');
+                }}
+                onRoomFilterChange={setCalendarRoomFilter}
+                teacherLabelForClass={teachersForClass}
+                onOpenClass={(classRow, session) => {
+                  if (session?.session_status === 'completed' || session?.session_status === 'cancelled') {
+                    openSessionFromCalendar(session);
+                    return;
+                  }
+                  setSelectedClassId(String(classRow.id));
+                  setAttendanceDate(calendarDate);
+                  setNotice('');
+                  setError('');
+                  setView('quick');
+                }}
+              />
+            </div>
+          ) : null}
+
+          {canAccessAttendanceView('manage') && view === 'manage' ? (
+            <AttendanceClassManagementWorkspace
+              activeClasses={activeClasses}
+              selectedClass={selectedClass}
+              selectedClassId={selectedClassId}
+              allSelectedMembers={allSelectedMembers}
+              filteredManagementMembers={filteredManagementMembers}
+              memberCounts={memberCounts}
+              teachersForClass={teachersForClass}
+              busy={busy}
+              fileRef={fileRef}
+              importExcel={importExcel}
+              importReport={importReport}
+              memberQuery={memberQuery}
+              setMemberQuery={setMemberQuery}
+              showAddStudent={showAddStudent}
+              setShowAddStudent={setShowAddStudent}
+              addForm={addForm}
+              setAddForm={setAddForm}
+              addStudent={addStudent}
+              showAddTeacher={showAddTeacher}
+              setShowAddTeacher={setShowAddTeacher}
+              newTeacherName={newTeacherName}
+              setNewTeacherName={setNewTeacherName}
+              addTeacher={addTeacher}
+              deleteClass={deleteClass}
+              client={client}
+              isAdmin={isAttendanceAdmin}
+              canManageMembers={canAccessAttendanceView('manage')}
+              canArchiveClass={canUseClassArchive}
+              removeStudent={removeStudent}
+              loadAll={loadAll}
+              onMemberNoteSaved={(memberId, teacherNote) => {
+                setMembers((current) => current.map((member) => (
+                  String(member.id) === String(memberId)
+                    ? { ...member, teacher_note: teacherNote }
+                    : member
+                )));
+              }}
+              setError={setError}
+              setNotice={setNotice}
+              onSelectClass={setSelectedClassId}
+              stateScope={currentUser?.id || currentUser?.authId || currentUser?.email || runtime.session?.user?.id || ''}
+            />
+          ) : null}
+
+          {!loading && canAccessAttendanceView('report') && view === 'report' ? <AttendanceMonthlyReport client={client} language={language} classes={classes} includeSupplemental={canSeeSupplementalHistory} month={reportMonth} onMonthChange={setReportMonth} onError={setError} /> : null}
+
+          {canOpenArchive && view === 'archive' ? <AttendanceArchivePanel
+            items={canUseAttendanceHistoryArchive ? archiveItems : []}
+            classItems={canUseClassArchive ? classArchiveItems : []}
+            loading={archiveLoading}
+            busy={busy}
+            isAdmin={isAttendanceAdmin}
+            canManageClasses={canUseClassArchive}
+            onRefresh={() => loadArchive()}
+            onRestore={restoreArchivedSession}
+            onRequestDelete={requestArchivedPermanentDelete}
+            onApproveDelete={(item) => reviewArchivedPermanentDelete(item, true)}
+            onRejectDelete={(item) => reviewArchivedPermanentDelete(item, false)}
+            onRestoreClass={restoreArchivedClass}
+            onRequestDeleteClass={requestArchivedClassPermanentDelete}
+            onApproveDeleteClass={(item) => reviewArchivedClassPermanentDelete(item, true)}
+            onRejectDeleteClass={(item) => reviewArchivedClassPermanentDelete(item, false)}
+          /> : null}
+
+          {!loading && canAccessAttendanceView('history') && view === 'history' ? (
+            <div className="ahv3__shell" data-attendance-history-v3="true">
+              <section className="ahv3__list">
+                <header className="ahv3__list-head">
+                  <div className="ahv3__list-title"><div><strong>Lịch sử điểm danh</strong><p>Tra cứu các buổi đã chốt và buổi đã hủy.</p></div><div className="ahv3__list-actions"><span>{filteredHistory.length} buổi</span>{canDeleteAttendanceHistory ? <button type="button" className={historySelectionMode ? 'is-active' : ''} disabled={busy} onClick={toggleHistorySelectionMode}>{historySelectionMode ? 'Thoát chọn' : 'Chọn nhiều'}</button> : null}</div></div>
+                  <label className="ahv3__search" data-bes-keep-search="true"><Icon name="history" size={16} /><input value={historyQuery} onChange={(event) => setHistoryQuery(event.target.value)} placeholder="Tìm theo tên lớp, môn học, giáo viên hoặc ngày…" /></label>
+                  <div className="ahv3__filters">
+                    <label><span>Loại lớp</span><select value={historyType} onChange={(event) => setHistoryType(event.target.value)}><option value="all">Tất cả loại lớp</option><option value="remedial">Phụ đạo</option><option value="gifted">Bồi dưỡng HSG</option>{canSeeSupplementalHistory ? <option value="supplemental">Học bổ sung</option> : null}</select></label>
+                    <label><span>Sắp xếp theo ngày</span><select value={historySort} onChange={(event) => setHistorySort(event.target.value)}><option value="desc">Mới nhất → cũ nhất</option><option value="asc">Cũ nhất → mới nhất</option></select></label>
+                  </div>
+                  <div className="ahv3__date-filters" data-bes-keep-search="true">
+                    <label><span>Từ ngày</span><input type="date" value={historyDateFrom} max={historyDateTo || undefined} onChange={(event) => setHistoryDateFrom(event.target.value)} /></label>
+                    <label><span>Đến ngày</span><input type="date" value={historyDateTo} min={historyDateFrom || undefined} onChange={(event) => setHistoryDateTo(event.target.value)} /></label>
+                  </div>
+                  <div className={`ahv3__filter-meta ${historyDateRangeInvalid ? 'is-invalid' : ''}`}>
+                    <button type="button" disabled={!historyHasFilters} onClick={() => { setHistoryQuery(''); setHistoryType('all'); setHistorySort('desc'); setHistoryDateFrom(''); setHistoryDateTo(''); }}><Icon name="refresh" size={14} />Xóa bộ lọc</button>
+                    <span>{historyDateRangeInvalid ? 'Khoảng ngày không hợp lệ' : `Hiển thị ${filteredHistory.length} buổi`}</span>
+                  </div>
+                  {historySelectionMode ? <div className="ahv3__bulk-toolbar"><button type="button" disabled={busy || !filteredHistory.length} onClick={toggleAllFilteredHistorySelection}>{allFilteredHistorySelected ? 'Bỏ chọn kết quả' : 'Chọn tất cả kết quả'}</button><span>Đã chọn <b>{selectedHistorySessionIds.length}</b> buổi</span><button type="button" className="is-danger" disabled={busy || !selectedHistorySessionIds.length} onClick={deleteSelectedHistorySessions}><Icon name="trash" size={16} />{busy ? 'Đang lưu trữ…' : `Lưu trữ ${selectedHistorySessionIds.length} buổi`}</button></div> : null}
+                </header>
+                <div className="ahv3__items">{filteredHistory.map((session, historyIndex) => {
+                  const rate = session.session_status === 'cancelled' || !Number(session.total_students) ? null : Math.round((Number(session.present_count || 0) / Number(session.total_students)) * 100);
+                  const isBulkSelected = selectedHistorySessionIdSet.has(String(session.id));
+                  return <button key={session.id} type="button" className={`${String(selectedSessionId) === String(session.id) && !historySelectionMode ? 'is-selected' : ''}${historySelectionMode ? ' is-bulk-mode' : ''}${isBulkSelected ? ' is-bulk-selected' : ''}`.trim()} aria-pressed={historySelectionMode ? isBulkSelected : undefined} onClick={() => { if (historySelectionMode) toggleHistoryBulkSelection(session.id); else loadSessionRecords(session.id); }}>
+                    {historySelectionMode ? <span className={`ahv3__select-box ${isBulkSelected ? 'is-checked' : ''}`} aria-hidden="true">{isBulkSelected ? <Icon name="check" size={14} /> : null}</span> : null}
+                    <span className="ahv3__number">{historyIndex + 1}</span>
+                    <span className={`attendance-type-dot is-${session.class_type}`} />
+                    <div className="ahv3__card-copy"><div className="ahv3__card-title"><b>{session.class_name}</b><span className={`ahv3__type is-${session.class_type}`}>{historyClassTypeLabel(session)}</span>{session.proof_path ? <span className="ahv3__card-photo-icon" title="Có ảnh minh chứng" aria-label="Có ảnh minh chứng"><Icon name="camera" size={14} /></span> : null}</div><small>{session.subject || 'Chưa ghi môn'} · {teacherForSession(session)}</small><time>{formatDate(session.attendance_date)} · {session.teaching_time_range || 'Chưa ghi giờ'} · {session.teaching_room || 'Chưa ghi phòng'}</time></div>
+                    <span className="ahv3__count"><b>{session.session_status === 'cancelled' ? 'Đã hủy' : `${session.present_count}/${session.total_students}`}</b><em>{session.session_status === 'cancelled' ? '0 tiết' : `${session.absent_count} vắng`}</em>{rate !== null ? <i>{rate}%</i> : null}</span>
+                  </button>;
+                })}{!filteredHistory.length ? <div className="attendance-empty">Chưa có buổi điểm danh phù hợp.</div> : null}</div>
+              </section>
+
+              <section className="ahv3__detail">{historySelectionMode ? <div className="ahv3__bulk-detail"><span><Icon name="trash" size={28} /></span><h2>Chọn nhiều buổi điểm danh</h2><p>Chọn các buổi ở danh sách bên trái, sau đó chuyển một lần vào Kho lưu trữ.</p><b>{selectedHistorySessionIds.length} buổi đã chọn</b></div> : selectedSession ? <>
+                <div className="ahv3__hero">
+                  <div className="ahv3__hero-copy"><span className={`att-m3-status-chip is-${selectedSession.session_status === 'cancelled' ? 'cancelled' : 'completed'}`}>{selectedSession.session_status === 'cancelled' ? 'Đã hủy' : 'Đã điểm danh'}</span><h2>{selectedSession.class_name}</h2><div className="ahv3__hero-chips"><span className={`ahv3__type is-${selectedSession.class_type}`}>{historyClassTypeLabel(selectedSession)}</span><span className="att-m3-period-chip">{selectedSession.session_status === 'cancelled' ? '0 tiết' : `${String(selectedSession.lesson_periods || 1).replace('.', ',')} tiết`}</span><span>{formatDate(selectedSession.attendance_date)}</span><span>{selectedSession.teaching_room || 'Chưa ghi phòng'}</span></div></div>
+                  <div className="ahv3__hero-art" aria-hidden="true"><span className="is-leaf is-leaf-1" /><span className="is-leaf is-leaf-2" /><span className="is-book is-book-1" /><span className="is-book is-book-2" /><span className="is-book is-book-3" /></div>
+                  <div className="ahv3__actions">{selectedSession.proof_path ? <a className="ahv3__view-photo" href={historyProofUrl || undefined} target="_blank" rel="noopener noreferrer" aria-disabled={!historyProofUrl} onClick={(event) => { if (!historyProofUrl) { event.preventDefault(); setError(historyProofLoading ? 'Ảnh đang được tải, vui lòng thử lại.' : 'Chưa thể tải ảnh minh chứng lúc này.'); } }}><Icon name="camera" size={16} />{historyProofLoading ? 'Đang tải ảnh…' : 'Xem ảnh đã chụp'}</a> : null}{canAccessAttendanceView('report') && !isSupplementalHistorySession(selectedSession) ? <button type="button" className="ahv3__report-button" onClick={() => { if (selectedSession.attendance_date) setReportMonth(selectedSession.attendance_date.slice(0, 7)); setView('report'); }}>Xem báo cáo tháng</button> : null}{canDeleteAttendanceHistory ? <button type="button" className="ahv3__delete-button" disabled={busy} onClick={() => deleteAttendanceSession(selectedSession)}><Icon name="trash" size={17} />Đưa vào Kho lưu trữ</button> : null}</div>
+                </div>
+
+                <h3 className="ahv3__section-title is-info"><span aria-hidden="true"><Icon name="calendar" size={14} /></span>Thông tin buổi học</h3>
+                <div className="ahv3__info-grid">
+                  <article><span className="ahv3__info-icon is-blue" aria-hidden="true"><Icon name="teacher" size={19} /></span><div><span>Giáo viên</span><b>{teacherForSession(selectedSession)}</b></div></article>
+                  <article><span className="ahv3__info-icon is-green" aria-hidden="true"><Icon name="book" size={19} /></span><div><span>Môn học</span><b>{selectedSession.subject || 'Chưa ghi môn'}</b></div></article>
+                  <article><span className="ahv3__info-icon is-purple" aria-hidden="true"><Icon name="calendar" size={19} /></span><div><span>Ngày dạy</span><b>{formatDate(selectedSession.attendance_date)}</b></div></article>
+                  <article><span className="ahv3__info-icon is-orange" aria-hidden="true"><Icon name="clock" size={19} /></span><div><span>Thời gian</span><b>{selectedSession.teaching_time_range || 'Chưa ghi'}</b></div></article>
+                  <article><span className="ahv3__info-icon is-blue" aria-hidden="true"><Icon name="room" size={19} /></span><div><span>Phòng học</span><b>{selectedSession.teaching_room || 'Chưa ghi'}</b></div></article>
+                  <article><span className="ahv3__info-icon is-purple" aria-hidden="true"><Icon name="periods" size={19} /></span><div><span>Số tiết</span><b>{selectedSession.session_status === 'cancelled' ? '0 tiết' : `${String(selectedSession.lesson_periods || 1).replace('.', ',')} tiết`}</b></div></article>
+                </div>
+
+                {selectedSession.proof_path ? <section className="ahv3__proof"><header><div><span className="ahv3__proof-icon" aria-hidden="true"><Icon name="camera" size={18} /></span><div><strong>Minh chứng hình ảnh</strong><small>Ảnh được lưu riêng tư và chỉ mở bằng liên kết tạm thời.</small></div></div>{historyProofUrl ? <a href={historyProofUrl} target="_blank" rel="noreferrer">Mở ảnh lớn</a> : null}</header>{historyProofLoading ? <div className="ahv3__proof-loading">Đang tải ảnh minh chứng…</div> : historyProofUrl ? <a className="ahv3__proof-image" href={historyProofUrl} target="_blank" rel="noreferrer"><img src={historyProofUrl} alt={`Minh chứng điểm danh ${selectedSession.class_name} ngày ${formatDate(selectedSession.attendance_date)}`} /></a> : <div className="ahv3__proof-loading">Không thể tải ảnh minh chứng lúc này.</div>}</section> : null}
+
+                <section className="ahv3__audit-actor-panel" aria-label="Nhật ký người thao tác">
+                  <header className="ahv3__audit-actor-panel__head">
+                    <div><strong>Nhật ký người thao tác</strong><span>Dữ liệu chốt buổi</span></div>
+                  </header>
+                  <div className="ahv3__audit-actor-panel__grid">
+                    <div><span>Người thao tác</span><b>{selectedSession.checked_by_name || selectedSession.checked_by || 'Không ghi nhận'}</b></div>
+                    <div><span>Chốt lúc</span><b>{formatDateTime(selectedSession.checked_at)}</b></div>
+                  </div>
+                </section>
+                {selectedSession.session_status === 'cancelled' ? <>
+                  <div className="att-m3-cancel-reason"><b>Lý do hủy</b><p>{selectedSession.cancellation_reason || 'Chưa ghi lý do.'}</p></div>
+                  <div className="ahv3__footer-grid"><section className="ahv3__note"><strong>Ghi chú buổi học</strong><p>{selectedSession.note || 'Buổi học đã hủy, không có ghi chú bổ sung.'}</p></section><section className="ahv3__lock"><strong>Nhật ký chốt buổi</strong><div><span>Chốt lúc</span><b>{formatDateTime(selectedSession.checked_at)}</b></div><div><span>Trạng thái</span><b>Đã hủy</b></div></section></div>
+                </> : <>
+                  <h3 className="ahv3__section-title ahv3__summary-title"><span aria-hidden="true"><Icon name="attendance" size={14} /></span>Tổng hợp điểm danh</h3>
+                  <div className="ahv3__stat-grid">
+                    <article><span className="ahv3__summary-icon is-blue" aria-hidden="true"><Icon name="people" size={19} /></span><b>{selectedSession.total_students}</b><span>Sĩ số lớp</span></article>
+                    <article className="is-present"><span className="ahv3__summary-icon is-green" aria-hidden="true"><Icon name="check" size={19} /></span><b>{selectedSession.present_count}</b><span>Có mặt</span><small>Đã gồm học sinh đi trễ</small></article>
+                    <article className="is-late"><span className="ahv3__summary-icon is-orange" aria-hidden="true"><Icon name="late" size={19} /></span><b>{selectedLateRecords.length}</b><span>Đi trễ</span><small>Vẫn tính có mặt</small></article>
+                    <article className="is-absent"><span className="ahv3__summary-icon is-red" aria-hidden="true"><Icon name="absent" size={19} /></span><b>{selectedSession.absent_count}</b><span>Vắng</span></article>
+                    <article className="ahv3__rate-card"><b>{selectedSessionAttendanceRate ?? 0}%</b><span>Tỷ lệ chuyên cần</span><span className="ahv3__rate-ring" style={{ '--attendance-rate': `${selectedSessionAttendanceRate ?? 0}%` }} aria-hidden="true" /></article>
+                  </div>
+
+                  <section className={`ahv3__late-section ${!selectedLateRecords.length ? 'is-empty' : ''}`.trim()}>
+                    <header><div><strong>Danh sách học sinh đi trễ</strong><span>{selectedLateRecords.length} học sinh</span></div></header>
+                    {selectedLateRecords.length ? (
+                      <div className="attendance-late-list">
+                        {selectedLateRecords.map((record, index) => <div key={record.id}><span>{index + 1}</span><div><b>{record.student_full_name}</b><small>{record.student_code || 'Không có mã HS'} · {attendanceStatusLabel(record.status)} · vẫn tính có mặt</small></div><em>{record.school_class_name || '—'}</em></div>)}
+                      </div>
+                    ) : (
+                      <div className="ahv3__empty-attendance is-late">
+                        <span aria-hidden="true"><Icon name="late" size={22} /></span>
+                        <div><b>Không có học sinh đi trễ.</b><small>Buổi học không ghi nhận trường hợp đi trễ.</small></div>
+                      </div>
+                    )}
+                  </section>
+
+                  <section className={`ahv3__absent-section ${!selectedAbsentRecords.length ? 'is-empty' : ''}`.trim()}>
+                    <header><div><strong>Danh sách học sinh vắng</strong><span>{selectedAbsentRecords.length} học sinh</span></div></header>
+                    {selectedAbsentRecords.length ? (
+                      <div className="attendance-absent-list">
+                        {selectedAbsentRecords.map((record, index) => <div key={record.id}><span>{index + 1}</span><div><b>{record.student_full_name}</b><small>{record.student_code || 'Không có mã HS'} · {ABSENCE_REASON_OPTIONS.find((item) => item.value === record.absence_reason_code)?.label || 'Chưa ghi lý do'}{record.absence_note ? ` · ${record.absence_note}` : ''}</small></div><em>{record.school_class_name || '—'}</em></div>)}
+                      </div>
+                    ) : (
+                      <div className="ahv3__empty-attendance is-absent">
+                        <span aria-hidden="true"><Icon name="check" size={22} /></span>
+                        <div><b>Tất cả học sinh đều có mặt.</b><small>Lớp duy trì sĩ số đầy đủ trong buổi học này.</small></div>
+                      </div>
+                    )}
+                  </section>
+
+                  <div className="ahv3__footer-grid"><section className="ahv3__note"><strong>Ghi chú buổi học</strong><p>{selectedSession.note || 'Chưa có ghi chú cho buổi học này.'}</p></section><section className="ahv3__lock"><strong>Nhật ký chốt buổi</strong><div><span>Chốt lúc</span><b>{formatDateTime(selectedSession.checked_at)}</b></div><div><span>Trạng thái</span><b>Đã chốt</b></div></section></div>
+                </>}
+              </> : <div className="attendance-empty is-large">Chọn một buổi để xem chi tiết.</div>}</section>
+            </div>
+          ) : null}
+        </main>
+      </section>
+  );
+  const overlay = standalone
+    ? <div className="attendance-standalone-root" data-attendance-workspace="standalone">{workspace}</div>
+    : open ? createPortal(
+      <div className="attendance-layer" data-global-motion-isolate="true" role="presentation"
+        onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
+        {workspace}
+      </div>, document.body,
+    ) : null;
+
+  return <>{tab}{overlay}</>;
+}

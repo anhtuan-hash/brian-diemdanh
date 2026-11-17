@@ -1,0 +1,157 @@
+export const APPS = [
+  {
+    slug: 'immersive-gallery', icon: 'IG', tone: 'mint', group: 'Creative Learning', groupVi: 'Sáng tạo & trưng bày',
+    title: 'Pétrus Ký School System', titleVi: 'Pétrus Ký School System · Bảo tàng số',
+    desc: 'Run English STEAM lessons, create accountless group museums, review and showcase student exhibitions.',
+    descVi: 'Tạo bài học STEM/STEAM Tiếng Anh, học sinh làm bảo tàng 3D không cần tài khoản, giáo viên và TTCM duyệt.',
+    status: 'Material 3 · STEAM · Accountless', statusVi: 'Dễ dùng · Bảo tàng 3D · Không cần tài khoản học sinh',
+    api: false, featured: true, hideable: false,
+  },
+  {
+    slug: 'sync-doctor', icon: 'SD', tone: 'blue', group: 'Operations', groupVi: 'Vận hành & dữ liệu',
+    title: 'Brian Sync Doctor', titleVi: 'Sync Doctor · Chẩn đoán đồng bộ',
+    desc: 'Read-only integrity checks across authorized class rosters, homeroom, gradebook and assessment sources.',
+    descVi: 'Đối soát danh sách học sinh, chủ nhiệm, sổ điểm và kiểm tra trong phạm vi được cấp quyền. Không thay đổi dữ liệu.',
+    status: 'Read only · Evidence · RLS', statusVi: 'Chỉ đọc · Có bằng chứng · Phân quyền',
+    api: false, featured: true, hideable: false,
+  },
+  {
+    slug: 'questatlas', icon: 'QA', tone: 'blue', group: 'Teaching Design', groupVi: 'Thiết kế dạy học',
+    title: 'BRIAN QuestAtlas', titleVi: 'QuestAtlas · Bản đồ tri thức & Escape Room',
+    desc: 'Connect reusable knowledge nodes to teacher-authored classroom escape quests. Deterministic and no AI.',
+    descVi: 'Kết nối bản đồ kiến thức với trò chơi giải mã do giáo viên thiết kế. Không sử dụng AI.',
+    status: 'Atlas · Quest Builder · Teacher Preview', statusVi: 'Atlas · Tạo Quest · Xem thử', api: false, featured: true,
+  },
+  {
+    slug: 'work-dashboard', route: 'dashboard', icon: 'DB', tone: 'blue', group: 'Management', groupVi: 'Quản lý',
+    title: 'Work Dashboard', titleVi: 'Bảng điều hành',
+    desc: 'Combine schedules, action items, professional activities, approvals and department health in one role-aware dashboard.',
+    descVi: 'Tổng hợp lịch làm việc, việc cần xử lý, hoạt động chuyên môn, phê duyệt và tình hình tổ theo đúng vai trò.',
+    status: 'Realtime · Role-aware · 14-day view', statusVi: 'Realtime · Theo vai trò · 14 ngày', api: true, featured: true,
+  },
+  {
+    slug: 'student-support', route: 'student-support', icon: 'SS', tone: 'mint', group: 'School Management', groupVi: 'Hỗ trợ học sinh',
+    title: 'Student Support Center', titleVi: 'Trung tâm Hỗ trợ Học sinh',
+    desc: 'Review factual school signals, coordinate support actions and follow up student progress.',
+    descVi: 'Tổng hợp tín hiệu thực tế, phối hợp hỗ trợ và theo dõi tiến trình học sinh.',
+    status: 'Rule-based · Human-reviewed · No AI', statusVi: 'Theo quy tắc · Giáo viên duyệt · Không AI', api: true, featured: true,
+  },
+  {
+    slug: 'gradebook-studio', icon: 'GB', tone: 'blue', group: 'Teaching Management', groupVi: 'Quản lý giảng dạy',
+    title: 'Gradebook Studio', titleVi: 'Sổ điểm',
+    desc: 'Manage class rosters and gradebooks independently of homeroom-teacher duties.',
+    descVi: 'Quản lý danh sách lớp và sổ điểm độc lập, dành cho mọi giáo viên dù có làm chủ nhiệm hay không.',
+    status: '2 semesters · Excel · PDF', statusVi: '2 học kỳ · Excel · PDF', api: false, featured: true, hideable: false,
+  },
+  {
+    slug: 'brian-team', icon: 'BT', tone: 'mint', group: 'Management', groupVi: 'Quản lý',
+    title: 'Brian Team', titleVi: 'Nhân sự tổ chuyên môn',
+    desc: 'Manage department members, assignments, professional records, absences, evaluations and reports through linked approved teacher accounts.',
+    descVi: 'Quản lí thành viên tổ, phân công, hồ sơ chuyên môn, nghỉ–vắng, đánh giá và báo cáo bằng tài khoản giáo viên đã được duyệt.',
+    status: 'Department head · Linked accounts', statusVi: 'Dành cho TTCM · Liên kết tài khoản',
+    api: false, featured: true, hideable: false,
+  },
+  {
+    slug: 'assessment-core', route: 'assessment-core', icon: 'QB', tone: 'blue', group: 'Assessment', groupVi: 'Kiểm tra đánh giá',
+    title: 'Question Bank', titleVi: 'Ngân hàng câu hỏi',
+    desc: 'Store reusable questions, preserve context bundles, manage exams and receive completed drafts directly from ChatGPT.',
+    descVi: 'Lưu câu hỏi tái sử dụng, giữ nguyên chùm ngữ liệu, quản lý đề thi và nhận đề hoàn chỉnh trực tiếp từ ChatGPT.',
+    status: 'Questions · Bundles · Exams · ChatGPT', statusVi: 'Câu hỏi · Chùm bài · Đề thi · ChatGPT', api: true, featured: true,
+  },
+  {
+    slug: 'lesson-check-studio', icon: 'KC', tone: 'mint', group: 'Assessment', groupVi: 'Kiểm tra đánh giá',
+    title: 'Lesson Check Studio', titleVi: 'Kiểm tra bài',
+    desc: 'Paste iframe, URL or HTML code and keep each embedded item as a separate classroom teaching activity.',
+    descVi: 'Dán iframe, URL hoặc mã HTML và lưu mỗi nội dung nhúng thành một hoạt động dạy học riêng để xem trước và trình chiếu trực tiếp.',
+    status: 'Iframe · HTML · URL · Teaching mode', statusVi: 'Iframe · HTML · URL · Chế độ dạy',
+    api: false, featured: true, hideable: false,
+  },
+  {
+    slug: 'thpt-practice-hub', icon: 'TH', tone: 'orange', group: 'Exam Preparation', groupVi: 'Luyện thi THPT',
+    title: 'THPT Interactive Practice Hub', titleVi: 'Luyện thi THPT',
+    desc: 'Upload, review, organize and run interactive HTML exam-preparation lessons directly inside Brian.',
+    descVi: 'Tải lên, duyệt, quản lý và chạy trực tiếp các bài luyện thi THPT tương tác dạng HTML.',
+    status: 'HTML library · TTCM approval', statusVi: 'Kho HTML · TTCM duyệt', api: true, featured: true,
+  },
+  {
+    slug: 'knowledge-hub', route: 'knowledge-hub', icon: 'KH', tone: 'blue', group: 'Teaching Resources', groupVi: 'Học liệu thông minh',
+    title: 'Smart Knowledge Library', titleVi: 'Kho học liệu thông minh',
+    desc: 'Search, classify, favorite and organize approved resources with lifecycle metadata.',
+    descVi: 'Tìm kiếm, phân loại, yêu thích và tổ chức học liệu theo metadata và vòng đời.',
+    status: 'Metadata · Collections', statusVi: 'Metadata · Bộ sưu tập', api: true, featured: true,
+  },
+  {
+    slug: 'platform-readiness', route: 'platform-readiness', icon: 'PR', tone: 'mint', group: 'Platform', groupVi: 'Nền tảng',
+    title: 'Platform Readiness', titleVi: 'PWA, bảo mật & tiếp cận',
+    desc: 'Install the site as an app, audit security headers, tune accessibility and monitor performance budgets.',
+    descVi: 'Cài website như ứng dụng, kiểm tra bảo mật, điều chỉnh khả năng tiếp cận và theo dõi ngân sách hiệu năng.',
+    status: 'PWA · Security · WCAG · Web Vitals', statusVi: 'PWA · Bảo mật · WCAG · Hiệu năng', api: true, featured: true,
+  },
+  {
+    slug: 'cloud-operations', route: 'cloud-operations', icon: 'CO', tone: 'mint', group: 'Operations', groupVi: 'Tự động hóa & vận hành',
+    title: 'Cloud Operations', titleVi: 'Vận hành nền 24/7',
+    desc: 'Run automation with durable queues, Supabase Cron, controlled retries, approval gates and operations digests.',
+    descVi: 'Chạy tự động hóa bằng hàng đợi bền vững, Supabase Cron, retry, phê duyệt và bản tin vận hành.',
+    status: '24/7 worker · Queue · Digest', statusVi: 'Worker 24/7 · Hàng đợi · Bản tin', api: true, featured: true,
+  },
+  {
+    slug: 'data-governance', route: 'data-governance', icon: 'DG', tone: 'orange', group: 'Governance', groupVi: 'Quản trị dữ liệu',
+    title: 'Data Governance', titleVi: 'Quản trị dữ liệu & tuân thủ',
+    desc: 'Audit actions, control permission overrides, create snapshots and restore deleted content safely.',
+    descVi: 'Theo dõi thao tác, kiểm soát quyền ngoại lệ, tạo snapshot và khôi phục dữ liệu an toàn.',
+    status: 'Audit · Backup · Trash · RLS', statusVi: 'Audit · Sao lưu · Thùng rác · RLS', api: true, featured: true,
+  },
+  {
+    slug: 'resource-library-hub', route: 'resource-library', icon: 'RL', tone: 'blue', group: 'Teaching Resources', groupVi: 'Học liệu dùng chung',
+    title: 'Brian Resource Library', titleVi: 'Kho học liệu Tổ Tiếng Anh',
+    desc: 'A shared English teaching-resource library backed by the department leader’s Google Drive, search, classification and approval workflows.',
+    descVi: 'Kho sách và học liệu dùng chung, tự lưu lên Google Drive của TTCM, có phân loại, tìm kiếm và quy trình duyệt.',
+    status: 'Google Drive · Collections', statusVi: 'Google Drive · Bộ sưu tập', api: true, featured: true,
+  },
+  {
+    slug: 'news-reader', route: 'news', icon: 'NW', tone: 'mint', group: 'Reading & News', groupVi: 'Đọc báo',
+    title: 'Newsroom Reader', titleVi: 'Newsroom – Đọc báo',
+    desc: 'Read Vietnamese education news and English-language reporting in a focused, source-attributed daily reader.',
+    descVi: 'Đọc tin giáo dục Việt Nam và báo tiếng Anh trong giao diện tập trung, rõ nguồn và cập nhật tự động.',
+    status: 'Live RSS · Reading mode', statusVi: 'RSS trực tiếp · Chế độ đọc', api: true, featured: true,
+  },
+  {
+    slug: 'vietnam-tax', icon: 'TX', tone: 'blue', group: 'Teacher Utilities', groupVi: 'Tiện ích giáo viên',
+    title: 'Vietnam Tax Studio', titleVi: 'Tính thuế TNCN 2026',
+    desc: 'Estimate Vietnam personal income tax, mandatory insurance and net salary, with a clear comparison between the former 7-bracket and current 5-bracket scales.',
+    descVi: 'Ước tính thuế TNCN, bảo hiểm bắt buộc và lương thực nhận; so sánh rõ biểu thuế 7 bậc với biểu thuế 5 bậc hiện hành.',
+    status: '2026 tax scale · Offline calculator', statusVi: 'Biểu thuế 2026 · Tính offline', api: true, featured: true,
+  },
+  {
+    slug: 'textlab-activities', icon: 'TL', tone: 'blue', group: 'Teaching Design', groupVi: 'Tạo hoạt động',
+    title: 'Brian TextLab Activities', titleVi: 'Brian TextLab Activities',
+    desc: 'Turn text into 18 interactive classroom activities with live preview and offline export.',
+    descVi: 'Biến văn bản thành 18 dạng hoạt động tương tác, xem trước trực tiếp và xuất gói dùng offline.',
+    status: '18 templates · Offline', statusVi: '18 mẫu · Offline', api: true, featured: true,
+  },
+  {
+    slug: 'textcare', icon: 'TC', tone: 'red', group: 'Document Tools', groupVi: 'Văn bản',
+    title: 'TextCare Fixer', titleVi: 'TextCare Fixer',
+    desc: 'Upload, paste, detect and normalize administrative documents.', descVi: 'Tải file/dán text, nhận diện và chuẩn hoá văn bản hành chính.',
+    status: 'Manual · Offline', statusVi: 'Thủ công · Offline', api: true,
+  },
+];
+
+// Game Hub is permanently retired. Keep the export for compatibility with
+// existing imports, but expose no applications from this registry.
+export const GAME_APPS = [];
+
+export const SPECIAL_TOOLS = [];
+
+export const RESOURCE_ITEMS = [
+  {
+    icon: 'WF', title: 'Teacher Flow', titleVi: 'Quy trình',
+    text: 'Choose a tool, paste content, generate, teach live, or export offline.',
+    textVi: 'Chọn công cụ, dán nội dung, tạo hoạt động, dạy trực tiếp hoặc xuất file.',
+  },
+  {
+    icon: 'DB', title: 'V1.0 Official Dashboard', titleVi: 'Dashboard chính thức V1.0',
+    text: 'The dashboard is organized by workflow groups for faster opening, creating and saving.',
+    textVi: 'Dashboard được sắp xếp theo nhóm chức năng để mở nhanh, tạo nhanh và lưu nhanh.',
+  },
+];

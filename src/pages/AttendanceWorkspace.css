@@ -1,0 +1,269 @@
+/*
+ * ESL Brian Attendance — Approved horizontal-navigation workspace (v3).
+ * Structural layout ONLY; component surfaces live in AttendanceWorkspaceRebuilt.css.
+ * The legacy attendance modal is outside .attendance-workspace-page and untouched.
+ */
+#bes-main-content[data-route="attendance"],
+#bes-main-content[data-route="attendance"] .bqa-content-safe-frame {
+  width:100%!important;
+  max-width:none!important;
+  min-width:0;
+  margin:0!important;
+  padding:0!important;
+  overflow:visible!important;
+}
+#bes-main-content[data-route="attendance"]{
+  background:#f2f6fc!important;
+}
+.attendance-workspace-page{
+  --aw-primary:#195ed8;
+  --aw-ink:#183253;
+  width:100%;
+  min-width:0;
+  max-width:1680px;
+  margin:0 auto;
+  padding:clamp(12px,1.7vw,24px);
+  color:var(--aw-ink);
+  background:linear-gradient(180deg,#f3f7ff,#f7faff);
+}
+.attendance-standalone-root{min-width:0;width:100%;}
+.attendance-workspace-page .attendance-shell.is-standalone{
+  display:flex!important;
+  flex-direction:column!important;
+  grid-template-columns:none!important;
+  grid-template-rows:none!important;
+  width:100%!important;
+  max-width:none!important;
+  min-width:0;
+  min-height:calc(100dvh - 100px);
+  height:auto!important;
+  max-height:none!important;
+  position:relative;
+  overflow:visible!important;
+  border:1px solid #d8e4f5!important;
+  border-radius:21px!important;
+  background:#fff!important;
+  box-shadow:0 10px 34px rgba(19,53,105,.10)!important;
+}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-topbar{
+  display:flex!important;
+  flex:0 0 auto;
+  align-items:center;
+  justify-content:space-between;
+  position:relative;
+  width:100%;
+  min-width:0;
+  min-height:80px!important;
+  padding:14px clamp(14px,2vw,26px)!important;
+  border-bottom:1px solid #e3eaf6!important;
+  border-radius:20px 20px 0 0;
+  background:linear-gradient(100deg,#fff,#f7faff)!important;
+  box-shadow:none!important;
+}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-title{
+  display:flex;align-items:center;gap:13px;min-width:0;
+}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-title>span{
+  flex:0 0 49px;width:49px;height:49px;
+  border-radius:14px!important;
+  background:#e8f1ff!important;
+  color:#1c62d4!important;
+}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-title strong{
+  color:#14335d!important;
+  font-size:clamp(18px,1.65vw,23px)!important;
+  font-weight:850!important;
+  line-height:1.2!important;
+  letter-spacing:-.02em;
+}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-title small{
+  display:block;
+  color:#2361ba!important;
+  font-size:10px!important;
+  letter-spacing:.08em;
+  font-weight:900!important;
+}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-top-actions{
+  display:flex;flex:0 0 auto;gap:9px;align-items:center;
+}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-workspace-back{
+  display:inline-flex!important;
+  align-items:center;justify-content:center;gap:9px;
+  width:auto!important;min-width:135px;
+  height:41px;
+  padding:0 14px!important;
+  border:1px solid #cbdcf8!important;
+  border-radius:11px!important;
+  background:#fff!important;color:#1957b6!important;
+  box-shadow:0 2px 7px rgba(26,75,148,.065);
+  font-size:12px!important;font-weight:800!important;
+}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-workspace-back:hover{
+  background:#eaf3ff!important;
+}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-tabs{
+  width:100%;min-width:0;
+  display:flex!important;
+  flex-direction:row!important;
+  flex-wrap:nowrap!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:7px!important;
+  height:auto!important;
+  min-height:64px!important;
+  max-height:none!important;
+  padding:10px clamp(12px,1.8vw,24px)!important;
+  margin:0!important;
+  position:relative;
+  z-index:6;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  scrollbar-width:thin;
+  border:0!important;
+  border-bottom:1px solid #dce6f4!important;
+  border-radius:0!important;
+  background:#fff!important;
+  box-shadow:none!important;
+}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-tabs::before,
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-tabs::after{
+  content:none!important;display:none!important;
+}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-tabs>button{
+  display:inline-flex!important;
+  flex:0 0 auto!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8px!important;
+  width:auto!important;
+  min-width:max-content!important;
+  min-height:42px!important;
+  height:42px!important;
+  margin:0!important;
+  padding:9px 13px!important;
+  border:1px solid transparent!important;
+  border-radius:11px!important;
+  background:transparent!important;
+  color:#496281!important;
+  font-size:12px!important;
+  font-weight:770!important;
+  line-height:1.25!important;
+  white-space:nowrap!important;
+  text-align:center!important;
+  box-shadow:none!important;
+  transition:background-color .15s ease,color .15s ease,border-color .15s ease;
+}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-tabs>button .attendance-icon{
+  width:18px!important;height:18px!important;flex:0 0 18px;
+  color:currentColor!important;
+}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-tabs>button:hover:not(.is-active){
+  background:#edf4ff!important;
+  color:#1659ba!important;
+  border-color:#dce9ff!important;
+}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-tabs>button.is-active{
+  color:#fff!important;
+  background:#2064d9!important;
+  border-color:#2064d9!important;
+  box-shadow:0 3px 9px rgba(25,94,214,.16)!important;
+}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-tabs>button.is-active .attendance-icon{color:#fff!important}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-tabs>button.is-active::after{content:none!important;display:none!important}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-content{
+  display:block!important;
+  width:100%;
+  flex:1 0 auto!important;
+  min-width:0;
+  min-height:580px!important;
+  height:auto!important;
+  max-height:none!important;
+  padding:clamp(14px,2vw,26px)!important;
+  grid-column:auto!important;
+  grid-row:auto!important;
+  overflow:visible!important;
+  scrollbar-gutter:auto;
+  border-radius:0 0 20px 20px;
+  background:#f4f7fc!important;
+}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-banner{
+  position:relative!important;
+  inset:auto!important;
+  z-index:2;
+  width:100%;
+  border-radius:0!important;
+  padding:11px 23px!important;
+}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-content :is(.attendance-quick-layout,.attendance-history-layout){
+  height:auto!important;
+  min-height:0!important;
+}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-quick-layout{
+  grid-template-columns:minmax(260px,315px) minmax(0,1fr)!important;
+}
+.attendance-workspace-page .attendance-shell.is-standalone :is(.att-report-m3,.stud-att,.attendance-archive){
+  padding:0!important;
+}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-manage-overview-toolbar{
+  border-radius:14px!important;
+}
+.attendance-workspace-page .attendance-shell.is-standalone .attendance-daily-compact-toolbar{top:0}
+.attendance-workspace-page .attendance-shell.is-standalone .bes-attendance-time-settings.is-compact-popover{
+  position:fixed!important;
+  z-index:10000!important;
+  inset:clamp(90px,13dvh,145px) 18px auto auto!important;
+  width:min(480px,calc(100vw - 36px))!important;
+  max-height:70dvh;
+  overflow:auto;
+  box-shadow:0 18px 52px rgba(15,44,91,.23)!important;
+}
+@media(max-width:980px){
+  .attendance-workspace-page .attendance-shell.is-standalone .attendance-quick-layout{
+    grid-template-columns:minmax(235px,32%) minmax(0,1fr)!important;
+  }
+  .attendance-workspace-page .attendance-shell.is-standalone .attendance-content{padding:15px!important}
+}
+@media(max-width:760px){
+  .attendance-workspace-page{padding:8px}
+  .attendance-workspace-page .attendance-shell.is-standalone{
+    border-radius:15px!important;
+    min-height:calc(100dvh - 85px);
+  }
+  .attendance-workspace-page .attendance-shell.is-standalone .attendance-topbar{
+    min-height:70px!important;
+    padding:11px 12px!important;
+    border-radius:14px 14px 0 0;
+  }
+  .attendance-workspace-page .attendance-shell.is-standalone .attendance-title>span{
+    width:39px;height:39px;flex-basis:39px;border-radius:11px!important;
+  }
+  .attendance-workspace-page .attendance-shell.is-standalone .attendance-title strong{
+    font-size:15px!important;
+  }
+  .attendance-workspace-page .attendance-shell.is-standalone .attendance-workspace-back{
+    width:41px!important;min-width:41px;padding:0!important;
+  }
+  .attendance-workspace-page .attendance-shell.is-standalone .attendance-workspace-back span{display:none}
+  .attendance-workspace-page .attendance-shell.is-standalone .attendance-tabs{
+    min-height:57px!important;padding:7px 9px!important;gap:5px!important;
+  }
+  .attendance-workspace-page .attendance-shell.is-standalone .attendance-tabs>button{
+    min-height:39px!important;height:39px!important;font-size:12px!important;padding:7px 10px!important;
+  }
+  .attendance-workspace-page .attendance-shell.is-standalone .attendance-content{
+    padding:12px!important;
+    min-height:calc(100dvh - 225px)!important;
+  }
+  .attendance-workspace-page .attendance-shell.is-standalone .attendance-quick-layout{
+    grid-template-columns:minmax(0,1fr)!important;gap:12px!important;
+  }
+  .attendance-workspace-page .attendance-shell.is-standalone .attendance-class-list{max-height:340px;overflow:auto}
+  .attendance-workspace-page .attendance-shell.is-standalone .bes-attendance-time-settings.is-compact-popover{
+    inset:clamp(70px,13dvh,130px) 8px auto 8px!important;
+    width:auto!important;max-height:75dvh;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .attendance-workspace-page .attendance-tabs>button{transition:none!important}
+}
