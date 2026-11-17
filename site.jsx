@@ -82,10 +82,12 @@ export default function AttendanceSite() {
       ) : (
         <>
           <header className="attendance-site-header">
-            <a href="#/attendance" aria-label="Trang chính Điểm danh">
-              <img src="/brian-english-brand-logo.png" alt="" width="38" height="38" />
+            <a href="#/attendance" aria-label="@brianverse · Trang chính Điểm danh">
+              <span className="attendance-brand-mark" aria-hidden="true">
+                <img src="/brian-english-brand-logo.png" alt="" width="940" height="760" />
+              </span>
               <strong className="attendance-site-title">Điểm danh</strong>
-              <strong className="attendance-editorial-wordmark">BRIAN ENGLISH</strong>
+              <strong className="attendance-editorial-wordmark">@brianverse</strong>
               <span className="attendance-editorial-site-caption">Điểm danh lớp phụ đạo &amp; bồi dưỡng</span>
             </a>
             <div>
