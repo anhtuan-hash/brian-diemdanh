@@ -7,6 +7,7 @@ import {
   requestPasswordReset,
   updatePassword,
 } from '../utils/auth.js';
+import AttendanceLoginFooter from '../components/attendance/AttendanceLoginFooter.jsx';
 import './AttendanceAuth.css';
 
 export default function AuthPage({ mode = 'login', language, onLogin, setGlobalLoading }) {
@@ -291,6 +292,7 @@ export default function AuthPage({ mode = 'login', language, onLogin, setGlobalL
           )}
         </p>
       </main>
+      {isLogin && <AttendanceLoginFooter />}
     </div>
   );
 }
