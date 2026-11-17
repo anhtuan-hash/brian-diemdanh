@@ -16,9 +16,9 @@ Trên Vercel, để Root Directory ở thư mục gốc repo. Các thiết lập
 
 ## Supabase và dữ liệu
 
-- `supabase/migrations/` ghi lại cấu trúc đã áp dụng trên Supabase B, gồm tám bảng cốt lõi và mười bảng lưu trữ, bổ sung và cấu hình. Các bảng mới được giữ riêng tư. Quyền đọc bảng cốt lõi dựa trên lớp được phân công. Quyền quản trị xem toàn bộ lớp yêu cầu phiên có mức xác thực `aal2`.
+- `supabase/migrations/` ghi lại cấu trúc và quyền đã áp dụng trên Supabase B. Giáo viên có quyền xem theo lớp được phân công, còn quyền điểm danh và báo cáo toàn trường dựa trên quyền được cấp trong hồ sơ. Quyền quản trị yêu cầu phiên có mức xác thực `aal2`.
 - `supabase/functions/teacher-accounts/` giữ mã dịch vụ tài khoản của ứng dụng cũ để hoàn thiện luồng giáo viên trên project B. Dịch vụ cần được cấu hình và kiểm thử trước khi dùng.
-- Các migration kèm theo là nền tảng đã kiểm tra quyền đọc. Luồng ghi điểm danh và các RPC nghiệp vụ còn thiếu cần được hoàn thiện cùng dữ liệu thật, Auth, ảnh minh chứng và phân quyền nghiệp vụ trước khi dùng.
+- Supabase B đã được thử nghiệm với đăng nhập mật khẩu, quyền đọc theo lớp, chốt, sửa, hủy buổi và chống ghi trùng. Luồng gắn ảnh minh chứng đã được kiểm tra với dữ liệu giả lập. Các chức năng quản lý lớp, lưu trữ nâng cao và Học bổ sung cần các RPC riêng trước khi phát hành đầy đủ. Đăng nhập Google cần cấu hình OAuth cho dự án B.
 
 ### Chuyển dữ liệu giữa hai dự án
 
