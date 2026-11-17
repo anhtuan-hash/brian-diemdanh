@@ -69,6 +69,28 @@ const SESSION_COLUMNS = 'id,class_id,class_type,class_name,subject,teacher_id,te
 const RECORD_COLUMNS = 'id,session_id,class_id,member_id,member_key,student_code,student_full_name,school_class_name,status,recorded_at,absence_reason_code,absence_note';
 const VIETNAM_TIME_ZONE = 'Asia/Ho_Chi_Minh';
 
+async function listExtraAttendanceSessions(client) {
+  const pageSize = 400;
+  const sessions = [];
+  let cursor = null;
+
+  while (true) {
+    let query = client.from('bes_extra_attendance_sessions').select(SESSION_COLUMNS)
+      .order('checked_at', { ascending: false }).order('id', { ascending: false }).limit(pageSize);
+    // checked_at is not unique. Use id to continue through equal timestamps
+    // without skipping a row when new sessions are inserted at the front.
+    if (cursor) {
+      query = query.or(`checked_at.lt.${cursor.checked_at},and(checked_at.eq.${cursor.checked_at},id.lt.${cursor.id})`);
+    }
+    const { data, error } = await query;
+    if (error) throw error;
+    const page = data || [];
+    sessions.push(...page);
+    if (page.length < pageSize) return sessions;
+    cursor = page.at(-1);
+  }
+}
+
 const PATHS = {
   attendance: 'M19 3h-1V1h-2v2H8V1H6v2H5a2 2 0 0 0-2 2v16h18V5a2 2 0 0 0-2-2Zm0 16H5V8h14v11Zm-8.3-2.2-3.1-3.1 1.4-1.4 1.7 1.7 4.3-4.3 1.4 1.4-5.7 5.7Z',
   close: 'm6.4 5 5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5Z',
@@ -408,20 +430,20 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
     setLoading(true);
     setError('');
     try {
-      const [classResult, memberResult, classTeacherResult, sessionResult] = await Promise.all([
+      const [classResult, memberResult, classTeacherResult, nextSessions] = await Promise.all([
         client.from('bes_extra_classes').select(CLASS_COLUMNS).order('class_name', { ascending: true }),
         client.from('bes_extra_class_members').select(MEMBER_COLUMNS).order('student_full_name', { ascending: true }),
         client.from('bes_extra_class_teachers').select(CLASS_TEACHER_COLUMNS).order('position', { ascending: true }),
-        client.from('bes_extra_attendance_sessions').select(SESSION_COLUMNS).order('checked_at', { ascending: false }).limit(400),
+        listExtraAttendanceSessions(client),
         refreshSupplementalHistory(),
       ]);
-      const firstError = classResult.error || memberResult.error || classTeacherResult.error || sessionResult.error;
+      const firstError = classResult.error || memberResult.error || classTeacherResult.error;
       if (firstError) throw firstError;
       const nextClasses = classResult.data || [];
       setClasses(nextClasses);
       setMembers(memberResult.data || []);
       setClassTeachers(classTeacherResult.data || []);
-      setSessions(sessionResult.data || []);
+      setSessions(nextSessions);
       if (!keepSelection || !nextClasses.some((row) => String(row.id) === String(selectedClassId))) {
         setSelectedClassId(nextClasses.find((row) => row.active)?.id || '');
       }
@@ -454,12 +476,11 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
 
   async function refreshHistoryData() {
     if (!client || !runtime.ready || !runtime.session || !allowed) return;
-    const [sessionResult] = await Promise.all([
-      client.from('bes_extra_attendance_sessions').select(SESSION_COLUMNS).order('checked_at', { ascending: false }).limit(400),
+    const [nextSessions] = await Promise.all([
+      listExtraAttendanceSessions(client),
       refreshSupplementalHistory(),
     ]);
-    if (sessionResult.error) throw sessionResult.error;
-    setSessions(sessionResult.data || []);
+    setSessions(nextSessions);
   }
 
   useEffect(() => {
