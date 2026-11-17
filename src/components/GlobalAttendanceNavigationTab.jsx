@@ -249,6 +249,18 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
     return ['quick','calendar','manage','history','report','archive'].includes(candidate) ? candidate : 'quick';
   });
   const workspaceVisible = open || standalone;
+  const editorialView = standalone && ['manage', 'archive', 'report'].includes(view);
+  const attendanceTabsRef = useRef(null);
+
+  useEffect(() => {
+    if (!editorialView) return;
+    const nav = attendanceTabsRef.current;
+    const active = nav?.querySelector('button[aria-current="page"]');
+    if (!active || nav.scrollWidth <= nav.clientWidth) return;
+    const end = active.offsetLeft + active.offsetWidth;
+    if (end > nav.scrollLeft + nav.clientWidth) nav.scrollLeft = end - nav.clientWidth;
+    if (active.offsetLeft < nav.scrollLeft) nav.scrollLeft = active.offsetLeft;
+  }, [editorialView, view]);
   const [classes, setClasses] = useState([]);
   const [members, setMembers] = useState([]);
   const [classTeachers, setClassTeachers] = useState([]);
@@ -1632,32 +1644,43 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
 
   const workspace = (
       <section className={standalone ? 'attendance-shell is-standalone' : 'attendance-shell'}
+        data-attendance-editorial-view={editorialView ? view : undefined}
         role={standalone ? 'region' : 'dialog'}
         aria-modal={standalone ? undefined : 'true'}
         data-editorial-quick={useEditorialQuick || undefined}
         aria-label="Điểm danh lớp phụ đạo và bồi dưỡng học sinh giỏi">
-        <header className="attendance-topbar">
+        {!editorialView && <header className="attendance-topbar">
           <div className="attendance-title"><span><Icon name="attendance" size={28} /></span><div><small>{standalone ? "ESL BRIAN · ỨNG DỤNG ĐIỂM DANH" : "QUẢN LÝ CHUYÊN CẦN"}</small><strong>Điểm danh lớp phụ đạo & bồi dưỡng</strong></div></div>
           <div className="attendance-top-actions"><button type="button" className="attendance-icon-button" onClick={() => { loadAll(); if (view === 'quick') { loadDaySession(); loadTeacherDaySessions(); } if (view === 'calendar') loadCalendarSessions(calendarDate); if (view === 'archive') loadArchive(); }} title="Làm mới"><Icon name="refresh" /></button>{!standalone ? <button type="button" className="attendance-icon-button" onClick={() => setOpen(false)} aria-label="Đóng"><Icon name="close" /></button> : null}</div>
-        </header>
+        </header>}
 
-        <nav className="attendance-tabs" aria-label="Phân hệ điểm danh">
+        <nav ref={attendanceTabsRef} className="attendance-tabs" aria-label="Phân hệ điểm danh">
           {availableAttendanceTabs.map((item) => (
-            <button key={item.id} type="button" className={view === item.tab ? 'is-active' : ''} onClick={() => {
+            <button key={item.id} type="button" className={view === item.tab ? 'is-active' : ''} aria-current={view === item.tab ? 'page' : undefined} onClick={() => {
+              if (item.tab !== view) {
+                setNotice('');
+                setError('');
+              }
               setView(item.tab);
               if (standalone) window.history.replaceState(null, '', '#/attendance?tab=' + encodeURIComponent(item.tab));
             }}>
               <Icon name={ATTENDANCE_TAB_ICONS[item.tab] || 'attendance'} size={18} />{standalone && item.tab === 'quick' ? 'Điểm danh' : item.titleVi}{item.tab === 'archive' && archiveCount > 0 ? <span className="attendance-tab-badge">{archiveCount > 99 ? '99+' : archiveCount}</span> : null}
             </button>
           ))}
+          {editorialView && (
+            <button type="button" className="ae-nav-refresh" aria-label="Làm mới dữ liệu điểm danh"
+              onClick={() => { loadAll(); if (view === 'archive') loadArchive(); }}>
+              <Icon name="refresh" size={19} />
+            </button>
+          )}
         </nav>
 
-        {notice ? <div className="attendance-banner is-success">{notice}</div> : null}
-        {error ? <div className="attendance-banner is-error">{error}</div> : null}
+        {notice ? <div className="attendance-banner is-success" role="status">{notice}</div> : null}
+        {error ? <div className="attendance-banner is-error" role="alert">{error}</div> : null}
         {view === 'history' && supplementalHistoryError ? <div className="attendance-banner is-error" role="status">{supplementalHistoryError}</div> : null}
 
         <main className="attendance-content">
-          {standalone && !useEditorialQuick ? <>
+          {standalone && !useEditorialQuick && !editorialView ? <>
             <AttendanceFeatureDeck items={availableAttendanceTabs} showSupplemental={canSeeSupplementalHistory} activeView={view}
               onNavigate={(nextView) => {
                 if (nextView === 'supplemental') {
@@ -1796,6 +1819,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
 
           {canAccessAttendanceView('manage') && view === 'manage' ? (
             <AttendanceClassManagementWorkspace
+              loading={loading}
               activeClasses={activeClasses}
               selectedClass={selectedClass}
               selectedClassId={selectedClassId}

@@ -1,3 +1,4 @@
+import AttendanceEditorialHeading from './AttendanceEditorialHeading.jsx';
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AttendancePanelHeading, AttendanceEmpty } from './AttendanceWorkspaceUI.jsx';
 import { attendanceSubjectKey, extraClassTypeLabel } from '../../utils/extraClassAttendance.js';
@@ -92,13 +93,6 @@ function WorkspaceIcon({ name, size = 18 }) {
   return <svg {...common}>{paths[name] || paths.list}</svg>;
 }
 
-const SUBJECT_ICONS = {
-  math:'calculator', casio:'calculator', chemistry:'flask', physics:'atom',
-  literature:'book', geography:'globe', biology:'leaf', english:'globe',
-  history:'book',
-};
-function classSubjectIcon(subjectKey) { return SUBJECT_ICONS[subjectKey] || 'book'; }
-
 /**
  * Keep the class-management subview in tab-scoped storage so a session refresh,
  * browser/window switch or temporary route remount does not return the user
@@ -156,6 +150,7 @@ function downloadMemberCsv(selectedClass, members) {
 
 export default function AttendanceClassManagementWorkspace({
   activeClasses = [],
+  loading = false,
   selectedClass,
   allSelectedMembers = [],
   filteredManagementMembers = [],
@@ -317,14 +312,16 @@ export default function AttendanceClassManagementWorkspace({
 
   if (!detailVisible) {
     return (
-      <section className="attendance-manage-overview">
-        <div className="attendance-manage-overview-toolbar attendance-import-card">
-          <label className="attendance-manage-search" data-bes-keep-search="true">
+      <section className="ae-manage" aria-label="Quản lý lớp học">
+        <AttendanceEditorialHeading title="Quản lý lớp" className="ae-heading--manage"
+          metrics={[{ label: 'Lớp học', value: loading ? null : activeClasses.length }]} />
+        <div className="ae-manage__toolbar">
+          <label className="ae-search" data-bes-keep-search="true">
             <WorkspaceIcon name="search" size={17} />
             <input
               value={manageClassQuery}
               onChange={(event) => setManageClassQuery(event.target.value)}
-              placeholder="Tìm kiếm tên lớp, môn học, giáo viên..."
+              placeholder="Tìm theo tên lớp, môn học, giáo viên…"
               aria-label="Tìm kiếm lớp quản lý"
             />
           </label>
@@ -335,35 +332,33 @@ export default function AttendanceClassManagementWorkspace({
             onChange={(event) => importExcel?.(event.target.files?.[0])}
             hidden
           />
-          <button type="button" className="attendance-manage-import-button" disabled={busy} onClick={() => fileRef?.current?.click()}>
+          <button type="button" className="ae-button" disabled={busy} onClick={() => fileRef?.current?.click()}>
             <WorkspaceIcon name="upload" size={17} />
             {busy ? 'Đang xử lý…' : 'Chọn file Excel'}
           </button>
         </div>
 
-        <div className="attendance-manage-filter-chips" aria-label="Bộ lọc lớp">
-          <div role="group" aria-label="Loại lớp">
+        <div className="ae-manage__filters" aria-label="Bộ lọc lớp">
+          <div className="ae-segments" role="group" aria-label="Loại lớp">
             {[
               ['all', 'Tất cả'],
               ['remedial', 'Phụ đạo'],
               ['gifted', 'Bồi dưỡng'],
             ].map(([value, label]) => (
-              <button key={value} type="button" className={manageTypeFilter === value ? 'is-active' : ''} onClick={() => setManageTypeFilter(value)}>{label}</button>
+              <button key={value} type="button" aria-pressed={manageTypeFilter === value} onClick={() => setManageTypeFilter(value)}>{label}</button>
             ))}
           </div>
-          <span className="attendance-manage-filter-divider" aria-hidden="true" />
-          <div role="group" aria-label="Khối lớp">
+          <div className="ae-segments" role="group" aria-label="Khối lớp">
             {[
               ['all', 'Tất cả khối'],
               ['10', 'Khối 10'],
               ['11', 'Khối 11'],
               ['12', 'Khối 12'],
             ].map(([value, label]) => (
-              <button key={value} type="button" className={manageGradeFilter === value ? 'is-active' : ''} onClick={() => setManageGradeFilter(value)}>{label}</button>
+              <button key={value} type="button" aria-pressed={manageGradeFilter === value} onClick={() => setManageGradeFilter(value)}>{label}</button>
             ))}
           </div>
-          <span className="attendance-manage-result-count">{filteredManageClasses.length}/{activeClasses.length} lớp</span>
-          <div className="attendance-manage-display-toggle" role="group" aria-label="Kiểu hiển thị lớp">
+          <div className="ae-segments ae-manage__display" role="group" aria-label="Kiểu hiển thị lớp">
             <button type="button" className={manageDisplay === 'grid' ? 'is-active' : ''} aria-label="Hiển thị dạng lưới" aria-pressed={manageDisplay === 'grid'} onClick={() => setManageDisplay('grid')}><WorkspaceIcon name="grid" size={17}/></button>
             <button type="button" className={manageDisplay === 'list' ? 'is-active' : ''} aria-label="Hiển thị dạng danh sách" aria-pressed={manageDisplay === 'list'} onClick={() => setManageDisplay('list')}><WorkspaceIcon name="list" size={17}/></button>
           </div>
@@ -383,10 +378,12 @@ export default function AttendanceClassManagementWorkspace({
           </section>
         ) : null}
 
-        <div className="attendance-manage-list-heading"><h2>Danh sách lớp học</h2><span>{filteredManageClasses.length} lớp phù hợp</span></div>
-        <div className={`attendance-manage-tile-grid ${manageDisplay === 'list' ? 'is-list' : ''}`}>
+        <div className="ae-section-heading">
+          <h2>Danh sách lớp học</h2>
+          {filteredManageClasses.length !== activeClasses.length && <span role="status">{filteredManageClasses.length} lớp phù hợp</span>}
+        </div>
+        <div className={`ae-manage__grid ${manageDisplay === 'list' ? 'is-list' : ''}`}>
           {filteredManageClasses.map((classRow) => {
-            const subjectKey = attendanceSubjectKey(classRow.subject);
             const room = roomForExtraClass(classRow) || 'Chưa ghi phòng';
             const weekday = weekdayLabel(classRow);
             const time = String(classRow.time_range || '').trim() || 'Chưa ghi giờ';
@@ -396,30 +393,25 @@ export default function AttendanceClassManagementWorkspace({
               <button
                 key={classRow.id}
                 type="button"
-                className={`attendance-manage-class-tile is-subject-${subjectKey} is-${classRow.class_type}`}
+                className="ae-class"
                 onClick={() => openClass(classRow)}
               >
-                <span className="attendance-manage-tile__topline">
-                  <span className="attendance-manage-tile__icon"><WorkspaceIcon name={classSubjectIcon(subjectKey)} size={23} /></span>
-                  <span className="attendance-manage-tile__eyebrow">LỚP HỌC</span>
-                  <WorkspaceIcon name="layers" size={17} />
+                <span className="ae-class__badges">
+                  <span className={`ae-tag is-${classRow.class_type}`}>{shortTypeLabel(classRow.class_type)}</span>
+                  <span className="ae-tag is-outline">{classRow.grade_level ? `Khối ${classRow.grade_level}` : 'Chưa ghi khối'}</span>
                 </span>
-                <span className="attendance-manage-tile__title">{classRow.class_name}</span>
-                <span className="attendance-manage-tile__badges">
-                  <span className={`attendance-manage-tile__type is-${classRow.class_type}`}>{shortTypeLabel(classRow.class_type)}</span>
-                  <span className="attendance-manage-tile__grade">{classRow.grade_level ? `Khối ${classRow.grade_level}` : 'Chưa ghi khối'}</span>
-                </span>
-                <span className="attendance-manage-tile__meta">
-                  <span className="attendance-manage-tile__subject"><WorkspaceIcon name="book" size={16}/><span>Môn học</span><strong>{classRow.subject || 'Chưa ghi môn'}</strong></span>
-                  <span className="attendance-manage-tile__teacher" title={teacher}><WorkspaceIcon name="teacher" size={16}/><span>Giáo viên</span><strong>{teacher}</strong></span>
-                  <span className="attendance-manage-tile__room"><WorkspaceIcon name="room" size={16}/><span>Phòng học</span><strong>{room === 'Chưa ghi phòng' ? room : `Phòng ${room}`}</strong></span>
-                  <span className="attendance-manage-tile__weekday attendance-manage-tile__time"><WorkspaceIcon name="calendar" size={16}/><span>Thời gian</span><strong>{weekday} · {time}</strong></span>
-                  <span className="attendance-manage-tile__students"><WorkspaceIcon name="users" size={16}/><span>Sĩ số</span><strong>{studentCount} học sinh</strong></span>
+                <strong className="ae-class__name">{classRow.class_name}</strong>
+                <span className="ae-class__fields">
+                  <span><WorkspaceIcon name="book" size={17}/><span>Môn học</span><strong>{classRow.subject || 'Chưa ghi môn'}</strong></span>
+                  <span><WorkspaceIcon name="teacher" size={17}/><span>Giáo viên</span><strong>{teacher}</strong></span>
+                  <span><WorkspaceIcon name="room" size={17}/><span>Phòng học</span><strong>{room}</strong></span>
+                  <span><WorkspaceIcon name="calendar" size={17}/><span>Thời gian</span><strong>{weekday} · {time}</strong></span>
+                  <span><WorkspaceIcon name="users" size={17}/><span>Sĩ số</span><strong>{studentCount} học sinh</strong></span>
                 </span>
               </button>
             );
           })}
-          {!filteredManageClasses.length ? <AttendanceEmpty title="Không có lớp phù hợp" description="Thay đổi từ khóa, loại lớp hoặc khối để tiếp tục tìm kiếm." /> : null}
+          {!loading && !filteredManageClasses.length ? <AttendanceEmpty title="Không có lớp phù hợp" description="Thay đổi từ khóa, loại lớp hoặc khối để tiếp tục tìm kiếm." /> : null}
         </div>
       </section>
     );

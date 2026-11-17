@@ -111,6 +111,11 @@ function ensureFilter() {
   }
 
   let bar = document.getElementById(FILTER_ID);
+  if (host.dataset.attendanceEditorialView === 'report') {
+    bar?.remove();
+    closePanel();
+    return;
+  }
   if (!bar) {
     bar = document.createElement('section');
     bar.id = FILTER_ID;
