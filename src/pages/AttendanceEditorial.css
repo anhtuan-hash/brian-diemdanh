@@ -88,6 +88,31 @@
   box-shadow: none !important;
 }
 
+.attendance-workspace-page .attendance-shell.is-standalone[data-attendance-editorial-view="archive"] > .attendance-banner {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin: 0 !important;
+  padding: 9px 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--ae-ink) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--ae-ink) !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-attendance-editorial-view="archive"] > .attendance-banner::before {
+  content: "";
+  flex: 0 0 .65em;
+  height: .65em;
+  align-self: center;
+  background: var(--ae-red);
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-attendance-editorial-view="archive"] > .attendance-banner.is-success::before {
+  background: var(--ae-green);
+}
+
 [data-attendance-editorial-view] .attendance-tab-badge {
   padding: 3px 6px !important;
   border-radius: 0 !important;
@@ -393,6 +418,52 @@
 .ae-class__fields strong { min-width: 0; overflow-wrap: anywhere; font-weight: 800; }
 
 .ae-archive__filters { grid-template-columns: minmax(0, 1.6fr) repeat(2, minmax(0, 1fr)) auto; }
+
+[data-attendance-editorial-view="archive"] .ae-archive__filters .ae-search {
+  min-height: var(--ae-field-height);
+  box-sizing: border-box;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-attendance-editorial-view="archive"] .ae-archive__filters .ae-search > input {
+  border: 0 !important;
+  outline-offset: -2px;
+}
+
+[data-attendance-editorial-view="archive"] .ae-archive__filters input::placeholder { color: var(--ae-lined); }
+
+.ae-archive__empty {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(12px, 2vw, 26px);
+  padding: clamp(23px, 4vw, 54px) 0;
+  border-bottom: 1px solid var(--ae-ink);
+  color: var(--ae-ink);
+}
+
+.ae-archive__empty > span {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: clamp(40px, 5vw, 56px);
+  aspect-ratio: 1;
+  border: 1px solid var(--ae-ink);
+}
+
+.ae-archive__empty h2 {
+  margin: 0;
+  color: inherit;
+  font-size: clamp(1.45rem, 3.2vw, 2.9rem);
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: -.055em;
+}
+
+.ae-archive__empty p {
+  margin: .5rem 0 0;
+  color: var(--ae-lined);
+  line-height: 1.4;
+}
+
 .ae-archive__actions { display: flex; gap: 7px; justify-content: flex-end; }
 .ae-archive__actions .ae-button { white-space: nowrap; }
 .ae-archive__table { min-width: 990px; }
