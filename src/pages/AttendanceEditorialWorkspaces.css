@@ -395,7 +395,7 @@ html body .attendance-site .attendance-workspace-page .attendance-shell.is-stand
   gap: 7px;
 }
 
-.attendance-site .attendance-shell .attendance-editorial-history .ahv3__search input {
+html body .attendance-site .attendance-workspace-page .attendance-shell[data-editorial-page="history"] .attendance-editorial-history label.ahv3__search > input {
   width: 100%;
   min-width: 0;
   padding: 0 !important;
@@ -403,6 +403,8 @@ html body .attendance-site .attendance-workspace-page .attendance-shell.is-stand
   color: var(--attendance-ink) !important;
   background: transparent !important;
   box-shadow: none !important;
+  border-radius: 0 !important;
+  font: inherit !important;
 }
 
 .attendance-site .attendance-shell .attendance-editorial-history :is(.ahv3__filters, .ahv3__date-filters) {
@@ -627,6 +629,67 @@ html body .attendance-site .attendance-workspace-page .attendance-shell[data-edi
 
 .attendance-shell .attendance-editorial-history .attendance-editorial-history-back { display: none; }
 
+.attendance-editorial-history .ahv3__hero::before { content: none !important; }
+
+/* The compatibility bridge carries session context for legacy listeners. */
+.attendance-editorial-history > .ahv3__detail > .bes-history-post-confirm-bridge[hidden] {
+  display: none !important;
+}
+
+.attendance-site [data-editorial-page="history"] .attendance-editorial-history .ahv3__filter-meta {
+  min-height: 0;
+  padding-block: 2px;
+  color: #555148;
+}
+
+.attendance-site [data-editorial-page="history"] .attendance-editorial-history .ahv3__filter-meta button {
+  padding: 5px 7px;
+  border: 1px solid var(--attendance-line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--attendance-ink);
+}
+
+.attendance-site [data-editorial-page="history"] .attendance-editorial-history .ahv3__filter-meta.is-invalid {
+  color: #a3261b;
+}
+
+.attendance-site [data-editorial-page="history"] .attendance-editorial-history :is(.ahv3__items time, .ahv3__audit-actor-panel__grid span, .ahv3__note p) {
+  color: #555148 !important;
+  font-size: .87rem;
+}
+
+.attendance-site [data-editorial-page="history"] .attendance-editorial-history :is(.ahv3__audit-actor-panel__head strong, .ahv3__late-section header strong, .ahv3__absent-section header strong, .ahv3__note > strong, .ahv3__empty-attendance b, .ahv3__audit-actor-panel__grid b) {
+  color: var(--attendance-ink) !important;
+}
+
+.attendance-site [data-editorial-page="history"] .attendance-editorial-history :is(.ahv3__late-section, .ahv3__absent-section) header > div > span {
+  display: inline-block;
+  padding: .12em .4em;
+  background: transparent;
+  border: 1px solid var(--attendance-line);
+  border-radius: 0;
+  color: #555148;
+  font-size: .72rem;
+}
+
+.attendance-site [data-editorial-page="history"] .attendance-editorial-history .ahv3__empty-attendance {
+  display: block !important;
+  min-height: 0 !important;
+  text-align: start !important;
+}
+
+.attendance-site [data-editorial-page="history"] .attendance-editorial-history .ahv3__audit-actor-panel__grid {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 6px 26px;
+}
+
+.attendance-site [data-editorial-page="history"] .attendance-editorial-history .ahv3__actions > button svg {
+  flex: 0 0 auto;
+}
+
 /* Supplemental classes */
 .attendance-site .attendance-workspace-page .attendance-shell.is-standalone #bes-supplemental-learning-admin {
   margin: 0 !important;
@@ -717,7 +780,7 @@ html body .attendance-site .attendance-workspace-page .attendance-shell[data-edi
   box-shadow: none !important;
 }
 
-.attendance-site .attendance-workspace-page .attendance-shell.is-standalone #bes-supplemental-learning-admin .attendance-editorial-supplemental button.is-primary {
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone #bes-supplemental-learning-admin .attendance-editorial-supplemental :is(.bes-supplemental-class-toolbar, .bes-supplemental-class-card, .bes-supplemental-class-editor) button.is-primary {
   color: white !important;
   background: var(--attendance-red) !important;
   border-color: var(--attendance-red) !important;
@@ -773,6 +836,25 @@ html body .attendance-site .attendance-workspace-page .attendance-shell[data-edi
     padding-inline-start: 0;
     border-inline-start: 0;
   }
+}
+
+@media (max-width: 900px) {
+  html body .attendance-site .attendance-workspace-page .attendance-shell[data-editorial-page="history"] .attendance-editorial-history {
+    grid-template-rows: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  html body .attendance-site .attendance-workspace-page .attendance-shell[data-editorial-page="history"] .attendance-editorial-history .ahv3__list-head {
+    display: grid !important;
+    background: transparent !important;
+  }
+
+  html body .attendance-site .attendance-workspace-page .attendance-shell[data-editorial-page="history"] .attendance-editorial-history .ahv3__list {
+    display: grid !important;
+  }
+
+  .attendance-editorial-history .ahv3__stat-grid > article { grid-column: auto !important; }
 }
 
 @media (max-width: 760px) {
@@ -834,7 +916,152 @@ html body .attendance-site .attendance-workspace-page .attendance-shell[data-edi
     padding: 4px !important;
   }
 
+  html body .attendance-site .attendance-workspace-page .attendance-shell[data-editorial-page="history"] .attendance-editorial-history :is(.ahv3__audit-actor-panel, .ahv3__late-section, .ahv3__absent-section, .ahv3__note) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+
   .attendance-site .attendance-shell .attendance-editorial-history .ahv3__stat-grid small {
     display: none;
+  }
+}
+
+#bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-class-editor .bes-supplemental-editor-heading {
+  display: flex !important;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px 20px;
+  padding: clamp(14px, 2vw, 27px) 0 !important;
+  margin: 0 !important;
+  border-bottom: 2px solid var(--attendance-ink) !important;
+}
+
+#bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-editor-heading h3 {
+  margin: 0;
+  color: var(--attendance-ink);
+  font-size: clamp(1.7rem, 3.5vw, 3.25rem);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -.055em;
+}
+
+#bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-editor-heading span {
+  color: var(--attendance-red);
+}
+
+#bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-class-form {
+  gap: 0;
+}
+
+#bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-editor-card > header {
+  flex-wrap: wrap;
+  margin-bottom: 13px;
+}
+
+#bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-editor-card h4 {
+  font-size: clamp(1.15rem, 1.9vw, 1.7rem);
+  font-weight: 850;
+  letter-spacing: -.035em;
+}
+
+#bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-form-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+
+#bes-supplemental-learning-admin .attendance-editorial-supplemental :is(.bes-supplemental-editor-card label, .bes-supplemental-weekdays legend) {
+  font-size: .9rem;
+  color: var(--attendance-ink);
+}
+
+#bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-weekdays > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+#bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-day {
+  margin: 0;
+  min-height: 38px;
+  border: 1px solid var(--attendance-line);
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+#bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-day:has(input:checked) {
+  background: var(--attendance-selection);
+  border-color: var(--attendance-ink);
+}
+
+#bes-supplemental-learning-admin .attendance-editorial-supplemental input[type="checkbox"] {
+  width: 17px !important;
+  height: 17px;
+  accent-color: var(--attendance-red);
+}
+
+#bes-supplemental-learning-admin .attendance-editorial-supplemental :is(.bes-supplemental-teacher-row, .bes-supplemental-add-member, .bes-supplemental-member-row) {
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+
+#bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-teacher-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  padding-bottom: 8px;
+}
+
+#bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-editor-hint {
+  margin: 0;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--attendance-line);
+  color: #555148;
+}
+
+#bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-savebar {
+  position: static !important;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0 !important;
+  border: 0 !important;
+  border-bottom: 2px solid var(--attendance-ink) !important;
+  border-radius: 0;
+  background: transparent !important;
+  backdrop-filter: none;
+}
+
+#bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-savebar p {
+  margin: 0;
+  color: #a3261b;
+  font-weight: 650;
+}
+
+#bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-savebar p:empty { display: none; }
+
+#bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-savebar > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-inline-start: auto;
+}
+
+@media (max-width: 880px) {
+  #bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  #bes-supplemental-learning-admin .attendance-editorial-supplemental :is(.bes-supplemental-form-grid, .bes-supplemental-teacher-row) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-teacher-row > button {
+    justify-self: end;
   }
 }

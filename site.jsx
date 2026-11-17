@@ -74,7 +74,8 @@ export default function AttendanceSite() {
   }
 
   return (
-    <div className="app-shell attendance-site" data-route={showLogin ? 'login' : 'attendance'}>
+    <div className="app-shell attendance-site" data-route={showLogin ? 'login' : 'attendance'}
+      data-attendance-editorial-account={!showLogin && canAccess && admin && adminPage ? route : undefined}>
       {showLogin ? (
         <AuthPage language="vi" mode={route === 'register' ? 'register' : 'login'}
           onLogin={() => { window.location.hash = attendanceHash.current; }} />

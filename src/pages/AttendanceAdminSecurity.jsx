@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { getRuntimeClient } from '../services/runtime/core.js';
 import { initializeAuthSession } from '../utils/auth.js';
+import AttendanceEditorialHeading from '../components/attendance/AttendanceEditorialHeading.jsx';
+import './AttendanceAccountEditorial.css';
 
 export default function AttendanceAdminSecurity({ required }) {
   const [saving, setSaving] = useState(false);
@@ -29,19 +31,27 @@ export default function AttendanceAdminSecurity({ required }) {
   }
 
   return (
-    <section className="bes-mfa-settings" aria-labelledby="attendance-security-title" style={{ maxWidth: 680, margin: '24px auto' }}>
-      <header className="bes-mfa-settings-head">
-        <h1 id="attendance-security-title">Bảo mật tài khoản</h1>
-        <strong className={required ? 'enabled' : 'disabled'}>{required ? 'Đang bật' : 'Đang tắt'}</strong>
-      </header>
-      <p>Khi tắt, tài khoản Admin này dùng mật khẩu để đăng nhập Brian Điểm danh. Thầy có thể bật lại bất cứ lúc nào.</p>
-      <div className="bes-mfa-actions">
-        <button type="button" disabled={saving} onClick={updateRequirement}>
-          {saving ? 'Đang lưu…' : required ? 'Tắt xác thực hai yếu tố' : 'Bật xác thực hai yếu tố'}
-        </button>
+    <section className="attendance-account-security" aria-labelledby="attendance-security-title">
+      <AttendanceEditorialHeading title="Bảo mật tài khoản" titleId="attendance-security-title" />
+      <div className="attendance-account-security__setting">
+        <div>
+          <h2>Xác thực hai yếu tố</h2>
+          <span className="attendance-account-security__status" data-enabled={String(Boolean(required))}>
+            {required ? 'Đang bật' : 'Đang tắt'}
+          </span>
+        </div>
+        <div>
+          <p>{required
+            ? 'Tài khoản quản trị viên dùng mật khẩu và mã từ ứng dụng xác thực để đăng nhập BRIAN Điểm danh.'
+            : 'Tài khoản quản trị viên hiện dùng mật khẩu để đăng nhập BRIAN Điểm danh.'}</p>
+          <button type="button" className="attendance-account__action" data-variant={required ? 'outline' : 'primary'}
+            disabled={saving} onClick={updateRequirement}>
+            {saving ? 'Đang lưu…' : required ? 'Tắt xác thực hai yếu tố' : 'Bật xác thực hai yếu tố'}
+          </button>
+          {error && <p role="alert" className="attendance-account__error">{error}</p>}
+          {notice && <p role="status" className="attendance-account__notice">{notice}</p>}
+        </div>
       </div>
-      {error && <p role="alert" className="bes-mfa-warning">{error}</p>}
-      {notice && <p role="status" className="bes-mfa-feedback">{notice}</p>}
     </section>
   );
 }

@@ -1,12 +1,12 @@
 import React from 'react';
 
-export default function AttendanceEditorialHeading({ title, metrics = [], className = '', loading = false }) {
+export default function AttendanceEditorialHeading({ title, titleId, metrics = [], className = '', loading = false }) {
   const headingClass = className ? `ae-heading ${className}` : 'attendance-editorial-heading';
   const metricsClass = className ? 'ae-heading__metrics' : 'attendance-editorial-heading__metrics';
 
   return (
     <header className={headingClass}>
-      <h1>{title}</h1>
+      <h1 id={titleId}>{title}</h1>
       {metrics.length > 0 && (
         <dl className={metricsClass} aria-live="polite" aria-busy={loading}>
           {metrics.map(({ label, value }, index) => (

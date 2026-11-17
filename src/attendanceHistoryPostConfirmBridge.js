@@ -120,6 +120,7 @@ function ensureCompatibilitySurface(snapshot, resolved) {
   if (!surface) {
     surface = document.createElement('div');
     surface.className = 'bes-history-post-confirm-bridge';
+    surface.hidden = true;
     surface.setAttribute(BRIDGE_ATTRIBUTE, 'true');
     surface.innerHTML = `
       <div class="attendance-rollcall-head" hidden><h2></h2></div>
