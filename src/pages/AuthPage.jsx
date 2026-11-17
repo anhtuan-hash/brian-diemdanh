@@ -229,7 +229,9 @@ export default function AuthPage({ mode = 'login', language, onLogin, setGlobalL
               <input id="auth-email" name="email" type={isRegister ? 'email' : 'text'}
                 value={form.email} onChange={updateField} autoComplete={isRegister ? 'email' : 'username'}
                 autoCapitalize="none" spellCheck={false}
-                placeholder={isRegister ? 'name@school.edu' : vi ? 'Ví dụ: gv001' : 'Example: gv001'} />
+                placeholder={isRegister
+                  ? (vi ? 'ten@truong.edu.vn' : 'name@school.edu')
+                  : (vi ? 'Ví dụ: gv001' : 'Example: gv001')} />
             </div>
           )}
 

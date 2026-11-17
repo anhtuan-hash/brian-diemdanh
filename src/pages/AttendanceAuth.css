@@ -130,7 +130,7 @@
 }
 
 .attendance-auth-toggle,
-.attendance-auth button.attendance-auth-link {
+.attendance-auth :where(button.attendance-auth-link) {
   border: 0;
   background: transparent;
   font: inherit;
