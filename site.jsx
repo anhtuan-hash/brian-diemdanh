@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import AdminMfaSecurity from './src/components/AdminMfaSecurity.jsx';
-import TeacherFirstLoginPasswordGate from './src/components/TeacherFirstLoginPasswordGate.jsx';
 import { LoginPaperMasthead } from './src/features/login-scrapbook/LoginPaperArtwork.jsx';
 import AttendanceWorkspace from './src/pages/AttendanceWorkspace.jsx';
 import AuthPage from './src/pages/AuthPage.jsx';
@@ -96,7 +95,6 @@ export default function AttendanceSite() {
               <p role="alert">Tài khoản này chưa có quyền truy cập Điểm danh.</p>
             </main>
           )}
-          <TeacherFirstLoginPasswordGate currentUser={user} language="vi" />
         </>
       )}
     </div>
