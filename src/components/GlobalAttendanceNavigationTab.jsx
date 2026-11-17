@@ -42,6 +42,7 @@ import AttendanceMonthlyReport from './attendance/AttendanceMonthlyReport.jsx';
 import AttendanceClassManagementWorkspace from './attendance/AttendanceClassManagementWorkspace.jsx';
 import AttendanceDailySchedule from './attendance/AttendanceDailySchedule.jsx';
 import AttendanceEditorialHeading from './attendance/AttendanceEditorialHeading.jsx';
+import AttendanceHistoryRecords from './attendance/AttendanceHistoryRecords.jsx';
 import AttendanceArchivePanel from './attendance/AttendanceArchivePanel.jsx';
 import { ATTENDANCE_PROOF_BUCKET, buildAttendanceProofPath, prepareAttendanceProofImage } from '../utils/attendanceProofImage.js';
 import { filterAndSortAttendanceHistory } from '../utils/attendanceHistoryFilters.js';
@@ -111,6 +112,7 @@ const PATHS = {
   periods: 'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm1 5h12V6H6v2Zm0 5h12v-2H6v2Zm0 5h8v-2H6v2Z',
   late: 'M12 2a10 10 0 1 0 9.5 13h-2.2A8 8 0 1 1 12 4v8l5 3-1 1.7-6-3.6V4.3A8 8 0 0 1 12 4V2Zm8 1v6h-2V3h2Zm0 8a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6Z',
   absent: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.4 0-8 2.2-8 5v3h12.2a6.5 6.5 0 0 1-.2-1.5c0-2.2 1.1-4.2 2.8-5.4A15 15 0 0 0 9 13Zm10 1.6 1.4 1.4-1.9 1.9 1.9 1.9-1.4 1.4-1.9-1.9-1.9 1.9-1.4-1.4 1.9-1.9-1.9-1.9 1.4-1.4 1.9 1.9 1.9-1.9Z',
+  search: 'M10.5 3a7.5 7.5 0 1 0 4.59 13.43L20 21.34 21.34 20l-4.91-4.91A7.5 7.5 0 0 0 10.5 3Zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11Z',
   camera: 'M9 4 7.5 6H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2.5L15 4H9Zm3 13a4 4 0 1 1 0-8 4 4 0 0 1 0 8Zm0-2a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z',
 };
 
@@ -276,6 +278,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [records, setRecords] = useState([]);
   const historyRecordRequest = useRef(0);
+  const [historyRecordPhase, setHistoryRecordPhase] = useState('loading');
   const historyDetailRef = useRef(null);
   const historyListRef = useRef(null);
   const [calendarSessions, setCalendarSessions] = useState([]);
@@ -1394,26 +1397,37 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
 
   function loadSupplementalSessionRecords(session) {
     if (!session || !isSupplementalHistorySession(session)) return;
+    historyRecordRequest.current += 1;
     setSelectedSessionId(session.id);
     setError('');
     setRecords(Array.isArray(session.history_records) ? session.history_records : []);
+    setHistoryRecordPhase('ready');
   }
 
   async function loadSessionRecords(sessionId) {
     if (!client || !sessionId) return;
-    const request = ++historyRecordRequest.current;
     const supplementalSession = supplementalHistorySessions.find((session) => String(session.id) === String(sessionId));
     if (supplementalSession) {
       loadSupplementalSessionRecords(supplementalSession);
       return;
     }
+
+    const request = ++historyRecordRequest.current;
     if (String(sessionId) !== String(selectedSessionId)) setRecords([]);
     setSelectedSessionId(sessionId);
+    setHistoryRecordPhase('loading');
     setError('');
-    const { data, error: recordError } = await client.from('bes_extra_attendance_records').select(RECORD_COLUMNS).eq('session_id', sessionId).order('student_full_name', { ascending: true });
-    if (request !== historyRecordRequest.current) return;
-    if (recordError) setError(recordError.message);
-    else setRecords(data || []);
+    try {
+      const { data, error: recordError } = await client.from('bes_extra_attendance_records').select(RECORD_COLUMNS).eq('session_id', sessionId).order('student_full_name', { ascending: true });
+      if (request !== historyRecordRequest.current) return;
+      if (recordError) throw recordError;
+      setRecords(data || []);
+      setHistoryRecordPhase('ready');
+    } catch (recordError) {
+      if (request !== historyRecordRequest.current) return;
+      setError(recordError?.message || 'Chưa tải được danh sách học sinh.');
+      setHistoryRecordPhase('error');
+    }
   }
   async function deleteAttendanceSession(session) {
     if (!session || busy || !client || !canDeleteAttendanceHistory) return;
@@ -1697,7 +1711,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
   const historyAudit = selectedSession ? (
     <section className="ahv3__audit-actor-panel" aria-label="Nhật ký người thao tác">
                   <header className="ahv3__audit-actor-panel__head">
-                    <div><strong>Nhật ký người thao tác</strong><span>Dữ liệu chốt buổi</span></div>
+                    <div><strong>{useEditorialHistory ? 'Nhật ký thao tác' : 'Nhật ký người thao tác'}</strong><span>Dữ liệu chốt buổi</span></div>
                   </header>
                   <div className="ahv3__audit-actor-panel__grid">
                     <div><span>Người thao tác</span><b>{selectedSession.checked_by_name || selectedSession.checked_by || 'Không ghi nhận'}</b></div>
@@ -2004,7 +2018,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
               <section className="ahv3__list" ref={historyListRef} tabIndex={-1}>
                 <header className="ahv3__list-head">
                   <div className="ahv3__list-title"><div><strong>Lịch sử điểm danh</strong><p>Tra cứu các buổi đã chốt và buổi đã hủy.</p></div><div className="ahv3__list-actions"><span>{filteredHistory.length} buổi</span>{canDeleteAttendanceHistory ? <button type="button" className={historySelectionMode ? 'is-active' : ''} disabled={busy} onClick={toggleHistorySelectionMode}>{historySelectionMode ? 'Thoát chọn' : 'Chọn nhiều'}</button> : null}</div></div>
-                  <label className="ahv3__search" data-bes-keep-search="true"><Icon name="history" size={16} /><input value={historyQuery} onChange={(event) => setHistoryQuery(event.target.value)} aria-label="Tìm buổi điểm danh" placeholder="Tìm tên lớp, môn học, giáo viên hoặc ngày…" /></label>
+                  <label className="ahv3__search" data-bes-keep-search="true"><Icon name="search" size={16} /><input value={historyQuery} onChange={(event) => setHistoryQuery(event.target.value)} aria-label="Tìm buổi điểm danh" placeholder="Tìm tên lớp, môn học, giáo viên hoặc ngày…" /></label>
                   <div className="ahv3__filters">
                     <label><span>Loại lớp</span><select value={historyType} onChange={(event) => setHistoryType(event.target.value)}><option value="all">Tất cả loại lớp</option><option value="remedial">Phụ đạo</option><option value="gifted">Bồi dưỡng HSG</option>{canSeeSupplementalHistory ? <option value="supplemental">Học bổ sung</option> : null}</select></label>
                     <label><span>Sắp xếp theo ngày</span><select value={historySort} onChange={(event) => setHistorySort(event.target.value)}><option value="desc">Mới nhất → cũ nhất</option><option value="asc">Cũ nhất → mới nhất</option></select></label>
@@ -2019,7 +2033,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
                   </div>
                   {historySelectionMode ? <div className="ahv3__bulk-toolbar"><button type="button" disabled={busy || !filteredHistory.length} onClick={toggleAllFilteredHistorySelection}>{allFilteredHistorySelected ? 'Bỏ chọn kết quả' : 'Chọn tất cả kết quả'}</button><span>Đã chọn <b>{selectedHistorySessionIds.length}</b> buổi</span><button type="button" className="is-danger" disabled={busy || !selectedHistorySessionIds.length} onClick={deleteSelectedHistorySessions}><Icon name="trash" size={16} />{busy ? 'Đang lưu trữ…' : `Lưu trữ ${selectedHistorySessionIds.length} buổi`}</button></div> : null}
                 </header>
-                <div className="ahv3__items">{filteredHistory.map((session, historyIndex) => {
+                <div className="ahv3__items" role={useEditorialHistory ? 'region' : undefined} aria-label={useEditorialHistory ? 'Danh sách buổi điểm danh' : undefined} tabIndex={useEditorialHistory ? 0 : undefined}>{filteredHistory.map((session, historyIndex) => {
                   const rate = session.session_status === 'cancelled' || !Number(session.total_students) ? null : Math.round((Number(session.present_count || 0) / Number(session.total_students)) * 100);
                   const isBulkSelected = selectedHistorySessionIdSet.has(String(session.id));
                   return <button key={session.id} type="button" className={`${String(selectedSessionId) === String(session.id) && !historySelectionMode ? 'is-selected' : ''}${historySelectionMode ? ' is-bulk-mode' : ''}${isBulkSelected ? ' is-bulk-selected' : ''}`.trim()} aria-pressed={historySelectionMode ? isBulkSelected : String(selectedSessionId) === String(session.id)} onClick={() => {
@@ -2067,14 +2081,26 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
                 </> : <>
                   <h3 className="ahv3__section-title ahv3__summary-title"><span aria-hidden="true"><Icon name="attendance" size={14} /></span>Tổng hợp điểm danh</h3>
                   <div className="ahv3__stat-grid">
-                    <article><span className="ahv3__summary-icon is-blue" aria-hidden="true"><Icon name="people" size={19} /></span><b>{selectedSession.total_students}</b><span>Sĩ số lớp</span></article>
+                    <article><span className="ahv3__summary-icon is-blue" aria-hidden="true"><Icon name="people" size={19} /></span><b>{selectedSession.total_students}</b><span>{useEditorialHistory ? 'Sĩ số' : 'Sĩ số lớp'}</span></article>
                     <article className="is-present"><span className="ahv3__summary-icon is-green" aria-hidden="true"><Icon name="check" size={19} /></span><b>{selectedSession.present_count}</b><span>Có mặt</span><small>Đã gồm học sinh đi trễ</small></article>
-                    <article className="is-late"><span className="ahv3__summary-icon is-orange" aria-hidden="true"><Icon name="late" size={19} /></span><b>{selectedLateRecords.length}</b><span>Đi trễ</span><small>Vẫn tính có mặt</small></article>
+                    <article className="is-late"><span className="ahv3__summary-icon is-orange" aria-hidden="true"><Icon name="late" size={19} /></span><b>{useEditorialHistory && historyRecordPhase !== 'ready' ? '—' : selectedLateRecords.length}</b><span>Đi trễ</span><small>Vẫn tính có mặt</small></article>
                     <article className="is-absent"><span className="ahv3__summary-icon is-red" aria-hidden="true"><Icon name="absent" size={19} /></span><b>{selectedSession.absent_count}</b><span>Vắng</span></article>
-                    <article className="ahv3__rate-card"><b>{selectedSessionAttendanceRate ?? 0}%</b><span>Tỷ lệ chuyên cần</span><span className="ahv3__rate-ring" style={{ '--attendance-rate': `${selectedSessionAttendanceRate ?? 0}%` }} aria-hidden="true" /></article>
+                    <article className="ahv3__rate-card"><b>{selectedSessionAttendanceRate ?? 0}%</b><span>{useEditorialHistory ? 'Chuyên cần' : 'Tỷ lệ chuyên cần'}</span><span className="ahv3__rate-ring" style={{ '--attendance-rate': `${selectedSessionAttendanceRate ?? 0}%` }} aria-hidden="true" /></article>
                   </div>
 
-                  {historyAudit}
+                  {useEditorialHistory ? <>
+                    <div className="attendance-history-audit-strip">
+                      {historyAudit}
+                      {historyRecordPhase === 'ready' && selectedLateRecords.length === 0 && (
+                        <p><strong>Đi trễ</strong> · 0 học sinh</p>
+                      )}
+                    </div>
+                    {historyRecordPhase === 'ready' && selectedLateRecords.length > 0 && (
+                      <AttendanceHistoryRecords records={selectedLateRecords} phase={historyRecordPhase} />
+                    )}
+                    <AttendanceHistoryRecords records={selectedAbsentRecords} absent phase={historyRecordPhase} />
+                  </> : <>
+                    {historyAudit}
                   <section className={`ahv3__late-section ${!selectedLateRecords.length ? 'is-empty' : ''}`.trim()}>
                     <header><div><strong>Danh sách học sinh đi trễ</strong><span>{selectedLateRecords.length} học sinh</span></div></header>
                     {selectedLateRecords.length ? (
@@ -2102,6 +2128,8 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
                       </div>
                     )}
                   </section>
+
+                  </>}
 
                   <div className="ahv3__footer-grid"><section className="ahv3__note"><strong>Ghi chú buổi học</strong><p>{selectedSession.note || 'Chưa có ghi chú cho buổi học này.'}</p></section><section className="ahv3__lock"><strong>Nhật ký chốt buổi</strong><div><span>Chốt lúc</span><b>{formatDateTime(selectedSession.checked_at)}</b></div><div><span>Trạng thái</span><b>Đã chốt</b></div></section></div>
                 </>}

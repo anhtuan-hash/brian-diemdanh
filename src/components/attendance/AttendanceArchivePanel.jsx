@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import AttendanceEditorialHeading from './AttendanceEditorialHeading.jsx';
-import { AttendanceEmpty, AttendanceUiIcon } from './AttendanceWorkspaceUI.jsx';
+import { AttendanceUiIcon } from './AttendanceWorkspaceUI.jsx';
 
 const archivedAtFormatter = new Intl.DateTimeFormat('vi-VN', {
   dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh',
@@ -115,9 +115,13 @@ export default function AttendanceArchivePanel({
 
       {loading && <p role="status" className="ae-message">Đang tải Kho lưu trữ…</p>}
       {!loading && filtered.length === 0 && (
-        <AttendanceEmpty icon="archive"
-          title={combined.length ? 'Không có mục phù hợp' : 'Kho lưu trữ đang trống'}
-          description={combined.length ? 'Thay đổi từ khóa hoặc bộ lọc để xem kết quả.' : 'Các lớp và buổi học được lưu trữ sẽ hiển thị tại đây.'} />
+        <div className="ae-archive__empty" role="status">
+          <span aria-hidden="true"><AttendanceUiIcon name={combined.length ? 'search' : 'archive'} size={30} /></span>
+          <div>
+            <h2>{combined.length ? 'Không có mục phù hợp' : 'Kho lưu trữ đang trống'}</h2>
+            <p>{combined.length ? 'Thay đổi từ khóa hoặc bộ lọc để xem kết quả.' : 'Các lớp và buổi học được lưu trữ sẽ hiển thị tại đây.'}</p>
+          </div>
+        </div>
       )}
 
       {!loading && filtered.length > 0 && (
