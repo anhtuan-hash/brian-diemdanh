@@ -1,0 +1,234 @@
+.attendance-auth {
+  --attendance-auth-canvas: #f8f8f5;
+  --attendance-auth-ink: #161616;
+  --attendance-auth-accent: #123ecc;
+  --attendance-auth-rule: #cecec8;
+  --attendance-auth-gutter: clamp(1.25rem, 3.85vw, 4.25rem);
+
+  min-height: 100dvh;
+  padding-inline: var(--attendance-auth-gutter);
+  color: var(--attendance-auth-ink);
+  background: var(--attendance-auth-canvas);
+  font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.35;
+}
+
+.attendance-auth-masthead {
+  display: flex;
+  align-items: center;
+  min-height: clamp(4.25rem, 6.12vw, 6.1rem);
+  border-bottom: 1px solid var(--attendance-auth-rule);
+}
+
+.attendance-auth-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(0.7rem, 1.14vw, 1.12rem);
+  color: inherit;
+  font-size: clamp(1.3rem, 2.1vw, 2rem);
+  font-weight: 750;
+  letter-spacing: -0.045em;
+  text-decoration: none;
+}
+
+.attendance-auth-mark {
+  position: relative;
+  display: block;
+  flex: none;
+  width: clamp(1.75rem, 2.4vw, 2.4rem);
+  aspect-ratio: 0.8;
+  overflow: hidden;
+  mix-blend-mode: multiply;
+}
+
+.attendance-auth-mark img {
+  position: absolute;
+  inset: -6% auto auto -58%;
+  width: 209%;
+  max-width: none;
+  height: auto;
+}
+
+.attendance-auth-main {
+  width: min(100%, clamp(25rem, 34vw, 33.65rem));
+  margin-inline: auto;
+  margin-top: clamp(3.5rem, 12.15vh, 7.65rem);
+  padding-bottom: 3rem;
+  border-top: 3px solid var(--attendance-auth-accent);
+}
+
+.attendance-auth-main--account {
+  margin-top: clamp(2.5rem, 7vh, 5rem);
+}
+
+.attendance-auth-main h1 {
+  margin: clamp(1rem, 1.48vw, 1.5rem) 0 clamp(2rem, 3.58vw, 3.55rem);
+  font-size: clamp(2.625rem, 4.4vw, 4.375rem);
+  line-height: 1;
+  font-weight: 650;
+  letter-spacing: -0.057em;
+}
+
+.attendance-auth-main h1 span {
+  display: block;
+  color: var(--attendance-auth-accent);
+  font-weight: 800;
+}
+
+.attendance-auth-main--account h1 {
+  font-size: clamp(2.25rem, 3.45vw, 3.5rem);
+}
+
+.attendance-auth-form {
+  display: grid;
+  gap: clamp(1.4rem, 2.13vw, 2.12rem);
+  margin: 0;
+}
+
+.attendance-auth-field {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.attendance-auth-field label {
+  font-size: clamp(1rem, 1.5vw, 1.5rem);
+  font-weight: 700;
+  letter-spacing: -0.023em;
+}
+
+.attendance-auth-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.attendance-auth-field input {
+  width: 100%;
+  min-width: 0;
+  height: clamp(3rem, 4.13vw, 4.06rem);
+  padding: 0 clamp(0.8rem, 1.14vw, 1.15rem);
+  border: 1px solid #8c8e91;
+  border-radius: 0;
+  color: inherit;
+  background: #fff;
+  font: inherit;
+  font-size: clamp(1rem, 1.48vw, 1.5rem);
+}
+
+.attendance-auth-field input::placeholder {
+  color: #68696d;
+  opacity: 1;
+}
+
+.attendance-auth-secret {
+  position: relative;
+}
+
+.attendance-auth-secret input {
+  padding-right: 4.75rem;
+}
+
+.attendance-auth-toggle,
+.attendance-auth :where(button.attendance-auth-link) {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.attendance-auth-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.35rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding-inline: 0.65rem;
+  transform: translateY(-50%);
+  color: inherit;
+  font-size: clamp(0.95rem, 1.34vw, 1.32rem);
+}
+
+.attendance-auth .attendance-auth-link {
+  display: inline-block;
+  padding: 0;
+  color: var(--attendance-auth-accent);
+  font-size: clamp(0.95rem, 1.34vw, 1.32rem);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
+.attendance-auth-submit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: clamp(3.15rem, 4.45vw, 4.375rem);
+  padding: 0.4rem clamp(1.1rem, 1.7vw, 1.7rem);
+  border: 0;
+  border-radius: 0;
+  background: var(--attendance-auth-accent);
+  color: #fff;
+  font: inherit;
+  font-size: clamp(1.25rem, 2.04vw, 2rem);
+  font-weight: 750;
+  letter-spacing: -0.025em;
+  text-align: left;
+  cursor: pointer;
+}
+
+.attendance-auth-submit:hover:not(:disabled) {
+  background: #0c31a4;
+}
+
+.attendance-auth-submit:disabled {
+  cursor: wait;
+  opacity: 0.8;
+}
+
+.attendance-auth-submit svg {
+  flex: none;
+}
+
+.attendance-auth :is(a, button, input):focus-visible {
+  outline: 2px solid var(--attendance-auth-accent);
+  outline-offset: 3px;
+}
+
+.attendance-auth-toggle:focus-visible {
+  outline-offset: 0;
+}
+
+.attendance-auth-secondary {
+  margin: clamp(1.35rem, 2.3vw, 2.25rem) 0 0;
+  padding-top: clamp(0.9rem, 1.3vw, 1.25rem);
+  border-top: 1px solid var(--attendance-auth-rule);
+  font-size: clamp(1rem, 1.52vw, 1.5rem);
+}
+
+.attendance-auth-secondary .attendance-auth-link {
+  font-size: inherit;
+}
+
+.attendance-auth-message {
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border-inline-start: 3px solid currentColor;
+  background: #fff;
+  color: #175640;
+}
+
+.attendance-auth-message--error {
+  color: #9b2132;
+}
+
+@media (max-width: 34rem) {
+  .attendance-auth-main {
+    margin-top: clamp(2.75rem, 8vh, 4rem);
+  }
+
+  .attendance-auth-label-row .attendance-auth-link {
+    min-height: 2rem;
+  }
+}

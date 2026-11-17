@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import AdminMfaSecurity from './src/components/AdminMfaSecurity.jsx';
-import { LoginPaperMasthead } from './src/features/login-scrapbook/LoginPaperArtwork.jsx';
 import AttendanceWorkspace from './src/pages/AttendanceWorkspace.jsx';
 import AttendancePermissions from './src/pages/AttendancePermissions.jsx';
 import AttendanceAdminSecurity from './src/pages/AttendanceAdminSecurity.jsx';
@@ -73,16 +72,10 @@ export default function AttendanceSite() {
   }
 
   return (
-    <div className="app-shell attendance-site" data-route={showLogin ? 'login' : 'attendance'}
-      data-login-scrapbook={showLogin && route !== 'register' ? 'on' : undefined}>
+    <div className="app-shell attendance-site" data-route={showLogin ? 'login' : 'attendance'}>
       {showLogin ? (
-        <>
-          {route !== 'register' && <LoginPaperMasthead language="vi" />}
-          <main>
-            <AuthPage language="vi" mode={route === 'register' ? 'register' : 'login'}
-              scrapbookActive={route !== 'register'} onLogin={() => { window.location.hash = attendanceHash.current; }} />
-          </main>
-        </>
+        <AuthPage language="vi" mode={route === 'register' ? 'register' : 'login'}
+          onLogin={() => { window.location.hash = attendanceHash.current; }} />
       ) : (
         <>
           <header className="attendance-site-header">
