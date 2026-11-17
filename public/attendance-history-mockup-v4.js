@@ -40,7 +40,7 @@
     </div>`;
 
   function historyRoot() {
-    return document.querySelector('.ahv3__shell[data-attendance-history-v3="true"]');
+    return document.querySelector('.ahv3__shell[data-attendance-history-v3="true"]:not(.attendance-editorial-history)');
   }
 
   function shellFor(root) {

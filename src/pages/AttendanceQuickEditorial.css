@@ -1,11 +1,11 @@
-/* Shared Swiss Editorial masthead and standalone roll-call styles. */
+/* Shared frame for Swiss Editorial attendance pages, followed by roll-call styles. Extra specificity clears older UI patches. */
 .attendance-site-header .attendance-editorial-wordmark,
 .attendance-site-header .attendance-editorial-site-caption,
 .attendance-site-header .attendance-editorial-avatar {
   display: none;
 }
 
-.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-attendance-editorial-view]):not(.bes-supplemental-admin-open)) {
+.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open)) {
   --attendance-paper: #f7f5ef;
   --brian-document-canvas: var(--attendance-paper);
   --attendance-ink: #161612;
@@ -18,7 +18,7 @@
   font-family: Inter, "Helvetica Neue", Arial, sans-serif;
 }
 
-.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-attendance-editorial-view]):not(.bes-supplemental-admin-open)) .attendance-site-header {
+.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open)) .attendance-site-header {
   min-height: 58px;
   margin-inline: var(--attendance-gutter);
   padding: 8px 0;
@@ -29,41 +29,41 @@
   font-family: inherit;
 }
 
-.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-attendance-editorial-view]):not(.bes-supplemental-admin-open)) .attendance-site-header > a {
+.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open)) .attendance-site-header > a {
   text-decoration: none;
 }
 
-.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-attendance-editorial-view]):not(.bes-supplemental-admin-open)) .attendance-site-header img {
+.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open)) .attendance-site-header img {
   width: 35px;
   height: 35px;
   filter: grayscale(1) contrast(1.1);
 }
 
-.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-attendance-editorial-view]):not(.bes-supplemental-admin-open)) .attendance-site-title {
+.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open)) .attendance-site-title {
   display: none;
 }
 
-.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-attendance-editorial-view]):not(.bes-supplemental-admin-open)) .attendance-editorial-wordmark {
+.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open)) .attendance-editorial-wordmark {
   display: inline;
   font-size: clamp(19px, 2vw, 31px);
   font-weight: 900;
   letter-spacing: -.045em;
 }
 
-.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-attendance-editorial-view]):not(.bes-supplemental-admin-open)) .attendance-editorial-site-caption {
+.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open)) .attendance-editorial-site-caption {
   display: inline;
   padding-inline-start: 14px;
   border-inline-start: 1px solid var(--attendance-ink);
   font-weight: 700;
 }
 
-.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-attendance-editorial-view]):not(.bes-supplemental-admin-open)) .attendance-site-header > div {
+.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open)) .attendance-site-header > div {
   gap: 8px 14px;
   font-size: 13px;
   font-weight: 700;
 }
 
-.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-attendance-editorial-view]):not(.bes-supplemental-admin-open)) .attendance-editorial-avatar {
+.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open)) .attendance-editorial-avatar {
   display: inline-grid;
   place-items: center;
   width: 34px;
@@ -74,7 +74,7 @@
   font-weight: 850;
 }
 
-.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-attendance-editorial-view]):not(.bes-supplemental-admin-open)) .attendance-site-account-name {
+.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open)) .attendance-site-account-name {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -83,7 +83,7 @@
   white-space: nowrap;
 }
 
-.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-attendance-editorial-view]):not(.bes-supplemental-admin-open)) .attendance-site-header :is(button, div > a) {
+.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open)) .attendance-site-header :is(button, div > a) {
   padding: 5px 0;
   color: inherit;
   background: transparent;
@@ -92,12 +92,12 @@
   font: inherit;
 }
 
-.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-attendance-editorial-view]):not(.bes-supplemental-admin-open)) .attendance-site-header button {
+.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open)) .attendance-site-header button {
   padding-inline-start: 12px;
   border-inline-start: 1px solid var(--attendance-ink);
 }
 
-.attendance-site .attendance-workspace-page:has(.attendance-shell[data-editorial-quick]:not(.bes-supplemental-admin-open)) {
+.attendance-site .attendance-workspace-page:has(.attendance-shell:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open)) {
   max-width: none;
   margin: 0;
   padding: 0 var(--attendance-gutter) 24px !important;
@@ -105,7 +105,7 @@
   color: inherit;
 }
 
-.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick]:not(.bes-supplemental-admin-open) {
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open) {
   --quick-roster-grid: 3.35rem minmax(0, 1fr) minmax(7rem, 19%) minmax(13rem, 33%);
   min-height: 0;
   margin: 0;
@@ -118,7 +118,7 @@
   font-family: inherit;
 }
 
-.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick]:not(.bes-supplemental-admin-open) > .attendance-topbar {
+.attendance-workspace-page .attendance-shell.is-standalone:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open) > .attendance-topbar {
   position: absolute;
   z-index: 2;
   inset: 0 0 auto auto;
@@ -130,11 +130,11 @@
   background: var(--attendance-paper) !important;
 }
 
-.attendance-shell.is-standalone[data-editorial-quick]:not(.bes-supplemental-admin-open) .attendance-topbar .attendance-title {
+.attendance-shell.is-standalone:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open) .attendance-topbar .attendance-title {
   display: none;
 }
 
-.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick]:not(.bes-supplemental-admin-open) .attendance-top-actions .attendance-icon-button {
+.attendance-workspace-page .attendance-shell.is-standalone:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open) .attendance-top-actions .attendance-icon-button {
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
@@ -142,7 +142,7 @@
   box-shadow: none !important;
 }
 
-.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick]:not(.bes-supplemental-admin-open) > .attendance-tabs {
+.attendance-workspace-page .attendance-shell.is-standalone:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open) > .attendance-tabs {
   display: flex !important;
   flex-wrap: nowrap;
   justify-content: flex-start !important;
@@ -161,7 +161,7 @@
   box-shadow: none !important;
 }
 
-.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick]:not(.bes-supplemental-admin-open) > .attendance-tabs > button {
+.attendance-workspace-page .attendance-shell.is-standalone:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open) > .attendance-tabs > button {
   position: relative;
   flex: 0 0 auto;
   min-height: 49px !important;
@@ -175,18 +175,18 @@
   font: 750 clamp(.83rem, 1.21vw, 1.08rem)/1.1 Inter, "Helvetica Neue", Arial, sans-serif !important;
 }
 
-.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick]:not(.bes-supplemental-admin-open) > .attendance-tabs > button:first-child {
+.attendance-workspace-page .attendance-shell.is-standalone:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open) > .attendance-tabs > button:first-child {
   padding-inline-start: 2px !important;
 }
 
-.attendance-shell[data-editorial-quick]:not(.bes-supplemental-admin-open) > .attendance-tabs > button + button::before {
+.attendance-shell:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open) > .attendance-tabs > button + button::before {
   position: absolute;
   content: "";
   inset: 27% auto 27% 0;
   border-inline-start: 1px solid var(--attendance-ink);
 }
 
-.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick]:not(.bes-supplemental-admin-open) > .attendance-tabs > .is-active::after {
+.attendance-workspace-page .attendance-shell.is-standalone:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open) > .attendance-tabs > .is-active::after {
   content: "" !important;
   display: block !important;
   position: absolute !important;
@@ -196,17 +196,17 @@
   border-radius: 0 !important;
 }
 
-.attendance-shell[data-editorial-quick]:not(.bes-supplemental-admin-open) > .attendance-tabs button > :is(svg, [aria-hidden="true"]) {
+.attendance-shell:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open) > .attendance-tabs button > :is(svg, [aria-hidden="true"]) {
   display: none;
 }
 
-.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick]:not(.bes-supplemental-admin-open) .attendance-tab-badge {
+.attendance-workspace-page .attendance-shell.is-standalone:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open) .attendance-tab-badge {
   background: var(--attendance-red) !important;
   color: white !important;
   border-radius: 0 !important;
 }
 
-.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick]:not(.bes-supplemental-admin-open) > .attendance-content {
+.attendance-workspace-page .attendance-shell.is-standalone:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open) > .attendance-content {
   min-width: 0;
   margin: 0 !important;
   padding: 0 !important;
@@ -807,7 +807,7 @@
   display: none;
 }
 
-.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-attendance-editorial-view]):not(.bes-supplemental-admin-open)) :is(a,button,input,select,summary):focus-visible {
+.attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open)) :is(a,button,input,select,summary):focus-visible {
   outline: 2px solid var(--attendance-red) !important;
   outline-offset: 2px !important;
 }
@@ -817,7 +817,7 @@
 }
 
 @media (max-width: 1050px) {
-  .attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-attendance-editorial-view]):not(.bes-supplemental-admin-open)) .attendance-editorial-site-caption {
+  .attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open)) .attendance-editorial-site-caption {
     display: none;
   }
 }
@@ -871,7 +871,7 @@
 }
 
 @media (max-width: 520px) {
-  .attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-attendance-editorial-view]):not(.bes-supplemental-admin-open)) .attendance-site-header > div {
+  .attendance-site:has(.attendance-shell:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open)) .attendance-site-header > div {
     font-size: 12px;
   }
 

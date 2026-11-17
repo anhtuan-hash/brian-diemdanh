@@ -33,6 +33,7 @@ function openFilteredHistory(event) {
   if (!canManageSupplementalLearning(runtime || getRuntimeState())) return;
   const className = String(event?.detail?.className || '').trim();
   nextFrame(() => {
+    if (document.querySelector('.attendance-shell[data-editorial-page="history"]')) return;
     document.querySelector('[data-activity-filter="supplemental"]')?.click();
     nextFrame(() => {
       const query = document.querySelector('[data-report-query]');

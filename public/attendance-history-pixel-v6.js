@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const ROOT_SELECTOR = '.ahv3__shell[data-attendance-history-v3="true"]';
+  const ROOT_SELECTOR = '.ahv3__shell[data-attendance-history-v3="true"]:not(.attendance-editorial-history)';
   const ICON_ATTRIBUTE = 'data-ah-v6-activity-icon';
   const META_ATTRIBUTE = 'data-ah-v6-hero-meta';
   const ART_ATTRIBUTE = 'data-ah-v6-hero-art';

@@ -11,6 +11,7 @@ import {
 } from '../../utils/attendanceDailyRoomFilter.js';
 import { extraClassTypeLabel } from '../../utils/extraClassAttendance.js';
 import './AttendanceDailyOverview.css';
+import AttendanceEditorialHeading from './AttendanceEditorialHeading.jsx';
 
 const SUPPLEMENTAL_CHANGED_EVENT = 'bes-supplemental-attendance-changed';
 const SUPPLEMENTAL_OPEN_EVENT = 'bes-supplemental-open-rollcall';
@@ -97,6 +98,7 @@ export default function AttendanceDailySchedule({
   onRoomFilterChange,
   onOpenClass,
   teacherLabelForClass,
+  editorial = false,
 }) {
   const [supplementalActivities, setSupplementalActivities] = useState([]);
   const [supplementalLoading, setSupplementalLoading] = useState(false);
@@ -318,6 +320,12 @@ export default function AttendanceDailySchedule({
 
   return (
     <div className="attendance-daily-overview-host">
+      {editorial ? <AttendanceEditorialHeading title="Lịch điểm danh" loading={combinedLoading} metrics={[
+        { label: 'Có lịch', value: visibleRows.length },
+        { label: 'Đã điểm danh', value: completedCount },
+        { label: 'Chưa điểm danh', value: missingCount },
+        { label: 'Đã hủy', value: cancelledCount },
+      ]} /> : null}
       <div className="attendance-daily-compact-toolbar">
         <div className="attendance-calendar-room-filter" aria-label="Lọc theo phòng học">
           <div className="attendance-calendar-room-chips" role="group" aria-label="Phòng học">
@@ -353,6 +361,7 @@ export default function AttendanceDailySchedule({
             <span className="attendance-daily-date-card__label">Ngày điểm danh</span>
             <input
               type="date"
+              lang="vi-VN"
               aria-label="Ngày điểm danh"
               max={maxDate || undefined}
               value={date || ''}
@@ -363,7 +372,7 @@ export default function AttendanceDailySchedule({
       </div>
 
       <div className="attendance-daily-overview" aria-live="polite">
-        <div className="attendance-daily-overview__summary is-compact" aria-label="Tóm tắt điểm danh">
+        {!editorial ? <div className="attendance-daily-overview__summary is-compact" aria-label="Tóm tắt điểm danh">
           <div className="attendance-daily-overview__metrics">
             <article className="attendance-daily-overview__metric">
               <span className="attendance-daily-overview__metric-icon"><AttendanceDailyIcon name="list" /></span>
@@ -383,7 +392,7 @@ export default function AttendanceDailySchedule({
             </article>
           </div>
           <div className="attendance-daily-overview__route-meta"><AttendanceDailyIcon name="layers" />Tổng {visibleRows.length} lớp/buổi trong {activeFloorCount} tầng</div>
-        </div>
+        </div> : null}
 
         <div className="attendance-daily-table-header" aria-hidden="true">
           <span className="attendance-daily-table-header__class">LỚP / HOẠT ĐỘNG</span>

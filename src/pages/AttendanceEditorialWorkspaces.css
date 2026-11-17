@@ -1,0 +1,840 @@
+/* Editorial views reuse the shell and the real controls of each workspace. */
+.attendance-editorial-heading {
+  display: flex;
+  align-items: center;
+  gap: clamp(12px, 1.5vw, 24px);
+  min-width: 0;
+  padding: clamp(14px, 1.65vw, 25px) 0;
+  border-bottom: 2px solid var(--attendance-ink);
+  color: var(--attendance-ink);
+}
+
+.attendance-editorial-heading h1 {
+  min-width: 0;
+  margin: 0 !important;
+  color: var(--attendance-ink) !important;
+  font: 900 clamp(3rem, 8.4vw, 8.8rem)/1 Inter, "Helvetica Neue", Arial, sans-serif !important;
+  letter-spacing: -.083em;
+}
+
+.attendance-editorial-heading__metrics {
+  display: flex;
+  margin: 0;
+  align-items: stretch;
+  gap: clamp(8px, 1.25vw, 20px);
+  min-width: 0;
+  padding-inline-start: clamp(10px, 1.3vw, 20px);
+  border-inline-start: 1px solid var(--attendance-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.attendance-editorial-heading__metrics > div {
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 11px clamp(8px, 1vw, 16px);
+  border-inline-start: 1px solid var(--attendance-ink);
+}
+
+.attendance-editorial-heading__metrics > .is-primary {
+  background: var(--attendance-red);
+  color: white;
+  border: 0;
+}
+
+.attendance-editorial-heading__metrics dd {
+  order: -1;
+  margin: 0;
+  font-size: clamp(2rem, 4.9vw, 5rem);
+  font-weight: 900;
+  line-height: .96;
+  letter-spacing: -.065em;
+}
+
+.attendance-editorial-heading__metrics dt {
+  font-size: clamp(.76rem, 1.55vw, 1.45rem);
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.attendance-editorial-heading__metrics > .is-primary:only-child {
+  display: flex;
+  align-items: baseline;
+  gap: .16em;
+  padding: .17em .38em;
+  font-size: clamp(2rem, 4.9vw, 5rem);
+}
+
+.attendance-editorial-heading__metrics > .is-primary:only-child > dt::before {
+  content: "/ ";
+}
+
+.attendance-editorial-heading__metrics > .is-primary:only-child > dt {
+  font-size: .69em;
+  white-space: nowrap;
+}
+
+.attendance-editorial-activity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px clamp(8px, 1.25vw, 18px);
+  padding-block: 13px;
+  border-bottom: 2px solid var(--attendance-ink);
+}
+
+.attendance-editorial-activity > strong {
+  margin-inline-end: clamp(4px, 1.1vw, 20px);
+  font-size: clamp(1rem, 1.6vw, 1.4rem);
+  font-weight: 850;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-activity > :is(button, [aria-current="page"]) {
+  padding: 7px clamp(11px, 2vw, 28px);
+  color: var(--attendance-ink) !important;
+  background: transparent !important;
+  border: 1px solid var(--attendance-ink) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font: 800 clamp(.8rem, 1.4vw, 1.25rem)/1.2 Inter, "Helvetica Neue", Arial, sans-serif !important;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-activity > :is([aria-pressed="true"], [aria-current="page"]) {
+  color: white !important;
+  background: var(--attendance-red) !important;
+  border-color: var(--attendance-red) !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone.bes-supplemental-admin-open > .attendance-tabs > .is-active:not(.bes-supplemental-nav-tab)::after,
+.attendance-workspace-page .attendance-shell.is-standalone.bes-supplemental-admin-open > .attendance-topbar,
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone.bes-supplemental-admin-open > .attendance-content > :not(.bes-supplemental-workspace-host) {
+  display: none !important;
+}
+
+/* Calendar */
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] :is(.attendance-calendar-layout, .attendance-daily-overview-host, .attendance-daily-overview, .attendance-daily-overview__list, .attendance-daily-floor-card, .attendance-daily-floor-card__rows) {
+  display: block !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  color: var(--attendance-ink) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+[data-editorial-page="calendar"] .attendance-editorial-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 56%) minmax(0, 1fr);
+}
+
+[data-editorial-page="calendar"] .attendance-editorial-heading h1 {
+  font-size: clamp(2.1rem, 7.4vw, 7.85rem) !important;
+  white-space: nowrap;
+}
+
+[data-editorial-page="calendar"] .attendance-editorial-heading__metrics {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr 1fr .8fr;
+  gap: clamp(4px, .8vw, 14px);
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-compact-toolbar {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap;
+  gap: 10px !important;
+  width: 100% !important;
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  padding: 12px 0 !important;
+  border: 0 !important;
+  border-bottom: 2px solid var(--attendance-ink) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] :is(.attendance-calendar-room-filter, .attendance-daily-date-card, .attendance-daily-date-card__body) {
+  color: var(--attendance-ink) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] :is(.attendance-daily-date-card, .attendance-daily-date-card__body) {
+  display: block !important;
+  width: auto !important;
+  min-width: 0 !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-date-card input {
+  width: 11rem !important;
+  max-width: 100% !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-calendar-room-filter {
+  flex: 1 1 28rem;
+  min-width: 0 !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-calendar-room-chips {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] :is(.attendance-calendar-room-chip, .attendance-daily-date-card input) {
+  color: var(--attendance-ink) !important;
+  border: 1px solid var(--attendance-ink) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: clamp(.82rem, 1.2vw, 1.05rem) !important;
+  font-weight: 800 !important;
+  padding: 7px 10px !important;
+  min-height: 36px !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-calendar-room-chip.is-active {
+  background: var(--attendance-red) !important;
+  color: white !important;
+  border-color: var(--attendance-red) !important;
+}
+
+.attendance-shell[data-editorial-page="calendar"] :is(.attendance-daily-date-card__icon, .attendance-daily-date-card__label, .attendance-daily-floor-card__badge) {
+  display: none !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] :is(.attendance-daily-table-header, .attendance-daily-class-row) {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1.35fr) minmax(0, .68fr) minmax(0, .95fr) minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 4px 12px !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 8px clamp(8px, 1.25vw, 18px) !important;
+  text-align: start !important;
+  color: var(--attendance-ink) !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--attendance-ink) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-weight: 800 !important;
+  font-size: clamp(.84rem, 1.35vw, 1.16rem) !important;
+  line-height: 1.25 !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row:hover {
+  background: var(--attendance-selection) !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] :is(.attendance-daily-class-row > span, .attendance-daily-class-row__status-label, .attendance-daily-class-row b, .attendance-daily-table-header > span) {
+  color: inherit !important;
+  font: inherit !important;
+  grid-area: auto !important;
+  text-align: start !important;
+  justify-content: start !important;
+  justify-self: start !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+}
+
+html body .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row .attendance-daily-class-row__class-shell {
+  display: block !important;
+  grid-template-columns: none !important;
+  justify-self: stretch !important;
+  width: auto !important;
+  max-width: none !important;
+}
+
+.attendance-shell[data-editorial-page="calendar"] .attendance-daily-class-row__class {
+  display: block !important;
+  width: auto !important;
+  max-width: none !important;
+}
+
+.attendance-shell[data-editorial-page="calendar"] :is(.attendance-daily-class-row__leading-icon, .attendance-daily-class-row__room-icon, .attendance-daily-class-row__time-icon, .attendance-daily-class-row__status-icon, .attendance-daily-class-row__action, .attendance-daily-class-row__class small, .attendance-daily-floor-card__title svg) {
+  display: none !important;
+}
+
+.attendance-shell[data-editorial-page="calendar"] .attendance-daily-class-row__time-copy small {
+  font-size: .7em !important;
+  color: #535047 !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row__status.is-completed { color: #176345 !important; }
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row__status.is-missing { color: #86560d !important; }
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row__status.is-cancelled { color: var(--attendance-red) !important; }
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-floor-group {
+  display: block !important;
+  margin: 8px 0 0 !important;
+  padding: 6px 12px !important;
+  border: 0 !important;
+  border-inline-start: 6px solid #ac751c !important;
+  border-radius: 0 !important;
+  background: #f0e4cc !important;
+  box-shadow: none !important;
+}
+
+.attendance-site .attendance-shell[data-editorial-page="calendar"] .attendance-daily-floor-group[data-floor="2"] {
+  background: #e6e9da !important;
+  border-inline-start-color: #176345 !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-floor-card__title {
+  display: inline !important;
+  color: var(--attendance-ink) !important;
+  font-size: clamp(.9rem, 1.45vw, 1.3rem) !important;
+  font-weight: 850 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* History */
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="history"] .attendance-editorial-history {
+  display: grid !important;
+  grid-template-columns: minmax(16rem, 30%) minmax(0, 1fr) !important;
+  align-items: start;
+  gap: 0 !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell .attendance-editorial-history :is(.ahv3__list, .ahv3__list-head, .ahv3__detail, .ahv3__hero, .ahv3__info-grid, .ahv3__stat-grid, .ahv3__audit-actor-panel, .ahv3__footer-grid, .ahv3__late-section, .ahv3__absent-section, .ahv3__note, .ahv3__lock, .ahv3__empty-attendance) {
+  min-width: 0 !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--attendance-ink) !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell .attendance-editorial-history .ahv3__list {
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  align-self: stretch;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: 15px 15px 18px 0 !important;
+  border-inline-end: 1px solid var(--attendance-ink) !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell .attendance-editorial-history .ahv3__list-head {
+  display: grid !important;
+  row-gap: 9px !important;
+  position: static !important;
+}
+
+.attendance-editorial-history :is(.ahv3__list-title, .ahv3__list-actions, .ahv3__actions) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px !important;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history .ahv3__list-title {
+  padding-bottom: 5px !important;
+  border-bottom: 1px solid var(--attendance-ink);
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history .ahv3__list-title strong {
+  color: var(--attendance-ink) !important;
+  font-size: clamp(1.08rem, 1.75vw, 1.66rem) !important;
+  font-weight: 900 !important;
+  letter-spacing: -.045em;
+}
+
+.attendance-editorial-history :is(.ahv3__list-title p, .ahv3__list-actions > span, .ahv3__hero-art, .ahv3__hero-chips, .ahv3__detail > .ahv3__section-title, .ahv3__info-icon, .ahv3__stat-grid .ahv3__summary-icon, .ahv3__stat-grid .ahv3__rate-ring, .ahv3__items .ahv3__number, .ahv3__items .attendance-type-dot, .ahv3__items .ahv3__type, .ahv3__items .ahv3__card-copy > small, .ahv3__count em, .ahv3__count i, .ahv3__empty-attendance > span, .ahv3__empty-attendance small, .ahv3__audit-actor-panel__head span, .ahv3__lock) {
+  display: none !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell .attendance-editorial-history :is(.ahv3__search, .ahv3__filters input, .ahv3__filters select, .ahv3__date-filters input, .ahv3__actions > :is(button, a), .ahv3__list-actions button, .attendance-editorial-history-back) {
+  min-width: 0 !important;
+  min-height: 36px !important;
+  padding: 6px 9px !important;
+  color: var(--attendance-ink) !important;
+  border: 1px solid var(--attendance-ink) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: .9rem !important;
+}
+
+.attendance-editorial-history .ahv3__search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history .ahv3__search input {
+  width: 100%;
+  min-width: 0;
+  padding: 0 !important;
+  border: 0 !important;
+  color: var(--attendance-ink) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history :is(.ahv3__filters, .ahv3__date-filters) {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history :is(.ahv3__filters, .ahv3__date-filters) label {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  color: var(--attendance-ink) !important;
+  font-size: .83rem !important;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history .ahv3__items {
+  display: block !important;
+  min-height: 0 !important;
+  max-height: 30rem !important;
+  overflow: auto !important;
+  margin: 6px 0 0 !important;
+  padding: 0 !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell .attendance-editorial-history .ahv3__items > button {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) max-content !important;
+  gap: 5px 9px !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 9px 10px !important;
+  color: var(--attendance-ink) !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--attendance-ink) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell .attendance-editorial-history .ahv3__items > .is-bulk-mode {
+  grid-template-columns: 1.5rem minmax(0, 1fr) max-content !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell .attendance-editorial-history .ahv3__items > :is(.is-selected, .is-bulk-selected) {
+  background: var(--attendance-selection) !important;
+  box-shadow: inset 5px 0 var(--attendance-red) !important;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history :is(.ahv3__card-title b, .ahv3__count b) {
+  color: var(--attendance-ink) !important;
+  font-size: clamp(.88rem, 1.22vw, 1.08rem) !important;
+  font-weight: 850 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell .attendance-editorial-history .ahv3__detail {
+  display: block !important;
+  max-height: none !important;
+  overflow: visible !important;
+  padding: 10px 0 0 16px !important;
+}
+
+html body .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="history"] .attendance-editorial-history .ahv3__hero {
+  display: flex !important;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 0 !important;
+  gap: 9px !important;
+  padding: 8px 0 12px !important;
+  border-bottom: 1px solid var(--attendance-ink) !important;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history .ahv3__hero-copy {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history .ahv3__hero h2 {
+  margin: 0 !important;
+  order: -1;
+  overflow-wrap: anywhere;
+  color: var(--attendance-ink) !important;
+  font-size: clamp(1.46rem, 2.5vw, 2.7rem) !important;
+  font-weight: 900 !important;
+  letter-spacing: -.055em;
+  line-height: 1.1 !important;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history .att-m3-status-chip {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #176345 !important;
+  color: white !important;
+  padding: 5px 8px !important;
+}
+
+html body .attendance-site .attendance-workspace-page .attendance-shell[data-editorial-page="history"] .attendance-editorial-history :is(.att-m3-status-chip.is-cancelled, .ahv3__actions .ahv3__delete-button) {
+  color: white !important;
+  background: var(--attendance-red) !important;
+  border-color: var(--attendance-red) !important;
+}
+
+html body .attendance-site .attendance-workspace-page .attendance-shell[data-editorial-page="history"] .attendance-editorial-history .ahv3__info-grid {
+  display: flex !important;
+  flex-wrap: wrap;
+  row-gap: 6px !important;
+  padding: 8px 0 !important;
+  border-bottom: 2px solid var(--attendance-ink) !important;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history .ahv3__info-grid > article {
+  display: block !important;
+  padding: 0 10px !important;
+  min-width: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  border-inline-end: 1px solid var(--attendance-ink) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history .ahv3__info-grid > article:first-child { padding-inline-start: 0 !important; }
+.attendance-site .attendance-shell .attendance-editorial-history .ahv3__info-grid > article:last-child { border: 0 !important; }
+
+.attendance-editorial-history .ahv3__info-grid article div > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history .ahv3__info-grid b {
+  color: var(--attendance-ink) !important;
+  font-size: .96rem !important;
+  font-weight: 800 !important;
+}
+
+html body .attendance-site .attendance-workspace-page .attendance-shell[data-editorial-page="history"] .attendance-editorial-history .ahv3__stat-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.36fr) !important;
+  gap: 8px !important;
+  padding: 12px 0 !important;
+  border-bottom: 2px solid var(--attendance-ink) !important;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history .ahv3__stat-grid > article {
+  display: grid !important;
+  align-content: center;
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-items: center;
+  gap: 3px !important;
+  padding: 7px !important;
+  color: var(--attendance-ink) !important;
+  border: 0 !important;
+  border-inline-end: 1px solid var(--attendance-ink) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history .ahv3__stat-grid > .is-present {
+  background: #176345 !important;
+  color: white !important;
+  border: 0 !important;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history .ahv3__stat-grid > article:last-child { border: 0 !important; }
+
+.attendance-site .attendance-shell .attendance-editorial-history .ahv3__stat-grid > article > :is(b, span, small) {
+  color: inherit !important;
+  grid-area: auto !important;
+  margin: 0 !important;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history .ahv3__stat-grid b {
+  font-size: clamp(1.45rem, 4.35vw, 4.4rem) !important;
+  font-weight: 900 !important;
+  letter-spacing: -.075em;
+  line-height: .98 !important;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history .ahv3__stat-grid article > span {
+  font-size: clamp(.74rem, 1.35vw, 1.12rem) !important;
+  font-weight: 850 !important;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history .ahv3__stat-grid small { font-size: .68rem !important; }
+
+html body .attendance-site .attendance-workspace-page .attendance-shell[data-editorial-page="history"] .attendance-editorial-history :is(.ahv3__audit-actor-panel, .ahv3__late-section, .ahv3__absent-section, .ahv3__note) {
+  display: grid !important;
+  align-items: start;
+  min-height: 0 !important;
+  grid-template-columns: minmax(8rem, 30%) minmax(0, 1fr) !important;
+  gap: 9px !important;
+  padding: 10px 0 !important;
+  border-bottom: 1px solid var(--attendance-ink) !important;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history :is(.ahv3__audit-actor-panel__grid, .ahv3__empty-attendance, .ahv3__note p, .attendance-late-list, .attendance-absent-list) {
+  padding-inline-start: 10px !important;
+  border-inline-start: 1px solid var(--attendance-ink) !important;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history :is(.ahv3__audit-actor-panel__grid, .ahv3__footer-grid) {
+  display: block !important;
+}
+
+.attendance-site .attendance-shell .attendance-editorial-history :is(.ahv3__audit-actor-panel__grid > div, .ahv3__late-section header, .ahv3__absent-section header, .ahv3__empty-attendance > div) {
+  color: var(--attendance-ink) !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.attendance-shell .attendance-editorial-history .attendance-editorial-history-back { display: none; }
+
+/* Supplemental classes */
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone #bes-supplemental-learning-admin {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone #bes-supplemental-learning-admin .attendance-editorial-supplemental :is(.bes-supplemental-header, .bes-supplemental-main, .bes-supplemental-class-home, .bes-supplemental-class-toolbar, .bes-supplemental-list-heading, .bes-supplemental-empty-state, .bes-supplemental-class-card, .bes-supplemental-editor-card, .bes-supplemental-archive) {
+  min-width: 0 !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--attendance-ink) !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone #bes-supplemental-learning-admin .attendance-editorial-supplemental {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  overflow: visible !important;
+  background: var(--attendance-paper) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone #bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-header {
+  display: block !important;
+  position: relative !important;
+  inset: auto !important;
+  backdrop-filter: none !important;
+}
+
+.attendance-editorial-supplemental .attendance-editorial-heading__metrics { margin-inline-start: auto; }
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone #bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-header__aside {
+  position: absolute;
+  z-index: 1;
+  top: 4px;
+  right: 1px;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone #bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-header__aside button {
+  min-height: 28px !important;
+  padding: 0 4px !important;
+  color: var(--attendance-ink) !important;
+  background: var(--attendance-paper) !important;
+  border: 1px solid var(--attendance-ink) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone #bes-supplemental-learning-admin .attendance-editorial-supplemental :is(.bes-supplemental-class-toolbar, .bes-supplemental-list-heading) {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px !important;
+  width: 100% !important;
+  padding: 12px 0 !important;
+  border-bottom: 2px solid var(--attendance-ink) !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone #bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-class-toolbar label {
+  display: flex !important;
+  flex: 1 1 24rem !important;
+  align-items: center;
+  gap: clamp(10px, 2vw, 26px) !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  color: var(--attendance-ink) !important;
+  font-size: clamp(1rem, 1.75vw, 1.35rem) !important;
+  font-weight: 850 !important;
+}
+
+.attendance-editorial-supplemental .bes-supplemental-class-toolbar label > span { white-space: nowrap; }
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone #bes-supplemental-learning-admin .attendance-editorial-supplemental :is(.bes-supplemental-class-toolbar input, .bes-supplemental-class-toolbar button, .bes-supplemental-class-editor :is(input:not([type="checkbox"]), textarea, button), .bes-supplemental-class-card button, .bes-supplemental-archive button) {
+  min-width: 0 !important;
+  min-height: 40px !important;
+  color: var(--attendance-ink) !important;
+  border: 1px solid var(--attendance-ink) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone #bes-supplemental-learning-admin .attendance-editorial-supplemental button.is-primary {
+  color: white !important;
+  background: var(--attendance-red) !important;
+  border-color: var(--attendance-red) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone #bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-list-heading h3 {
+  color: var(--attendance-ink) !important;
+  font-size: clamp(1.16rem, 2.4vw, 2.2rem) !important;
+  font-weight: 900 !important;
+  letter-spacing: -.047em;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone #bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-empty-state {
+  display: grid !important;
+  justify-items: center;
+  align-content: center;
+  gap: 8px !important;
+  min-height: min(39vw, 340px) !important;
+  padding: clamp(22px, 4vw, 50px) 8px !important;
+  text-align: center;
+}
+
+.attendance-editorial-supplemental .bes-supplemental-empty-state svg {
+  width: clamp(56px, 9vw, 115px);
+  color: var(--attendance-ink);
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone #bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-empty-state strong {
+  color: var(--attendance-ink) !important;
+  font-size: clamp(1.35rem, 3.8vw, 3.3rem) !important;
+  font-weight: 900 !important;
+  letter-spacing: -.052em;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone #bes-supplemental-learning-admin .attendance-editorial-supplemental .bes-supplemental-empty-state > span {
+  color: var(--attendance-ink) !important;
+  font-size: clamp(.95rem, 1.8vw, 1.5rem) !important;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone #bes-supplemental-learning-admin .attendance-editorial-supplemental :is(.bes-supplemental-class-card, .bes-supplemental-editor-card, .bes-supplemental-archive) {
+  border-bottom: 1px solid var(--attendance-ink) !important;
+  padding: 14px 0 !important;
+}
+
+@media (max-width: 940px) {
+  [data-editorial-page="calendar"] .attendance-editorial-heading {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-editorial-page="calendar"] .attendance-editorial-heading__metrics {
+    padding-inline-start: 0;
+    border-inline-start: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="history"] .attendance-editorial-history {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .attendance-site .attendance-workspace-page .attendance-shell .attendance-editorial-history :is(.ahv3__list, .ahv3__detail) {
+    padding-inline: 0 !important;
+    border-inline: 0 !important;
+  }
+
+  .attendance-site .attendance-shell .attendance-editorial-history .ahv3__items {
+    max-height: 18rem !important;
+  }
+
+  .attendance-site .attendance-shell .attendance-editorial-history .attendance-editorial-history-back {
+    display: inline-block;
+    margin-top: 6px;
+  }
+
+  .attendance-editorial-supplemental .attendance-editorial-heading {
+    display: grid;
+    justify-items: start;
+  }
+
+  .attendance-editorial-supplemental .attendance-editorial-heading__metrics { margin-inline-start: 0; }
+}
+
+@media (max-width: 560px) {
+  .attendance-editorial-heading {
+    flex-wrap: wrap;
+  }
+
+  .attendance-editorial-heading__metrics { border-inline: 0; padding-inline-start: 0; }
+
+  [data-editorial-page="calendar"] .attendance-editorial-heading h1 {
+    font-size: clamp(2.05rem, 10vw, 3.4rem) !important;
+    white-space: normal;
+  }
+
+  [data-editorial-page="calendar"] .attendance-editorial-heading__metrics dt {
+    font-size: .74rem;
+  }
+
+  .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-table-header {
+    display: none !important;
+  }
+
+  .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, max-content) !important;
+  }
+
+  .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row__class-shell {
+    grid-column: 1 / -1;
+  }
+
+  .attendance-site .attendance-shell .attendance-editorial-history .ahv3__stat-grid > article {
+    padding: 4px !important;
+  }
+
+  .attendance-site .attendance-shell .attendance-editorial-history .ahv3__stat-grid small {
+    display: none;
+  }
+}
