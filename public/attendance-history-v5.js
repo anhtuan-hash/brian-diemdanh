@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const ROOT_SELECTOR = '.ahv3__shell[data-attendance-history-v3="true"]';
+  const ROOT_SELECTOR = '.ahv3__shell[data-attendance-history-v3="true"]:not(.attendance-editorial-history)';
   const APPROVED_FILTER_SELECTOR = '.ah-mockup-filterbar[data-ah-mockup-owned="filterbar"]';
   const DUPLICATE_ATTRIBUTE = 'data-ah-v5-duplicate-filter';
   const TYPE_FILTER_ATTRIBUTE = 'data-ah-v5-type-filter';

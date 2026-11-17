@@ -3,6 +3,8 @@ import './styles/SupplementalWorkspaceUnified.css';
 import { readSheet } from 'read-excel-file/browser';
 import { ensureRuntimeReady, getRuntimeClient, getRuntimeState, subscribeRuntime } from './services/runtime/core.js';
 import { canManageSupplementalLearning } from './supplementalAccess.js';
+import { hasAttendanceTabAccess } from './utils/permissions.js';
+import { withAttendanceReadOnlyAccess } from './utils/attendanceReadonlyAccess.js';
 import {
   deleteSupplementalClass,
   loadSupplementalClasses,
@@ -16,6 +18,8 @@ const HOST_ID = 'bes-supplemental-learning-admin';
 let runtime = null;
 let client = null;
 let classes = [];
+let classLoadState = 'idle';
+let classLoadRequest = 0;
 let busy = false;
 let message = '';
 let observer = null;
@@ -43,12 +47,21 @@ function setMessage(text = '', tone = 'ok') {
 
 async function reload({ keepSelection = true } = {}) {
   if (!client || !canManage()) return;
+  const request = ++classLoadRequest;
+  classLoadState = 'loading';
+  renderPanel();
   try {
-    classes = await loadSupplementalClasses(client, { includeArchived: true });
+    const next = await loadSupplementalClasses(client, { includeArchived: true });
+    if (request !== classLoadRequest || !canManage()) return;
+    classes = next;
+    classLoadState = 'ready';
     if (keepSelection && selectedClassId && !classes.some((item) => item.id === selectedClassId)) selectedClassId = '';
     renderPanel();
   } catch (error) {
+    if (request !== classLoadRequest || !canManage()) return;
+    classLoadState = 'error';
     setMessage(error?.message || 'Không thể tải dữ liệu Lớp học bổ sung.', 'error');
+    renderPanel();
   }
 }
 
@@ -82,7 +95,9 @@ function ensureLauncher() {
   button.innerHTML = '<span aria-hidden="true">＋</span><span>Học bổ sung</span>';
   button.addEventListener('click', openPanel);
   const report = [...tabs.querySelectorAll('button')].find((item) => /báo cáo|report/i.test(item.textContent || ''));
-  if (report) report.insertAdjacentElement('beforebegin', button); else tabs.append(button);
+  const archive = [...tabs.querySelectorAll('button')].find((item) => /kho lưu trữ/i.test(item.textContent || ''));
+  const nextTab = report || archive;
+  if (nextTab) nextTab.insertAdjacentElement('beforebegin', button); else tabs.append(button);
   restoreSupplementalRoute();
 }
 
@@ -94,7 +109,7 @@ function openPanel() {
   }
   let host = document.getElementById(HOST_ID);
   if (!host) { host = document.createElement('div'); host.id = HOST_ID; document.body.append(host); }
-  renderPanel();
+  message = '';
   void reload();
 }
 function closePanel() {
@@ -104,6 +119,8 @@ function closePanel() {
     window.history.replaceState(null, '', returnAttendanceHash);
   }
   host?.remove();
+  classLoadRequest += 1;
+  classLoadState = 'idle';
   returnAttendanceHash = '#/attendance';
   selectedClassId = '';
   creatingClass = false;
@@ -152,9 +169,19 @@ function parseImportedMembers(rows = []) {
   return members;
 }
 
-function classCards() {
+function classCards(editorial) {
+  if (classLoadState === 'loading') return '<p class="bes-supplemental-empty" role="status">Đang tải lớp học bổ sung…</p>';
+  if (classLoadState === 'error') return '<p class="bes-supplemental-empty"><button type="button" data-action="reload-classes">Tải lại danh sách</button></p>';
   const q = fold(classQuery);
   const rows = classes.filter((item) => !item.archivedAt && (!q || classSearchText(item).includes(q)));
+  if (!rows.length && editorial) return `<div class="bes-supplemental-empty-state" role="status">
+    <svg aria-hidden="true" viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="4">
+      <path d="M52 8H14v80h44M52 8l22 22v24M52 8v22h22M26 38h17m-17 12h27m-27 12h17"/>
+      <path d="M74 59v31M59 75h31" stroke="#bb291c" stroke-width="6"/>
+    </svg>
+    <strong>${q ? 'Không tìm thấy lớp phù hợp' : 'Chưa có lớp học bổ sung'}</strong>
+    <span>${q ? 'Thử tìm bằng tên lớp, môn học hoặc giáo viên khác.' : 'Tạo lớp để lên lịch và điểm danh.'}</span>
+  </div>`;
   if (!rows.length) return `<div class="bes-supplemental-empty-state"><span class="bes-supplemental-empty-state__icon" aria-hidden="true"><svg viewBox="0 0 48 48" width="48" height="48" fill="none"><rect x="8" y="8" width="32" height="32" rx="9" fill="#eaf2ff"/><path d="M16 18h16M16 24h10M16 30h7" stroke="#4b85d8" stroke-width="2.2" stroke-linecap="round"/><path d="M32 27v10m-5-5h10" stroke="#1767cf" stroke-width="2.6" stroke-linecap="round"/></svg></span><strong>${q ? 'Không tìm thấy lớp phù hợp' : 'Chưa có lớp học bổ sung'}</strong><span>${q ? 'Thử thay đổi từ khóa tìm kiếm để xem các lớp khác.' : 'Chọn “Tạo lớp học bổ sung” để bắt đầu quản lý lịch học và điểm danh.'}</span></div>`;
   return `<div class="bes-supplemental-class-grid">${rows.map((item) => {
     const next = item.nextSession || null;
@@ -182,8 +209,35 @@ function classEditor(item) {
 function renderPanel() {
   const host = document.getElementById(HOST_ID);
   if (!host || !canManage()) return;
+  const editorial = Boolean(document.querySelector('.attendance-shell.is-standalone'));
+  const canReadHistory = hasAttendanceTabAccess(withAttendanceReadOnlyAccess(runtime?.profile), 'history');
   const selected = creatingClass ? emptyClass() : classes.find((item) => item.id === selectedClassId) || null;
-  host.innerHTML = `<section class="bes-supplemental-dialog bes-supplemental-admin-workspace"><header class="bes-supplemental-header"><div class="bes-supplemental-header__identity"><span class="bes-supplemental-header__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8m-8 4h8m-8 4h5"/><path d="M17 15v4m-2-2h4"/></svg></span><div><h2>Học bổ sung</h2><p>Quản lý lớp, giáo viên, học sinh và các buổi học bổ sung.</p></div></div><div class="bes-supplemental-header__aside"><span class="bes-supplemental-header__count">${classes.filter((item) => !item.archivedAt).length} lớp học</span><button type="button" data-action="close" aria-label="Đóng Học bổ sung">×</button></div></header>${message ? `<div class="bes-supplemental-message" data-tone="ok">${esc(message)}</div>` : ''}<main class="bes-supplemental-main">${selected ? classEditor(selected) : `<section class="bes-supplemental-class-home"><div class="bes-supplemental-class-toolbar"><label>Tìm lớp<input type="search" data-class-search value="${esc(classQuery)}" placeholder="Tên lớp, môn, giáo viên, học sinh"></label><button class="is-primary" type="button" data-action="create-class">+ Tạo lớp học bổ sung</button></div><div class="bes-supplemental-list-heading"><h3>Danh sách lớp học bổ sung</h3><span>${classes.filter((item) => !item.archivedAt).length} lớp</span></div>${classCards()}${archivedClasses()}</section>`}</main></section>`;
+  const classCount = classLoadState === 'ready' ? classes.filter((item) => !item.archivedAt).length : '—';
+  const title = editorial
+    ? `<div class="attendance-editorial-heading"><h1>Học bổ sung</h1><dl class="attendance-editorial-heading__metrics" aria-live="polite"><div class="is-primary"><dt>Lớp học</dt><dd>${classCount}</dd></div></dl></div>`
+    : `<div class="bes-supplemental-header__identity"><div><h2>Học bổ sung</h2><p>Quản lý lớp, giáo viên, học sinh và các buổi học bổ sung.</p></div></div>`;
+  const activity = editorial && canReadHistory ? `<nav class="attendance-editorial-activity" aria-label="Loại hoạt động">
+    <strong>Loại hoạt động</strong>
+    <button type="button" data-history-type="all" title="Xem lịch sử tất cả hoạt động">Tất cả</button>
+    <button type="button" data-history-type="remedial" title="Xem lịch sử Phụ đạo">Phụ đạo</button>
+    <button type="button" data-history-type="gifted" title="Xem lịch sử Bồi dưỡng">Bồi dưỡng</button>
+    <span aria-current="page">Học bổ sung</span>
+  </nav>` : '';
+  const home = `<section class="bes-supplemental-class-home">${activity}
+    <div class="bes-supplemental-class-toolbar">
+      <label><span>Tìm lớp</span><input type="search" data-class-search value="${esc(classQuery)}" placeholder="Tên lớp, môn, giáo viên, học sinh"></label>
+      <button class="is-primary" type="button" data-action="create-class">+ Tạo lớp học bổ sung</button>
+    </div>
+    <div class="bes-supplemental-list-heading"><h3>Danh sách lớp học bổ sung</h3><span>${classCount} lớp</span></div>
+    ${classCards(editorial)}${classLoadState === 'ready' ? archivedClasses() : ''}
+  </section>`;
+  host.innerHTML = `<section class="bes-supplemental-dialog bes-supplemental-admin-workspace ${editorial ? 'attendance-editorial-supplemental' : ''}">
+    <header class="bes-supplemental-header">${title}
+      <div class="bes-supplemental-header__aside"><button type="button" data-action="close" aria-label="Đóng Học bổ sung">×</button></div>
+    </header>
+    ${message ? `<div class="bes-supplemental-message" role="status" data-tone="${classLoadState === 'error' ? 'error' : 'ok'}">${esc(message)}</div>` : ''}
+    <main class="bes-supplemental-main">${selected ? classEditor(selected) : home}</main>
+  </section>`;
   bindPanel(host, selected);
 }
 
@@ -263,10 +317,15 @@ function openAttendance(item, sessionId) {
   closePanel();
   window.dispatchEvent(new CustomEvent('bes-supplemental-open-rollcall', { detail: { sessionId, classId: item.id } }));
 }
-function openHistory(item) {
+function openHistory(item, type = 'supplemental') {
+  const historyTab = [...document.querySelectorAll('.attendance-tabs button')].find((button) => /lịch sử|history/i.test(button.textContent || ''));
+  if (!historyTab) return;
   closePanel();
-  [...document.querySelectorAll('.attendance-tabs button')].find((button) => /lịch sử|history/i.test(button.textContent || ''))?.click();
-  window.dispatchEvent(new CustomEvent('bes-supplemental-open-history', { detail: { classId: item.id, className: item.className || item.groupName } }));
+  historyTab.click();
+  const event = item ? 'bes-supplemental-open-history' : 'bes-attendance-history-filter';
+  window.dispatchEvent(new CustomEvent(event, {
+    detail: { type, classId: item?.id, className: item?.className || item?.groupName },
+  }));
 }
 function bindTeacherRemove(form) {
   form?.querySelectorAll('[data-remove-teacher]').forEach((button) => {
@@ -279,6 +338,10 @@ function bindTeacherRemove(form) {
 }
 function bindPanel(host, selected) {
   host.querySelector('[data-action="close"]')?.addEventListener('click', closePanel);
+  host.querySelector('[data-action="reload-classes"]')?.addEventListener('click', () => { message = ''; void reload(); });
+  host.querySelectorAll('[data-history-type]').forEach((button) => {
+    button.addEventListener('click', () => openHistory(null, button.dataset.historyType));
+  });
   host.querySelector('[data-class-search]')?.addEventListener('input', (event) => { classQuery = event.target.value || ''; renderPanel(); const next = document.querySelector('[data-class-search]'); next?.focus(); });
   host.querySelector('[data-action="create-class"]')?.addEventListener('click', () => { creatingClass = true; selectedClassId = ''; renderPanel(); });
   host.querySelectorAll('[data-action="back-to-classes"]').forEach((button) => button.addEventListener('click', () => { creatingClass = false; selectedClassId = ''; renderPanel(); }));

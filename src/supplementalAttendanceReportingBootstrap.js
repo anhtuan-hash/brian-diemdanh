@@ -104,7 +104,7 @@ function ensureFilter() {
   }
 
   const host = shell();
-  if (!host || !detectActiveTab()) {
+  if (!host || !detectActiveTab() || (activeTab === 'history' && host.dataset.editorialPage === 'history')) {
     document.getElementById(FILTER_ID)?.remove();
     closePanel();
     return;
@@ -281,6 +281,11 @@ async function refreshPanel(force = false) {
   if (!dateTo) dateTo = dayOffset(0);
   if (!['all', 'remedial', 'enrichment', 'supplemental'].includes(filter)) filter = 'all';
 
+  if (activeTab === 'history' && shell()?.dataset.editorialPage === 'history') {
+    closePanel();
+    return;
+  }
+
   if (filter === 'all') {
     if (activeTab === 'history') syncLegacyHistoryFilter('all');
     closePanel();
@@ -330,7 +335,9 @@ function bindTabs() {
       dateTo = '';
       query = '';
       filter = 'all';
-      if (next === 'history') setTimeout(() => syncLegacyHistoryFilter('all'), 0);
+      if (next === 'history') setTimeout(() => {
+        if (shell()?.dataset.editorialPage !== 'history') syncLegacyHistoryFilter('all');
+      }, 0);
       setTimeout(() => ensureFilter(), 0);
     });
   });
