@@ -1918,6 +1918,11 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
               setError={setError}
               setNotice={setNotice}
               onSelectClass={setSelectedClassId}
+              onOpenSupplemental={canSeeSupplementalHistory ? () => {
+                const launcher = attendanceTabsRef.current?.querySelector('.bes-supplemental-nav-tab');
+                if (launcher) launcher.click();
+                else setError('Phân hệ Học bổ sung đang được khởi tạo. Vui lòng chọn lại sau khi tải xong.');
+              } : undefined}
               stateScope={currentUser?.id || currentUser?.authId || currentUser?.email || runtime.session?.user?.id || ''}
             />
           ) : null}

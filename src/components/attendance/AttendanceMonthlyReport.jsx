@@ -237,21 +237,33 @@ export default function AttendanceMonthlyReport({ client, classes = [], month, o
     remarksDirty.current = false;
   }
 
+  const reportControls = (
+    <>
+      <div className="ae-segments" role="group" aria-label="Đối tượng báo cáo">
+        <button type="button" aria-pressed={isTeacherReport} onClick={() => setReportDimension('teacher')}>Theo giáo viên</button>
+        <button type="button" aria-pressed={!isTeacherReport} onClick={() => setReportDimension('student')}>Theo học sinh</button>
+      </div>
+      <label><span>Loại hoạt động</span>
+        <select value={activityType} onChange={(event) => changeActivityType(event.target.value)}>
+          <option value="all">Tất cả</option><option value="remedial">Phụ đạo</option><option value="enrichment">Bồi dưỡng</option>
+          {includeSupplemental && <option value="supplemental">Học bổ sung</option>}
+        </select>
+      </label>
+    </>
+  );
+
+  if (!isTeacherReport) {
+    return <StudentAttendanceReport client={client} language={language} month={month}
+      includeSupplemental={includeSupplemental} activityType={activityType} reporterName={reporterName}
+      reporterTitle={reporterTitle} onReporterNameChange={updateReporterName}
+      onReporterTitleChange={updateReporterTitle} onError={onError} reportControls={reportControls} />;
+  }
+
   return (
     <section className="ae-report" aria-label="Báo cáo điểm danh">
-      <AttendanceEditorialHeading title="Báo cáo" className="ae-heading--report" metrics={isTeacherReport ? metrics : []} />
+      <AttendanceEditorialHeading title="Báo cáo" className="ae-heading--report" metrics={metrics} />
       <div className="ae-report__filters ae-field-row">
-        <div className="ae-segments" role="group" aria-label="Đối tượng báo cáo">
-          <button type="button" aria-pressed={isTeacherReport} onClick={() => setReportDimension('teacher')}>Theo giáo viên</button>
-          <button type="button" aria-pressed={!isTeacherReport} onClick={() => setReportDimension('student')}>Theo học sinh</button>
-        </div>
-        <label><span>Loại hoạt động</span>
-          <select value={activityType} onChange={(event) => changeActivityType(event.target.value)}>
-            <option value="all">Tất cả</option><option value="remedial">Phụ đạo</option><option value="enrichment">Bồi dưỡng</option>
-            {includeSupplemental && <option value="supplemental">Học bổ sung</option>}
-          </select>
-        </label>
-        {isTeacherReport && <>
+        {reportControls}
           {mode === 'month'
             ? <label><span>Tháng</span><input type="month" value={month} onChange={(event) => {
               onMonthChange?.(event.target.value);
@@ -277,15 +289,8 @@ export default function AttendanceMonthlyReport({ client, classes = [], month, o
             <button type="button" aria-pressed={mode === 'month'} onClick={() => changeMode('month')}>Theo tháng</button>
             <button type="button" aria-pressed={mode === 'day'} onClick={() => changeMode('day')}>Theo ngày</button>
           </div>
-        </>}
       </div>
 
-      {!isTeacherReport ? (
-        <StudentAttendanceReport client={client} language={language} month={month}
-          includeSupplemental={includeSupplemental} activityType={activityType} reporterName={reporterName}
-          reporterTitle={reporterTitle} onReporterNameChange={updateReporterName}
-          onReporterTitleChange={updateReporterTitle} onError={onError} />
-      ) : <>
         <div className="ae-report__meta ae-field-row" aria-label="Thông tin người báo cáo">
           <label><span>Người báo cáo</span><input value={reporterName}
             onChange={(event) => updateReporterName(event.target.value)} placeholder="Nhập họ và tên" /></label>
@@ -381,7 +386,6 @@ export default function AttendanceMonthlyReport({ client, classes = [], month, o
             </div>
           </section>
         </>}
-      </>}
     </section>
   );
 }
