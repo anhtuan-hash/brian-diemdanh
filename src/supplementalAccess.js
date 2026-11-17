@@ -1,5 +1,5 @@
 import './styles/SupplementalClasses.css';
-import { normalizeSystemRole, SYSTEM_ROLES } from './utils/roles.js';
+import { isAdminRole } from './utils/roles.js';
 
 function allowedPermissionSet(profile = null) {
   const raw = profile?.permissions?.allowed;
@@ -21,15 +21,9 @@ export function canManageSupplementalLearning(runtime = {}) {
   const approved = profile?.approved === true;
   if (!approved || !userId) return false;
 
-  const profileRole = String(profile?.role || '').trim().toLowerCase();
-  const runtimeRole = normalizeSystemRole(runtime?.role, SYSTEM_ROLES.GUEST);
-  const isAdmin = profileRole === 'admin'
-    || profileRole === 'administrator'
-    || runtimeRole === SYSTEM_ROLES.ADMIN;
-
-  // Keep the client visibility rule aligned with backend authorization:
-  // approved Admins or users explicitly granted attendance:manage.
-  return isAdmin || allowedPermissionSet(profile).has('attendance:manage');
+  return isAdminRole(profile.role) || allowedPermissionSet(profile).has(
+    profile.attendancePermissionsManaged ? 'attendance:supplemental' : 'attendance:manage',
+  );
 }
 
 export function supplementalAccessSnapshot(runtime = {}) {

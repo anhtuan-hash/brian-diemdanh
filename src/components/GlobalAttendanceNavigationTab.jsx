@@ -306,17 +306,18 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
   const fileRef = useRef(null);
   const proofInputRef = useRef(null);
 
-  const systemRole = normalizeSystemRole(runtime.role || currentUser?.role, SYSTEM_ROLES.GUEST);
+  const systemRole = normalizeSystemRole(currentUser?.role, SYSTEM_ROLES.GUEST);
   const isAttendanceAdmin = systemRole === SYSTEM_ROLES.ADMIN;
   const canAccessAttendanceView = (tabId) => isAttendanceAdmin || hasAttendanceTabAccess(currentUser, tabId);
   const canDeleteAttendanceHistory = isAttendanceAdmin
-    || hasExplicitPermissionId(currentUser, ATTENDANCE_PERMISSION_IDS.delete)
-    || String(currentUser?.email || '').trim().toLowerCase() === 'hongtham@accounts.brianenglish.studio';
+    || hasExplicitPermissionId(currentUser, ATTENDANCE_PERMISSION_IDS.delete);
   const canUseAttendanceHistoryArchive = canDeleteAttendanceHistory;
-  const canUseClassArchive = isAttendanceAdmin || hasAttendanceTabAccess(currentUser, 'manage');
+  const canUseClassArchive = isAttendanceAdmin || (hasAttendanceTabAccess(currentUser, 'manage')
+    && (!currentUser?.attendancePermissionsManaged || canUseAttendanceHistoryArchive));
   const canOpenArchive = canUseAttendanceHistoryArchive || canUseClassArchive;
   const hasAttendanceReportOverride = isAttendanceAdmin || hasAttendanceTabAccess(currentUser, 'report');
-  const canUseQuickAttendance = isAttendanceAdmin || hasAttendanceTabAccess(currentUser, 'quick') || hasAttendanceReportOverride;
+  const canUseQuickAttendance = isAttendanceAdmin || hasAttendanceTabAccess(currentUser, 'quick')
+    || (!currentUser?.attendancePermissionsManaged && hasAttendanceReportOverride);
   const archiveTab = { id: 'attendance:archive', tab: 'archive', titleVi: 'Kho lưu trữ' };
   const availableAttendanceTabs = [
     ...ATTENDANCE_PERMISSION_ITEMS.filter((item) => item.tab === 'quick' ? canUseQuickAttendance : canAccessAttendanceView(item.tab)),
@@ -326,6 +327,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
   const firstAllowedView = canUseQuickAttendance ? 'quick' : getFirstAllowedAttendanceTab(currentUser);
   const allowed = Boolean(currentUser?.id && (isAttendanceAdmin || hasAnyAttendanceAccess(currentUser)));
   const canSeeSupplementalHistory = canManageSupplementalLearning(runtime);
+  const canOpenQuickView = canUseQuickAttendance || (canSeeSupplementalHistory && String(selectedClassId).startsWith('supplemental:'));
   const allowTeacherPeriodSelection = attendanceGlobalSettings.allowTeacherPeriodSelection === true;
 
   useEffect(() => {
@@ -405,9 +407,9 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
 
   useEffect(() => {
     if (!workspaceVisible || !allowed || !firstAllowedView) return;
-    const canOpenCurrentView = view === 'quick' ? canUseQuickAttendance : view === 'archive' ? canOpenArchive : canAccessAttendanceView(view);
+    const canOpenCurrentView = view === 'quick' ? canOpenQuickView : view === 'archive' ? canOpenArchive : canAccessAttendanceView(view);
     if (!canOpenCurrentView) setView(firstAllowedView);
-  }, [workspaceVisible, allowed, firstAllowedView, view, currentUser?.permissions, systemRole, canUseQuickAttendance]);
+  }, [workspaceVisible, allowed, firstAllowedView, view, currentUser?.permissions, systemRole, canOpenQuickView]);
 
   async function refreshSupplementalHistory() {
     if (!canSeeSupplementalHistory || !canAccessAttendanceView('history')) {
@@ -1662,9 +1664,9 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
 
           {loading ? <div className="attendance-loading">Đang đồng bộ dữ liệu điểm danh…</div> : null}
 
-          {!loading && canUseQuickAttendance && view === 'quick' ? (
-            <div className="attendance-quick-layout">
-              <aside className="attendance-class-list">
+          {!loading && canOpenQuickView && view === 'quick' ? (
+            <div className="attendance-quick-layout" style={canUseQuickAttendance ? undefined : { gridTemplateColumns: 'minmax(0, 1fr)' }}>
+              {canUseQuickAttendance ? <aside className="attendance-class-list">
                 <header><strong>Lớp đang hoạt động</strong><span>{filteredActiveClasses.length}/{activeClasses.length} lớp</span></header>
                 <div className="att-m3-class-discovery" data-bes-keep-search="true">
                   <label className="att-m3-class-search"><span>Tìm nhanh lớp</span><input value={classQuery} onChange={(event) => setClassQuery(event.target.value)} placeholder="Tên lớp, môn hoặc giáo viên…" /></label>
@@ -1679,7 +1681,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
                   const room = roomForExtraClass(classRow);
                   return <button key={classRow.id} type="button" className={`is-subject-${subjectKey} ${String(selectedClassId) === String(classRow.id) ? 'is-selected ' : ''}${scheduledForDate ? '' : 'is-off-schedule'}`.trim()} title={scheduledForDate ? undefined : `Không có lịch học ngày ${formatDate(attendanceDate)}`} onClick={() => setSelectedClassId(classRow.id)}><span className={`attendance-type-dot is-${classRow.class_type}`} /><div><div className="attendance-class-name-row"><b>{classRow.class_name}</b>{room ? <span className="attendance-room-chip">{room}</span> : null}</div><small>{extraClassTypeLabel(classRow.class_type)} · <span className="attendance-subject-chip">{classRow.subject || 'Chưa ghi môn'}</span></small><em>{teachersForClass(classRow)}</em></div><span className="attendance-count">{memberCounts.get(String(classRow.id)) || 0}</span>{last ? <time>{formatDate(last.attendance_date)}</time> : <time>Chưa điểm danh</time>}</button>;
                 })}{!filteredActiveClasses.length ? <div className="attendance-empty">Không có lớp phù hợp bộ lọc.</div> : null}</div>
-              </aside>
+              </aside> : null}
 
               <section
                 className="attendance-rollcall"

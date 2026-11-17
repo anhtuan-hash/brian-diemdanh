@@ -37,6 +37,7 @@ export const ATTENDANCE_PERMISSION_IDS = {
   manage: 'attendance:manage',
   history: 'attendance:history',
   report: 'attendance:report',
+  supplemental: 'attendance:supplemental',
   delete: 'attendance:delete',
 };
 
@@ -96,6 +97,15 @@ export const ATTENDANCE_PERMISSION_ITEMS = [
 // Destructive/manage actions are intentionally separate from tab permissions so
 // granting attendance:delete never becomes a fake navigation tab.
 export const ATTENDANCE_ACTION_PERMISSION_ITEMS = [
+  {
+    id: ATTENDANCE_PERMISSION_IDS.supplemental,
+    type: 'attendance',
+    section: 'attendance',
+    title: 'Supplemental learning',
+    titleVi: 'Học bổ sung',
+    desc: 'Manage supplemental classes and attendance.',
+    descVi: 'Quản lý lớp và điểm danh Học bổ sung.',
+  },
   {
     id: ATTENDANCE_PERMISSION_IDS.delete,
     type: 'attendance',
@@ -396,7 +406,8 @@ export function hasAttendanceTabAccess(user, tab) {
 
 export function hasAnyAttendanceAccess(user) {
   return ATTENDANCE_PERMISSION_ITEMS.some((item) => hasAttendanceTabAccess(user, item.tab))
-    || hasExplicitPermissionId(user, ATTENDANCE_PERMISSION_IDS.delete);
+    || hasExplicitPermissionId(user, ATTENDANCE_PERMISSION_IDS.delete)
+    || hasExplicitPermissionId(user, ATTENDANCE_PERMISSION_IDS.supplemental);
 }
 
 export function getFirstAllowedAttendanceTab(user) {

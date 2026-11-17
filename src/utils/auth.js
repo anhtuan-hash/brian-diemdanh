@@ -8,7 +8,7 @@ export const PROFILE_TABLE = 'profiles';
 export const OFFLINE_DEMO_SESSION_KEY = 'bes-offline-demo-user-v943';
 export const AUTH_NOTICE_KEY = 'bes-auth-notice-v1065';
 
-const PROFILE_COLUMNS = 'id,email,full_name,school,role,approved,permissions,created_at,updated_at';
+const PROFILE_COLUMNS = 'id,email,full_name,school,role,approved,permissions,attendance_permissions,created_at,updated_at';
 const PROFILE_CACHE_MAX_AGE = 30 * 60 * 1000;
 const AUTH_SESSION_CACHE_MAX_AGE = 5 * 60 * 1000;
 
@@ -195,6 +195,14 @@ function mapProfile(user, profile = null) {
   // from public VITE_* configuration or self-editable user_metadata.
   const role = normalizeSystemRole(profile?.role || 'teacher');
   const approved = profile?.approved === true;
+  const attendancePermissionsManaged = Array.isArray(profile?.attendance_permissions);
+  const permissions = normalizePermissions(profile?.permissions);
+  if (attendancePermissionsManaged) {
+    permissions.allowed = [
+      ...permissions.allowed.filter((id) => !id.startsWith('attendance:')),
+      ...profile.attendance_permissions,
+    ];
+  }
   return {
     id: user.id,
     authId: user.id,
@@ -205,7 +213,8 @@ function mapProfile(user, profile = null) {
     approved,
     createdAt: profile?.created_at || user.created_at || '',
     updatedAt: profile?.updated_at || '',
-    permissions: normalizePermissions(profile?.permissions),
+    permissions,
+    attendancePermissionsManaged,
     provider: 'supabase',
     authProviders: getAuthProviders(user),
     avatarUrl: meta.avatar_url || meta.picture || '',

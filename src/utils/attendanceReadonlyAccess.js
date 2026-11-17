@@ -12,7 +12,7 @@ export const ATTENDANCE_READ_ONLY_PERMISSION_IDS = Object.freeze([
  * write-capable Attendance permission (quick/manage/report).
  */
 export function withAttendanceReadOnlyAccess(user) {
-  if (!user?.id) return user;
+  if (!user?.id || user.attendancePermissionsManaged) return user;
 
   const sourcePermissions = user.permissions && typeof user.permissions === 'object'
     ? user.permissions
