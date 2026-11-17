@@ -1,35 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AttendancePanelHeading } from './AttendanceWorkspaceUI.jsx';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import AttendanceEditorialHeading from './AttendanceEditorialHeading.jsx';
 import { buildAttendanceReport, normalizeSupplementalReportData, uniqueReportTeachers } from '../../utils/attendanceReport.js';
 import { downloadAttendanceReportXlsx, printAttendanceReportPdf } from '../../utils/attendanceReportExport.js';
-import './AttendanceMonthlyReport.css';
 import StudentAttendanceReport from './StudentAttendanceReport.jsx';
 
 const REPORT_SESSION_COLUMNS = 'id,class_id,class_type,class_name,subject,teacher_name,attendance_date,checked_at,checked_by,checked_by_name,total_students,present_count,absent_count,note,session_status,lesson_periods,cancellation_reason,teaching_room,teaching_time_range';
 const REPORT_RECORD_COLUMNS = 'id,session_id,class_id,member_id,member_key,student_code,student_full_name,school_class_name,status,recorded_at,absence_reason_code,absence_note';
 const REPORT_CHANGE_COLUMNS = 'id,session_id,record_id,class_id,member_key,student_full_name,change_kind,changed_by,changed_by_name,changed_at,old_status,new_status,old_absence_reason_code,new_absence_reason_code,old_absence_note,new_absence_note,session_note_before,session_note_after';
 const VIETNAM_TIME_ZONE = 'Asia/Ho_Chi_Minh';
-
-const REPORT_ICON_PATHS = {
-  chart: <><path d="M4 19V9m5 10V5m5 14v-7m5 7V3" /><path d="m3 13 5-5 4 3 8-8" /></>,
-  person: <><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a8 8 0 0 1 16 0v1" /></>,
-  briefcase: <><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V4h8v3M3 12h18" /></>,
-  note: <><path d="M6 3h9l3 3v15H6z" /><path d="M14 3v4h4M9 11h6M9 15h6" /></>,
-  book: <><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5Z" /><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5Z" /></>,
-  users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></>,
-  clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
-  ban: <><circle cx="12" cy="12" r="9" /><path d="m6 6 12 12" /></>,
-  calendar: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M8 3v4m8-4v4M3 10h18" /></>,
-  download: <><path d="M12 4v11m0 0 4-4m-4 4-4-4" /><path d="M5 15v4h14v-4" /></>,
-  teacher: <><circle cx="9" cy="8" r="3" /><path d="M3 21v-2a6 6 0 0 1 12 0v2" /><path d="M17 8h4M19 6v4" /></>,
-  absent: <><circle cx="9" cy="8" r="3" /><path d="M3 21v-2a6 6 0 0 1 10-4.5" /><path d="m16 16 5 5m0-5-5 5" /></>,
-  chevronLeft: <path d="m15 18-6-6 6-6" />,
-  chevronRight: <path d="m9 18 6-6-6-6" />,
-};
-
-function ReportIcon({ name, size = 18 }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{REPORT_ICON_PATHS[name] || REPORT_ICON_PATHS.chart}</svg>;
-}
 
 function monthBounds(month) {
   const [year, value] = String(month || '').split('-').map(Number);
@@ -55,6 +34,7 @@ function formatDate(value) {
 }
 
 function formatCheckedTime(value) {
+  if (!value) return '—';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '—';
   return new Intl.DateTimeFormat('vi-VN', {
@@ -73,13 +53,6 @@ function periodLabel(value) {
 
 function classTypeLabel(value) {
   return value === 'gifted' ? 'Bồi dưỡng HSG' : value === 'remedial' ? 'Phụ đạo' : value === 'supplemental' ? 'Học bổ sung' : '—';
-}
-
-function teacherInitials(name) {
-  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return 'GV';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[parts.length - 2][0] || ''}${parts[parts.length - 1][0] || ''}`.toUpperCase();
 }
 
 function readStored(key, fallback = '') {
@@ -246,78 +219,169 @@ export default function AttendanceMonthlyReport({ client, classes = [], month, o
     track.scrollBy({ left: direction * Math.max(280, track.clientWidth * 0.82), behavior: 'smooth' });
   }
 
-  return <section className="att-report-m3">
-    <div className="att-report-m3__mode" role="group" aria-label="Đối tượng báo cáo" style={{ alignSelf: "start", padding: 4, borderRadius: 12, display: "flex", gap: 4 }}>
-      <button type="button" className={reportDimension === "teacher" ? "is-active" : ""} aria-pressed={reportDimension === "teacher"} onClick={() => setReportDimension("teacher")}>Theo giáo viên</button>
-      <button type="button" className={reportDimension === "student" ? "is-active" : ""} aria-pressed={reportDimension === "student"} onClick={() => setReportDimension("student")}>Theo học sinh</button>
-    </div>
-    {reportDimension === "student" ? <StudentAttendanceReport client={client} language={language} month={month} includeSupplemental={includeSupplemental} activityType={activityType} reporterName={reporterName} reporterTitle={reporterTitle} onReporterNameChange={updateReporterName} onReporterTitleChange={updateReporterTitle} onError={onError} /> : <>
-    <header className="att-report-m3__toolbar">
-      <AttendancePanelHeading className="att-report-m3__hero-copy" icon="report" iconClassName="att-report-m3__hero-icon" eyebrow="BÁO CÁO GIÁO VIÊN"
-        title="Báo cáo điểm danh" description="Thống kê ngày và tháng, bao gồm giờ dạy, phòng học và lịch sử điều chỉnh." />
-      <div className="att-report-m3__controls">
-        <div className="att-report-m3__mode" role="group" aria-label="Chế độ báo cáo">
-          <button type="button" className={mode === 'month' ? 'is-active' : ''} onClick={() => changeMode('month')}>Theo tháng</button>
-          <button type="button" className={mode === 'day' ? 'is-active' : ''} onClick={() => changeMode('day')}>Theo ngày</button>
+  const isTeacherReport = reportDimension === 'teacher';
+  const metrics = [
+    { label: 'Buổi đã dạy', value: report.metrics.completedSessions },
+    { label: 'Lượt có mặt', value: report.metrics.presentInstances },
+    { label: 'Tổng số tiết', value: Number(report.metrics.totalPeriods).toLocaleString('vi-VN') },
+    { label: 'Buổi đã hủy', value: report.metrics.cancelledSessions },
+  ].map((metric) => loading ? { ...metric, value: null } : metric);
+  const visibleClasses = reportClasses.filter((row) => row.active !== false && (
+    activityType === 'all' || row.class_type === (activityType === 'enrichment' ? 'gifted' : activityType)
+  ));
+
+  function changeActivityType(value) {
+    setActivityType(value);
+    setClassId('all');
+    setTeacherName('all');
+    remarksDirty.current = false;
+  }
+
+  return (
+    <section className="ae-report" aria-label="Báo cáo điểm danh">
+      <AttendanceEditorialHeading title="Báo cáo" className="ae-heading--report" metrics={isTeacherReport ? metrics : []} />
+      <div className="ae-report__filters ae-field-row">
+        <div className="ae-segments" role="group" aria-label="Đối tượng báo cáo">
+          <button type="button" aria-pressed={isTeacherReport} onClick={() => setReportDimension('teacher')}>Theo giáo viên</button>
+          <button type="button" aria-pressed={!isTeacherReport} onClick={() => setReportDimension('student')}>Theo học sinh</button>
         </div>
-        <div className="att-report-m3__filters">
+        <label><span>Loại hoạt động</span>
+          <select value={activityType} onChange={(event) => changeActivityType(event.target.value)}>
+            <option value="all">Tất cả</option><option value="remedial">Phụ đạo</option><option value="enrichment">Bồi dưỡng</option>
+            {includeSupplemental && <option value="supplemental">Học bổ sung</option>}
+          </select>
+        </label>
+        {isTeacherReport && <>
           {mode === 'month'
-            ? <label><span>Tháng</span><input type="month" value={month} onChange={(event) => { onMonthChange?.(event.target.value); remarksDirty.current = false; }} /></label>
-            : <label><span>Ngày</span><input type="date" value={date} max={vietnamDateString()} onChange={(event) => { setDate(event.target.value); remarksDirty.current = false; }} /></label>}
-          <label><span>Lớp</span><select value={classId} onChange={(event) => { setClassId(event.target.value); remarksDirty.current = false; }}><option value="all">Tất cả lớp</option>{reportClasses.filter((row) => row.active !== false && (activityType === 'all' || (activityType === 'enrichment' ? row.class_type === 'gifted' : row.class_type === activityType))).map((row) => <option key={row.id} value={row.id}>{row.class_name}</option>)}</select></label>
-          <label><span>Giáo viên</span><select value={teacherName} onChange={(event) => { setTeacherName(event.target.value); remarksDirty.current = false; }}><option value="all">Tất cả giáo viên</option>{teachers.map((name) => <option key={name} value={name}>{name}</option>)}</select></label>
-        </div>
-      </div>
-    </header>
-
-    <section className="att-report-m3__export-meta">
-      <label><span className="att-report-m3__meta-icon"><ReportIcon name="person" size={17} /></span><span>Người báo cáo</span><input value={reporterName} onChange={(event) => updateReporterName(event.target.value)} placeholder="Nhập họ và tên" /></label>
-      <label><span className="att-report-m3__meta-icon"><ReportIcon name="briefcase" size={17} /></span><span>Chức vụ</span><input value={reporterTitle} onChange={(event) => updateReporterTitle(event.target.value)} placeholder="Ví dụ: Phó hiệu trưởng" /></label>
-      <label className="is-wide"><span className="att-report-m3__meta-icon"><ReportIcon name="note" size={17} /></span><span>Nhận xét chung</span><textarea value={generalRemarks} rows="2" onChange={(event) => { remarksDirty.current = true; setGeneralRemarks(event.target.value); }} /></label>
-    </section>
-
-    {loading ? <div className="att-report-m3__loading">Đang tổng hợp dữ liệu {mode === 'day' ? 'ngày' : 'tháng'}…</div> : <>
-      <div className="att-report-m3__metrics">
-        <article className="is-blue"><span className="att-report-m3__metric-icon"><ReportIcon name="book" size={24} /></span><div><span>Buổi đã dạy</span><b>{report.metrics.completedSessions}</b><small>Phiên đã chốt</small></div></article>
-        <article className="is-green"><span className="att-report-m3__metric-icon"><ReportIcon name="users" size={24} /></span><div><span>Lượt có mặt</span><b>{report.metrics.presentInstances}</b><small>{pct(report.metrics.attendanceRate)} chuyên cần · {report.metrics.lateInstances} đi trễ</small></div></article>
-        <article className="is-purple"><span className="att-report-m3__metric-icon"><ReportIcon name="clock" size={24} /></span><div><span>Tổng số tiết</span><b>{String(report.metrics.totalPeriods).replace('.', ',')}</b><small>Không tính buổi hủy</small></div></article>
-        <article className="is-amber"><span className="att-report-m3__metric-icon"><ReportIcon name="ban" size={24} /></span><div><span>Buổi đã hủy</span><b>{report.metrics.cancelledSessions}</b><small>0 tiết / buổi</small></div></article>
-      </div>
-
-      <section className="att-report-m3__surface att-report-m3__teacher-surface">
-        <div className="att-report-m3__section-head">
-          <div className="att-report-m3__section-title"><span><ReportIcon name="teacher" size={20} /></span><div><h3>Theo giáo viên</h3><p>Tổng hợp số buổi, số tiết và tỷ lệ chuyên cần trong kỳ đang chọn. Kéo ngang để xem thêm giáo viên.</p></div></div>
-          <div className="att-report-m3__teacher-tools">
-            <label><span>Sắp xếp theo</span><select value={teacherSort} onChange={(event) => setTeacherSort(event.target.value)}><option value="periods-desc">Số tiết (giảm dần)</option><option value="attendance-desc">Chuyên cần (cao nhất)</option><option value="name-asc">Tên giáo viên (A–Z)</option></select></label>
-            <button type="button" aria-label="Giáo viên trước" onClick={() => scrollTeacherTrack(-1)}><ReportIcon name="chevronLeft" size={18} /></button>
-            <button type="button" className="is-next" aria-label="Giáo viên tiếp theo" onClick={() => scrollTeacherTrack(1)}><ReportIcon name="chevronRight" size={18} /></button>
+            ? <label><span>Tháng</span><input type="month" value={month} onChange={(event) => {
+              onMonthChange?.(event.target.value);
+              remarksDirty.current = false;
+            }} /></label>
+            : <label><span>Ngày</span><input type="date" value={date} max={vietnamDateString()} onChange={(event) => {
+              setDate(event.target.value);
+              remarksDirty.current = false;
+            }} /></label>}
+          <label><span>Lớp</span>
+            <select value={classId} onChange={(event) => { setClassId(event.target.value); remarksDirty.current = false; }}>
+              <option value="all">Tất cả lớp</option>
+              {visibleClasses.map((row) => <option key={row.id} value={row.id}>{row.class_name}</option>)}
+            </select>
+          </label>
+          <label><span>Giáo viên</span>
+            <select value={teacherName} onChange={(event) => { setTeacherName(event.target.value); remarksDirty.current = false; }}>
+              <option value="all">Tất cả giáo viên</option>
+              {teachers.map((name) => <option key={name} value={name}>{name}</option>)}
+            </select>
+          </label>
+          <div className="ae-segments" role="group" aria-label="Chế độ báo cáo">
+            <button type="button" aria-pressed={mode === 'month'} onClick={() => changeMode('month')}>Theo tháng</button>
+            <button type="button" aria-pressed={mode === 'day'} onClick={() => changeMode('day')}>Theo ngày</button>
           </div>
-        </div>
-        <div className="att-report-m3__teacher-track" ref={teacherTrackRef} tabIndex="0">
-          {sortedTeacherRows.map((row, index) => {
-            const rate = Math.max(0, Math.min(1, Number(row.attendance_rate || 0)));
-            return <article className={`att-report-m3__teacher-card is-tone-${index % 6}`} key={row.teacher_name}>
-              <div className="att-report-m3__teacher-card-head"><span className="att-report-m3__teacher-avatar">{teacherInitials(row.teacher_name)}</span><strong title={row.teacher_name}>{row.teacher_name}</strong></div>
-              <b>{periodLabel(row.total_periods)}</b>
-              <span>{row.completed_sessions} buổi · {row.distinct_classes} lớp</span>
-              <small>{row.present_instances} có mặt · {row.late_instances} đi trễ · {row.absent_instances} vắng</small>
-              <div className="att-report-m3__teacher-rate"><span className="att-report-m3__teacher-progress"><i style={{ width: `${rate * 100}%` }} /></span><b>{pct(rate)}</b></div>
-            </article>;
-          })}
-          {!sortedTeacherRows.length ? <div className="att-report-m3__empty">Chưa có buổi dạy phù hợp bộ lọc.</div> : null}
-        </div>
-      </section>
+        </>}
+      </div>
 
-      <section className="att-report-m3__surface att-report-m3__detail-surface">
-        <div className="att-report-m3__section-head"><div className="att-report-m3__section-title"><span><ReportIcon name="calendar" size={20} /></span><div><h3>Chi tiết buổi học</h3><p>Tách rõ giáo viên thực dạy, người thực hiện điểm danh và người điều chỉnh gần nhất.</p></div></div><div className="att-report-m3__export"><button type="button" disabled={loading} onClick={() => downloadAttendanceReportXlsx(report, exportFilters)}><ReportIcon name="download" size={15} />Xuất Excel</button><button className="is-primary" type="button" disabled={loading} onClick={async () => { try { await printAttendanceReportPdf(report, exportFilters); } catch (error) { onError?.(error.message); } }}><ReportIcon name="note" size={15} />Xuất PDF báo cáo</button></div></div>
-        <div className="att-report-m3__table-wrap"><table><thead><tr><th>Ngày</th><th>Giờ dạy</th><th>Giờ chốt</th><th>Lớp / loại</th><th>Môn</th><th>Phòng học</th><th>Giáo viên dạy</th><th>Người điểm danh</th><th>Điều chỉnh gần nhất</th><th>Số tiết</th><th>Sĩ số</th><th>Có mặt</th><th>Đi trễ</th><th>Vắng</th><th>Tỷ lệ</th><th>Trạng thái / ghi chú</th></tr></thead><tbody>{report.sessionRows.map((row) => <tr key={row.id} className={row.session_status === 'cancelled' ? 'is-cancelled' : ''}><td>{formatDate(row.attendance_date)}</td><td>{row.teaching_time_range || 'Chưa ghi'}</td><td>{formatCheckedTime(row.checked_at)}</td><td><b>{row.class_name}</b><small>{classTypeLabel(row.class_type)}</small></td><td>{row.subject || '—'}</td><td>{row.teaching_room || 'Chưa ghi'}</td><td>{row.teacher_name || '—'}</td><td><b>{row.checked_by_name || '—'}</b><small>{formatCheckedTime(row.checked_at)}</small></td><td><b>{row.latest_changed_by_name || 'Chưa điều chỉnh'}</b><small>{row.latest_changed_at ? formatCheckedTime(row.latest_changed_at) : `${row.change_count || 0} lần`}</small></td><td>{row.session_status === 'cancelled' ? '0' : String(row.lesson_periods).replace('.', ',')}</td><td>{row.total_students ?? '—'}</td><td>{row.present_count ?? '—'}</td><td>{row.late_count ?? '—'}</td><td>{row.absent_count ?? '—'}</td><td>{row.attendance_rate === null ? '—' : pct(row.attendance_rate)}</td><td><span className={`att-report-m3__status is-${row.session_status}`}>{row.session_status === 'cancelled' ? 'Đã hủy' : 'Đã điểm danh'}</span><small>{row.note || '—'}</small></td></tr>)}{!report.sessionRows.length ? <tr><td colSpan="16" className="att-report-m3__empty">Không có dữ liệu phù hợp bộ lọc.</td></tr> : null}</tbody></table></div>
-      </section>
+      {!isTeacherReport ? (
+        <StudentAttendanceReport client={client} language={language} month={month}
+          includeSupplemental={includeSupplemental} activityType={activityType} reporterName={reporterName}
+          reporterTitle={reporterTitle} onReporterNameChange={updateReporterName}
+          onReporterTitleChange={updateReporterTitle} onError={onError} />
+      ) : <>
+        <div className="ae-report__meta ae-field-row" aria-label="Thông tin người báo cáo">
+          <label><span>Người báo cáo</span><input value={reporterName}
+            onChange={(event) => updateReporterName(event.target.value)} placeholder="Nhập họ và tên" /></label>
+          <label><span>Chức vụ</span><input value={reporterTitle}
+            onChange={(event) => updateReporterTitle(event.target.value)} placeholder="Ví dụ: Phó hiệu trưởng" /></label>
+          <label><span>Nhận xét chung</span><textarea value={generalRemarks} rows={2}
+            onChange={(event) => { remarksDirty.current = true; setGeneralRemarks(event.target.value); }} /></label>
+        </div>
 
-      <section className="att-report-m3__surface att-report-m3__absence-surface">
-        <div className="att-report-m3__section-head"><div className="att-report-m3__section-title"><span><ReportIcon name="absent" size={20} /></span><div><h3>Chi tiết học sinh vắng</h3><p>Lý do vắng và ghi chú được lấy từ bản ghi đã chốt của từng buổi.</p></div></div></div>
-        <div className="att-report-m3__table-wrap"><table><thead><tr><th>Ngày</th><th>Học sinh</th><th>Lớp chính khóa</th><th>Lý do vắng</th><th>Ghi chú</th><th>Lớp phụ đạo/bồi dưỡng</th><th>Môn</th><th>Giáo viên</th><th>Giờ dạy</th><th>Giờ chốt</th><th>Phòng học</th></tr></thead><tbody>{report.absenceRows.map((row, index) => <tr key={`${row.session_id}-${row.student_code || row.student_full_name}-${index}`}><td>{formatDate(row.attendance_date)}</td><td><b>{row.student_full_name}</b><small>{row.student_code || 'Không có mã HS'}</small></td><td>{row.school_class_name || '—'}</td><td>{row.reason_label}</td><td>{row.absence_note || '—'}</td><td>{row.class_name}</td><td>{row.subject || '—'}</td><td>{row.teacher_name || '—'}</td><td>{row.teaching_time_range || 'Chưa ghi'}</td><td>{formatCheckedTime(row.checked_at)}</td><td>{row.teaching_room || 'Chưa ghi'}</td></tr>)}{!report.absenceRows.length ? <tr><td colSpan="11" className="att-report-m3__empty">Không có học sinh vắng trong dữ liệu phù hợp bộ lọc.</td></tr> : null}</tbody></table></div>
-      </section>
-    </>}
-    </>}
-  </section>;
+        {loading ? <p role="status" className="ae-message">Đang tổng hợp dữ liệu {mode === 'day' ? 'ngày' : 'tháng'}…</p> : <>
+          <section className="ae-report__teachers" aria-labelledby="ae-report-teachers-title">
+            <div className="ae-report__teacher-tools">
+              <h2 id="ae-report-teachers-title">Tổng hợp theo giáo viên</h2>
+              <div className="ae-report__teacher-controls">
+                <select aria-label="Sắp xếp giáo viên" value={teacherSort} onChange={(event) => setTeacherSort(event.target.value)}>
+                  <option value="periods-desc">Số tiết (giảm dần)</option><option value="attendance-desc">Chuyên cần (cao nhất)</option>
+                  <option value="name-asc">Tên giáo viên (A–Z)</option>
+                </select>
+                <button type="button" className="ae-button" aria-label="Giáo viên trước" onClick={() => scrollTeacherTrack(-1)}><ChevronLeft size={16} aria-hidden="true" /></button>
+                <button type="button" className="ae-button" aria-label="Giáo viên tiếp theo" onClick={() => scrollTeacherTrack(1)}><ChevronRight size={16} aria-hidden="true" /></button>
+              </div>
+            </div>
+            <div className="ae-report__teacher-track" ref={teacherTrackRef} tabIndex={0} role="region" aria-label="Danh sách giáo viên trong kỳ báo cáo">
+              {sortedTeacherRows.map((row, index) => (
+                <details className="ae-report__teacher" key={row.teacher_name}>
+                  <summary>
+                    <span className="ae-report__teacher-rank">{String(index + 1).padStart(2, '0')}</span>
+                    <span><strong>{row.teacher_name}</strong><b>{periodLabel(row.total_periods)}</b></span>
+                  </summary>
+                  <small>{row.completed_sessions} buổi · {row.distinct_classes} lớp · {pct(row.attendance_rate)} chuyên cần</small>
+                  <small>{row.present_instances} có mặt · {row.late_instances} đi trễ · {row.absent_instances} vắng</small>
+                </details>
+              ))}
+              {sortedTeacherRows.length === 0 && <p className="ae-message">Chưa có buổi dạy phù hợp bộ lọc.</p>}
+            </div>
+          </section>
+
+          <section aria-labelledby="ae-report-sessions-title">
+            <div className="ae-section-heading">
+              <h2 id="ae-report-sessions-title">Chi tiết buổi học</h2>
+              <div className="ae-actions">
+                <button type="button" className="ae-button" onClick={() => downloadAttendanceReportXlsx(report, exportFilters)}>Xuất Excel</button>
+                <button type="button" className="ae-button ae-button--primary" onClick={async () => {
+                  try { await printAttendanceReportPdf(report, exportFilters); } catch (error) { onError?.(error.message); }
+                }}>Xuất PDF báo cáo</button>
+              </div>
+            </div>
+            <div className="ae-table-scroll" tabIndex={0} role="region" aria-labelledby="ae-report-sessions-title">
+              <table className="ae-table ae-report__table">
+                <thead><tr>{['Ngày', 'Giờ dạy', 'Giờ chốt', 'Lớp / Loại', 'Môn', 'Phòng học', 'Giáo viên dạy',
+                  'Người điểm danh', 'Điều chỉnh gần nhất', 'Số tiết', 'Sĩ số', 'Có mặt', 'Đi trễ', 'Vắng', 'Tỷ lệ',
+                  'Trạng thái / ghi chú'].map((label) => <th key={label} scope="col">{label}</th>)}</tr></thead>
+                <tbody>{report.sessionRows.map((row) => (
+                  <tr key={row.id}>
+                    <td>{formatDate(row.attendance_date)}</td><td>{row.teaching_time_range || 'Chưa ghi'}</td>
+                    <td>{formatCheckedTime(row.checked_at)}</td>
+                    <td><strong>{row.class_name}</strong><small>{classTypeLabel(row.class_type)}</small></td>
+                    <td>{row.subject || '—'}</td><td>{row.teaching_room || 'Chưa ghi'}</td><td>{row.teacher_name || '—'}</td>
+                    <td><strong>{row.checked_by_name || '—'}</strong></td>
+                    <td>
+                      <span className={`ae-tag ${row.change_count ? 'is-gifted' : 'is-amber'}`}>{row.change_count ? 'Đã điều chỉnh' : 'Chưa điều chỉnh'}</span>
+                      {row.change_count > 0 && <small>{[row.latest_changed_by_name, row.latest_changed_at && formatCheckedTime(row.latest_changed_at), `${row.change_count} lần`].filter(Boolean).join(' · ')}</small>}
+                    </td>
+                    <td>{row.session_status === 'cancelled' ? '0' : String(row.lesson_periods).replace('.', ',')}</td>
+                    <td>{row.total_students ?? '—'}</td><td>{row.present_count ?? '—'}</td><td>{row.late_count ?? '—'}</td>
+                    <td>{row.absent_count ?? '—'}</td><td>{row.attendance_rate === null ? '—' : pct(row.attendance_rate)}</td>
+                    <td><strong>{row.session_status === 'cancelled' ? 'Đã hủy' : 'Đã điểm danh'}</strong>{row.note && <small>{row.note}</small>}</td>
+                  </tr>
+                ))}
+                {report.sessionRows.length === 0 && <tr><td colSpan={16}>Không có dữ liệu phù hợp bộ lọc.</td></tr>}</tbody>
+              </table>
+            </div>
+          </section>
+
+          <section aria-labelledby="ae-report-absences-title">
+            <div className="ae-section-heading"><h2 id="ae-report-absences-title">Chi tiết học sinh vắng</h2></div>
+            <div className="ae-table-scroll" tabIndex={0} role="region" aria-labelledby="ae-report-absences-title">
+              <table className="ae-table ae-report__table ae-report__table--absences">
+                <thead><tr>{['Ngày', 'Học sinh', 'Lớp chính khóa', 'Lý do vắng', 'Ghi chú', 'Lớp phụ đạo/bồi dưỡng',
+                  'Môn', 'Giáo viên', 'Giờ dạy', 'Giờ chốt', 'Phòng học'].map((label) => <th key={label} scope="col">{label}</th>)}</tr></thead>
+                <tbody>{report.absenceRows.map((row, index) => (
+                  <tr key={`${row.session_id}-${row.student_code || row.student_full_name}-${index}`}>
+                    <td>{formatDate(row.attendance_date)}</td>
+                    <td><strong>{row.student_full_name}</strong>{row.student_code && <small>{row.student_code}</small>}</td>
+                    <td>{row.school_class_name || '—'}</td><td>{row.reason_label}</td><td>{row.absence_note || '—'}</td>
+                    <td>{row.class_name}</td><td>{row.subject || '—'}</td><td>{row.teacher_name || '—'}</td>
+                    <td>{row.teaching_time_range || 'Chưa ghi'}</td><td>{formatCheckedTime(row.checked_at)}</td>
+                    <td>{row.teaching_room || 'Chưa ghi'}</td>
+                  </tr>
+                ))}
+                {report.absenceRows.length === 0 && <tr><td colSpan={11}>Không có học sinh vắng trong dữ liệu phù hợp bộ lọc.</td></tr>}</tbody>
+              </table>
+            </div>
+          </section>
+        </>}
+      </>}
+    </section>
+  );
 }

@@ -1,32 +1,47 @@
 import React, { useMemo, useState } from 'react';
-import { AttendancePanelHeading, AttendanceStatCard, AttendanceEmpty } from './AttendanceWorkspaceUI.jsx';
-import './AttendanceArchive.css';
+import AttendanceEditorialHeading from './AttendanceEditorialHeading.jsx';
+import { AttendanceEmpty, AttendanceUiIcon } from './AttendanceWorkspaceUI.jsx';
+
+const archivedAtFormatter = new Intl.DateTimeFormat('vi-VN', {
+  dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh',
+});
 
 function formatDate(value) {
-  if (!value) return '—';
-  const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
-  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString('vi-VN');
+  const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : '—';
 }
 
 function formatDateTime(value) {
   if (!value) return '—';
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
+  return Number.isNaN(date.getTime()) ? String(value) : archivedAtFormatter.format(date);
 }
 
 function fold(value) {
-  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  return String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/đ/g, 'd').trim();
 }
 
-function requestLabel(status) {
-  if (status === 'pending') return 'Đang chờ Admin duyệt';
-  if (status === 'approved') return 'Admin đã duyệt · chờ hoàn tất xóa';
-  if (status === 'rejected') return 'Admin đã từ chối yêu cầu xóa';
-  return 'Chưa yêu cầu xóa vĩnh viễn';
-}
+const REQUEST_LABELS = {
+  pending: 'Đang chờ Admin duyệt',
+  approved: 'Đã duyệt · chờ hoàn tất xóa',
+  rejected: 'Đã từ chối yêu cầu xóa',
+};
 
-function classTypeLabel(value) {
-  return value === 'remedial' ? 'Phụ đạo' : value === 'gifted' ? 'Bồi dưỡng' : 'Lớp học';
+function ArchiveSource({ item }) {
+  if (item.archive_kind !== 'class') {
+    return <small>{item.source_type === 'supplemental' ? 'Học bổ sung' : 'Điểm danh lớp'}{item.subject ? ` · ${item.subject}` : ''}</small>;
+  }
+  const classType = { remedial: 'Phụ đạo', gifted: 'Bồi dưỡng' }[item.class_type];
+  const description = [classType, item.subject, item.grade_level && `Khối ${item.grade_level}`, item.school_year].filter(Boolean);
+  return (
+    <details className="ae-archive__class-detail">
+      <summary>Lớp học · Chi tiết</summary>
+      {description.length > 0 && <span>{description.join(' · ')}</span>}
+      <span>{item.member_count ?? 0} học sinh · {item.teacher_count ?? 0} giáo viên</span>
+      <span>{item.session_count ?? 0} buổi điểm danh · {item.record_count ?? 0} bản ghi</span>
+      {item.archived_by_name && <span>Người lưu trữ: {item.archived_by_name}</span>}
+    </details>
+  );
 }
 
 export default function AttendanceArchivePanel({
@@ -53,64 +68,106 @@ export default function AttendanceArchivePanel({
   const combined = useMemo(() => [
     ...items.map((item) => ({ ...item, archive_kind: 'attendance' })),
     ...classItems.map((item) => ({ ...item, archive_kind: 'class', source_type: 'class' })),
-  ], [items, classItems]);
+  ].sort((a, b) => (Date.parse(b.archived_at) || 0) - (Date.parse(a.archived_at) || 0)), [items, classItems]);
 
-  const filtered = useMemo(() => combined.filter((item) => {
+  const searchTerm = fold(query);
+  const filtered = combined.filter((item) => {
     if (source !== 'all' && item.source_type !== source) return false;
-    if (requestStatus !== 'all' && item.delete_request_status !== requestStatus) return false;
-    if (!query.trim()) return true;
-    return fold(`${item.class_name} ${item.subject} ${item.teacher_name} ${item.archived_by_name} ${item.grade_level} ${item.school_year}`).includes(fold(query));
-  }), [combined, query, source, requestStatus]);
-
+    if (requestStatus !== 'all' && (item.delete_request_status || 'none') !== requestStatus) return false;
+    return !searchTerm || fold(`${item.class_name} ${item.subject} ${item.teacher_name} ${item.archived_by_name} ${item.grade_level} ${item.school_year}`).includes(searchTerm);
+  });
   const pendingCount = combined.filter((item) => item.delete_request_status === 'pending').length;
   const approvedCount = combined.filter((item) => item.delete_request_status === 'approved').length;
+  const metrics = [
+    { label: 'Đang lưu trữ', value: loading ? null : combined.length },
+    ...(isAdmin ? [{ label: 'Chờ duyệt', value: loading ? null : pendingCount }] : []),
+    ...(isAdmin && approvedCount > 0 ? [{ label: 'Chờ hoàn tất', value: approvedCount }] : []),
+  ];
 
   return (
-    <section className="attendance-archive" aria-label="Kho lưu trữ điểm danh">
-      <AttendancePanelHeading className="attendance-archive__hero" icon="shield" eyebrow="AN TOÀN DỮ LIỆU" title="Kho lưu trữ điểm danh"
-        description="Lưu trữ an toàn các buổi học và lớp học; dữ liệu chỉ bị xóa vĩnh viễn sau khi được phê duyệt."
-        aside={<div className="awu-mini-stats"><AttendanceStatCard icon="archive" tone="blue" label="Đang lưu trữ" value={combined.length} />{isAdmin && pendingCount>0 ? <span className="awu-pill is-amber">{pendingCount} chờ duyệt</span> : null}{isAdmin && approvedCount>0 ? <span className="awu-pill is-red">{approvedCount} chờ hoàn tất</span> : null}</div>}
-      />
+    <section className="ae-archive" aria-label="Kho lưu trữ điểm danh" aria-busy={loading}>
+      <AttendanceEditorialHeading title="Kho lưu trữ" className="ae-heading--archive" metrics={metrics} />
 
-      <div className="attendance-archive__toolbar" data-bes-keep-search="true">
-        <label className="attendance-archive__search"><span>Tìm trong kho</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tên lớp, môn, giáo viên…" /></label>
-        <label><span>Nguồn</span><select value={source} onChange={(event) => setSource(event.target.value)}><option value="all">Tất cả</option><option value="class">Lớp học</option><option value="extra">Phụ đạo / Bồi dưỡng</option><option value="supplemental">Học bổ sung</option></select></label>
-        <label><span>Trạng thái xóa</span><select value={requestStatus} onChange={(event) => setRequestStatus(event.target.value)}><option value="all">Tất cả</option><option value="none">Chưa yêu cầu</option><option value="pending">Chờ duyệt</option><option value="approved">Chờ hoàn tất</option><option value="rejected">Đã từ chối</option></select></label>
-        <button type="button" className="attendance-archive__refresh" disabled={busy || loading} onClick={onRefresh}>Làm mới</button>
+      <div className="ae-archive__filters ae-field-row" data-bes-keep-search="true">
+        <label>
+          <span>Tìm trong kho</span>
+          <span className="ae-search">
+            <AttendanceUiIcon name="search" size={21} />
+            <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tên lớp, môn, giáo viên…" />
+          </span>
+        </label>
+        <label>
+          <span>Nguồn</span>
+          <select value={source} onChange={(event) => setSource(event.target.value)}>
+            <option value="all">Tất cả</option><option value="class">Lớp học</option>
+            <option value="extra">Phụ đạo / Bồi dưỡng</option><option value="supplemental">Học bổ sung</option>
+          </select>
+        </label>
+        <label>
+          <span>Trạng thái xóa</span>
+          <select value={requestStatus} onChange={(event) => setRequestStatus(event.target.value)}>
+            <option value="all">Tất cả</option><option value="none">Chưa yêu cầu</option><option value="pending">Chờ duyệt</option>
+            <option value="approved">Chờ hoàn tất</option><option value="rejected">Đã từ chối</option>
+          </select>
+        </label>
+        <button type="button" className="ae-button" disabled={busy || loading} onClick={onRefresh}>Làm mới</button>
       </div>
 
-      {loading ? <div className="attendance-archive__empty">Đang tải Kho lưu trữ…</div> : null}
-      {!loading && !filtered.length ? <AttendanceEmpty icon="archive" title={combined.length ? 'Không có mục phù hợp' : 'Kho lưu trữ đang trống'} description={combined.length ? 'Thay đổi từ khóa hoặc bộ lọc để xem kết quả.' : 'Các lớp và buổi học được lưu trữ sẽ hiển thị tại đây.'} /> : null}
+      {loading && <p role="status" className="ae-message">Đang tải Kho lưu trữ…</p>}
+      {!loading && filtered.length === 0 && (
+        <AttendanceEmpty icon="archive"
+          title={combined.length ? 'Không có mục phù hợp' : 'Kho lưu trữ đang trống'}
+          description={combined.length ? 'Thay đổi từ khóa hoặc bộ lọc để xem kết quả.' : 'Các lớp và buổi học được lưu trữ sẽ hiển thị tại đây.'} />
+      )}
 
-      {!loading && filtered.length ? <div className="attendance-archive__list">{filtered.map((item) => {
-        const pending = item.delete_request_status === 'pending';
-        const approved = item.delete_request_status === 'approved';
-        const rejected = item.delete_request_status === 'rejected';
-        const isClass = item.archive_kind === 'class';
-        const mayMutate = isClass ? canManageClasses : true;
-        const restore = isClass ? onRestoreClass : onRestore;
-        const requestDelete = isClass ? onRequestDeleteClass : onRequestDelete;
-        const approveDelete = isClass ? onApproveDeleteClass : onApproveDelete;
-        const rejectDelete = isClass ? onRejectDeleteClass : onRejectDelete;
-        return (
-          <article key={`${item.archive_kind}:${item.archive_id}`} className={`attendance-archive__card ${isClass ? 'is-class-card' : ''} ${pending || approved ? 'is-pending' : ''} ${rejected ? 'is-rejected' : ''}`}>
-            <div className="attendance-archive__card-main">
-              <div className="attendance-archive__card-title"><span className={`attendance-archive__source is-${item.source_type}`}>{isClass ? 'Lớp học' : item.source_type === 'supplemental' ? 'Học bổ sung' : 'Điểm danh lớp'}</span><h3>{item.class_name || (isClass ? 'Lớp học' : 'Buổi điểm danh')}</h3></div>
-              {isClass ? <>
-                <div className="attendance-archive__meta"><span><b>Loại lớp</b>{classTypeLabel(item.class_type)}</span><span><b>Môn</b>{item.subject || '—'}</span><span><b>Khối</b>{item.grade_level ? `Khối ${item.grade_level}` : '—'}</span><span><b>Năm học</b>{item.school_year || '—'}</span><span><b>Lưu trữ lúc</b>{formatDateTime(item.archived_at)}</span><span><b>Người lưu trữ</b>{item.archived_by_name || '—'}</span></div>
-                <div className="attendance-archive__counts"><span>{item.member_count || 0} học sinh</span><span>{item.teacher_count || 0} giáo viên</span><span>{item.session_count || 0} buổi điểm danh</span><span>{item.record_count || 0} bản ghi</span></div>
-              </> : <div className="attendance-archive__meta"><span><b>Ngày học</b>{formatDate(item.attendance_date)}</span><span><b>Giáo viên</b>{item.teacher_name || '—'}</span><span><b>Môn</b>{item.subject || '—'}</span><span><b>Lưu trữ lúc</b>{formatDateTime(item.archived_at)}</span></div>}
-              <div className={`attendance-archive__request-state is-${item.delete_request_status || 'none'}`}><strong>{requestLabel(item.delete_request_status)}</strong>{pending && item.delete_request_reason ? <span>Lý do: {item.delete_request_reason}</span> : null}{approved && item.delete_review_note ? <span>Ghi chú Admin: {item.delete_review_note}</span> : null}{rejected && item.delete_review_note ? <span>Phản hồi Admin: {item.delete_review_note}</span> : null}</div>
-            </div>
-            <div className="attendance-archive__actions">
-              {mayMutate && !pending && !approved ? <button type="button" className="is-restore" disabled={busy} onClick={() => restore?.(item)}>Khôi phục</button> : null}
-              {mayMutate && !pending && !approved ? <button type="button" className="is-request" disabled={busy} onClick={() => requestDelete?.(item)}>{rejected ? 'Gửi lại yêu cầu xóa' : 'Yêu cầu xóa vĩnh viễn'}</button> : null}
-              {isAdmin && pending ? <><button type="button" className="is-reject" disabled={busy} onClick={() => rejectDelete?.(item)}>Từ chối</button><button type="button" className="is-approve" disabled={busy} onClick={() => approveDelete?.(item)}>Duyệt xóa vĩnh viễn</button></> : null}
-              {isAdmin && approved ? <button type="button" className="is-approve" disabled={busy} onClick={() => approveDelete?.(item)}>Hoàn tất xóa vĩnh viễn</button> : null}
-            </div>
-          </article>
-        );
-      })}</div> : null}
+      {!loading && filtered.length > 0 && (
+        <div className="ae-table-scroll" tabIndex={0} role="region" aria-label="Danh sách dữ liệu lưu trữ">
+          <table className="ae-table ae-archive__table">
+            <thead>
+              <tr><th scope="col">Lớp / Nguồn</th><th scope="col">Ngày học</th><th scope="col">Giáo viên</th>
+                <th scope="col">Lưu trữ lúc</th><th scope="col">Trạng thái</th><th scope="col">Thao tác</th></tr>
+            </thead>
+            <tbody>{filtered.map((item) => {
+              const status = item.delete_request_status;
+              const pending = status === 'pending';
+              const approved = status === 'approved';
+              const isClass = item.archive_kind === 'class';
+              const mayRestoreOrRequest = (!isClass || canManageClasses) && !pending && !approved;
+              const restore = isClass ? onRestoreClass : onRestore;
+              const requestDelete = isClass ? onRequestDeleteClass : onRequestDelete;
+              const approveDelete = isClass ? onApproveDeleteClass : onApproveDelete;
+              const rejectDelete = isClass ? onRejectDeleteClass : onRejectDelete;
+
+              return <tr key={`${item.archive_kind}:${item.archive_id}`}>
+                <th scope="row"><strong>{item.class_name || (isClass ? 'Lớp học' : 'Buổi điểm danh')}</strong><ArchiveSource item={item} /></th>
+                <td>{formatDate(item.attendance_date)}</td>
+                <td>{item.teacher_name || '—'}</td>
+                <td>{formatDateTime(item.archived_at)}</td>
+                <td>
+                  <strong className={pending ? 'ae-archive__pending' : undefined}>{REQUEST_LABELS[status] || 'Đang lưu trữ'}</strong>
+                  {pending && item.delete_request_reason && <small>Lý do: {item.delete_request_reason}</small>}
+                  {(approved || status === 'rejected') && item.delete_review_note && <small>Phản hồi Admin: {item.delete_review_note}</small>}
+                </td>
+                <td>
+                  <div className="ae-archive__actions">
+                    {mayRestoreOrRequest && <>
+                      <button type="button" className="ae-button" disabled={busy} onClick={() => restore?.(item)}>Khôi phục</button>
+                      <button type="button" className="ae-button ae-button--danger" disabled={busy} onClick={() => requestDelete?.(item)}>
+                        {status === 'rejected' ? 'Gửi lại yêu cầu xóa' : 'Yêu cầu xóa vĩnh viễn'}
+                      </button>
+                    </>}
+                    {isAdmin && pending && <>
+                      <button type="button" className="ae-button" disabled={busy} onClick={() => rejectDelete?.(item)}>Từ chối</button>
+                      <button type="button" className="ae-button ae-button--primary" disabled={busy} onClick={() => approveDelete?.(item)}>Duyệt xóa vĩnh viễn</button>
+                    </>}
+                    {isAdmin && approved && <button type="button" className="ae-button ae-button--primary" disabled={busy} onClick={() => approveDelete?.(item)}>Hoàn tất xóa vĩnh viễn</button>}
+                  </div>
+                </td>
+              </tr>;
+            })}</tbody>
+          </table>
+        </div>
+      )}
     </section>
   );
 }
