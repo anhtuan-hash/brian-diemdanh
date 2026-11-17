@@ -202,9 +202,6 @@ export default function AuthPage({ mode = 'login', language, onLogin, setGlobalL
           </span>
           <span>@brianverse</span>
         </a>
-        {isLogin && <span className="attendance-auth-caption">
-          {vi ? 'Điểm danh lớp phụ đạo & bồi dưỡng' : 'Attendance for tutoring & enrichment classes'}
-        </span>}
       </header>
 
       <main className={isLogin ? 'attendance-auth-layout' : undefined}>
