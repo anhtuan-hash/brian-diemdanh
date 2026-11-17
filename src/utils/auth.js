@@ -1,4 +1,4 @@
-import { isSupabaseConfigured, supabase } from './supabase.js';
+import { invalidateSupabaseReadCacheForTable, isSupabaseConfigured, supabase } from './supabase.js';
 import { createAllAccessPermissions, normalizePermissions } from './permissions.js';
 import { normalizeSystemRole } from './roles.js';
 
@@ -8,7 +8,7 @@ export const PROFILE_TABLE = 'profiles';
 export const OFFLINE_DEMO_SESSION_KEY = 'bes-offline-demo-user-v943';
 export const AUTH_NOTICE_KEY = 'bes-auth-notice-v1065';
 
-const PROFILE_COLUMNS = 'id,email,full_name,school,role,approved,permissions,attendance_permissions,created_at,updated_at';
+const PROFILE_COLUMNS = 'id,email,full_name,school,role,approved,permissions,attendance_permissions,attendance_mfa_required,created_at,updated_at';
 const PROFILE_CACHE_MAX_AGE = 30 * 60 * 1000;
 const AUTH_SESSION_CACHE_MAX_AGE = 5 * 60 * 1000;
 
@@ -215,6 +215,7 @@ function mapProfile(user, profile = null) {
     updatedAt: profile?.updated_at || '',
     permissions,
     attendancePermissionsManaged,
+    attendanceMfaRequired: profile?.attendance_mfa_required !== false,
     provider: 'supabase',
     authProviders: getAuthProviders(user),
     avatarUrl: meta.avatar_url || meta.picture || '',
@@ -245,6 +246,7 @@ async function readProfile(userId, { force = false } = {}) {
     return { profile: cached.profile, error: null, cached: true };
   }
   if (!force && profilePromises.has(key)) return profilePromises.get(key);
+  if (force) invalidateSupabaseReadCacheForTable(PROFILE_TABLE);
 
   const task = (async () => {
     const { data, error } = await supabase

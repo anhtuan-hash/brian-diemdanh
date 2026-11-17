@@ -107,8 +107,10 @@ export default function AdminMfaSecurity({ user, route, language = 'vi', require
 
   if (!isAdmin) return children ?? null;
 
-  const needsVerification = (state.factors.length > 0 || state.webauthnFactors.length > 0) && state.currentLevel !== 'aal2';
-  const needsAttendanceMfa = requireForAttendance && (state.loading || state.error || state.currentLevel !== 'aal2');
+  const attendanceMfaDisabled = requireForAttendance && user?.attendanceMfaRequired === false;
+  const needsVerification = !attendanceMfaDisabled && (state.factors.length > 0 || state.webauthnFactors.length > 0) && state.currentLevel !== 'aal2';
+  const needsAttendanceMfa = requireForAttendance && !attendanceMfaDisabled
+    && (state.loading || state.error || state.currentLevel !== 'aal2');
   const needsAttendanceEnrollment = needsAttendanceMfa && !state.loading && !state.error && !needsVerification;
   const canonicalOrigin = typeof window !== 'undefined' && window.location.hostname === 'esl-brian.vercel.app';
 

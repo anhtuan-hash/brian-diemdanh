@@ -3,6 +3,7 @@ import AdminMfaSecurity from './src/components/AdminMfaSecurity.jsx';
 import { LoginPaperMasthead } from './src/features/login-scrapbook/LoginPaperArtwork.jsx';
 import AttendanceWorkspace from './src/pages/AttendanceWorkspace.jsx';
 import AttendancePermissions from './src/pages/AttendancePermissions.jsx';
+import AttendanceAdminSecurity from './src/pages/AttendanceAdminSecurity.jsx';
 import AuthPage from './src/pages/AuthPage.jsx';
 import { bootRuntimeCore } from './src/services/runtime/core.js';
 import { useRuntimeCore } from './src/services/runtime/useRuntimeCore.js';
@@ -19,6 +20,7 @@ function readRoute() {
   if (href.includes('type=recovery') || href.includes('recovery=1')) return 'login';
   if (/^#\/register(?:$|\?)/.test(hash)) return 'register';
   if (hash === '#/phan-quyen') return 'permissions';
+  if (hash === '#/bao-mat') return 'security';
   return 'attendance';
 }
 
@@ -27,13 +29,14 @@ export default function AttendanceSite() {
   const [route, setRoute] = useState(readRoute);
   const [signOutError, setSignOutError] = useState(false);
   const attendanceHash = useRef(
-    /^#\/(?:attendance|phan-quyen)(?:$|\?)/.test(window.location.hash) ? window.location.hash : '#/attendance',
+    /^#\/(?:attendance|phan-quyen|bao-mat)(?:$|\?)/.test(window.location.hash) ? window.location.hash : '#/attendance',
   );
   const user = runtime.profile;
   const admin = user?.role === 'admin';
   const isSignedIn = user?.provider === 'supabase' && user.approved === true;
   const showLogin = !isSignedIn || route === 'login';
   const canAccess = isSignedIn && hasRouteAccess(withAttendanceReadOnlyAccess(user), 'attendance');
+  const adminPage = route === 'permissions' || route === 'security';
 
   useEffect(() => {
     const syncRoute = () => setRoute(readRoute());
@@ -42,11 +45,11 @@ export default function AttendanceSite() {
   }, []);
 
   useEffect(() => {
-    if (!isSignedIn || admin) return undefined;
+    if (!isSignedIn) return undefined;
     const refresh = () => { void initializeAuthSession({ force: true }).catch(() => {}); };
     window.addEventListener('focus', refresh);
     return () => window.removeEventListener('focus', refresh);
-  }, [isSignedIn, admin, user?.id]);
+  }, [isSignedIn, user?.id]);
 
   async function handleLogout() {
     setSignOutError(false);
@@ -90,14 +93,17 @@ export default function AttendanceSite() {
             <div>
               <span>{user.name}</span>
               {admin && <a href="#/phan-quyen" aria-current={route === 'permissions' ? 'page' : undefined}>Phân quyền</a>}
+              {admin && <a href="#/bao-mat" aria-current={route === 'security' ? 'page' : undefined}>Bảo mật</a>}
               <button type="button" onClick={handleLogout}>Đăng xuất</button>
             </div>
           </header>
           {signOutError && <p className="attendance-site-status" role="alert">Chưa đăng xuất được. Vui lòng thử lại.</p>}
-          {canAccess && (route !== 'permissions' || admin) ? (
+          {canAccess && (!adminPage || admin) ? (
             <AdminMfaSecurity key={user.id} user={user} route="attendance" language="vi" requireForAttendance>
               <main className="attendance-site-content">
-                {route === 'permissions' ? <AttendancePermissions /> : <AttendanceWorkspace key={JSON.stringify(user.permissions.allowed)} currentUser={user} language="vi" />}
+                {route === 'permissions' && <AttendancePermissions />}
+                {route === 'security' && <AttendanceAdminSecurity required={user.attendanceMfaRequired} />}
+                {route === 'attendance' && <AttendanceWorkspace key={JSON.stringify(user.permissions.allowed)} currentUser={user} language="vi" />}
               </main>
             </AdminMfaSecurity>
           ) : (
