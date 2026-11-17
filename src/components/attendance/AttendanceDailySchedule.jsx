@@ -142,8 +142,9 @@ export default function AttendanceDailySchedule({
   }, [date]);
 
   const scheduledClasses = useMemo(
-    () => classes.filter((classRow) => classRow.active !== false && isExtraClassScheduledOnDate(classRow, date)),
-    [classes, date],
+    () => classes.filter((classRow) => sessionsByClass.has(String(classRow.id))
+      || (classRow.active !== false && isExtraClassScheduledOnDate(classRow, date))),
+    [classes, date, sessionsByClass],
   );
 
   const roomOptions = useMemo(() => sortAttendanceRoomLabels([

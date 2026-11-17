@@ -1,5 +1,6 @@
 .bes-mfa-shield{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;min-height:100dvh;background:rgba(15,23,42,.7);backdrop-filter:blur(7px);padding:20px;overflow:auto}
 .bes-mfa-shield-card{background:#fff;color:#182437;border-radius:20px;padding:30px;width:min(100%,410px);box-shadow:0 30px 90px #11182750;display:grid;gap:12px}
+.bes-mfa-shield-card:has(.bes-mfa-enroll){box-sizing:border-box;max-height:calc(100dvh - 40px);overflow:auto}
 .bes-mfa-shield-mark{display:grid;place-items:center;background:#164f7b;color:#fff;font-weight:900;font-size:24px;width:50px;height:50px;border-radius:15px}
 .bes-mfa-shield-card h2{font-size:22px;line-height:1.26;margin:4px 0}
 .bes-mfa-shield-card p{font-size:14px;line-height:1.65;color:#475569;margin:0}

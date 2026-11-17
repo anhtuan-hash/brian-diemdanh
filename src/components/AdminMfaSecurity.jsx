@@ -4,9 +4,7 @@ import { supabase } from '../utils/supabase.js';
 import { logoutUser } from '../utils/auth.js';
 import './AdminMfaSecurity.css';
 
-// Deliberately opt-in: existing Admin accounts without enrolled factors are not locked out.
-// Once a factor is verified, it must be presented again on future Admin logins.
-export default function AdminMfaSecurity({ user, route, language = 'vi' }) {
+export default function AdminMfaSecurity({ user, route, language = 'vi', requireForAttendance = false, children }) {
   const vi = language === 'vi';
   const isAdmin = user?.role === 'admin' && user?.provider === 'supabase' && Boolean(supabase);
   const [state, setState] = useState({ loading: true, currentLevel: '', nextLevel: '', factors: [], webauthnFactors: [], error: '' });
@@ -107,9 +105,11 @@ export default function AdminMfaSecurity({ user, route, language = 'vi' }) {
     return () => data?.subscription?.unsubscribe();
   }, [isAdmin, user?.id, refresh]);
 
-  if (!isAdmin) return null;
+  if (!isAdmin) return children ?? null;
 
   const needsVerification = (state.factors.length > 0 || state.webauthnFactors.length > 0) && state.currentLevel !== 'aal2';
+  const needsAttendanceMfa = requireForAttendance && (state.loading || state.error || state.currentLevel !== 'aal2');
+  const needsAttendanceEnrollment = needsAttendanceMfa && !state.loading && !state.error && !needsVerification;
   const canonicalOrigin = typeof window !== 'undefined' && window.location.hostname === 'esl-brian.vercel.app';
 
   const explainWebauthnError = (error) => {
@@ -248,14 +248,38 @@ export default function AdminMfaSecurity({ user, route, language = 'vi' }) {
     await refresh();
   };
 
-  // A temporary Supabase MFA lookup error must not lock out an existing Admin
-  // who has not yet enrolled a factor. Server-side sensitive actions remain protected.
-  const dialog = needsVerification ? (
+  const enrollmentForm = setup ? (
+    <form onSubmit={confirmSetup} className="bes-mfa-enroll">
+      <p>{setup.target === 'apple'
+        ? (vi ? 'Trong ứng dụng Mật khẩu trên Mac, chọn tài khoản BRIAN → Sửa → Thiết lập mã. Dán khóa thiết lập rồi nhập mã 6 chữ số.' : 'In Passwords on Mac, choose your BRIAN account → Edit → Set Up Code. Paste the setup key, then enter the six-digit code.')
+        : (vi ? 'Quét mã QR bằng ứng dụng xác thực rồi nhập mã 6 chữ số để kích hoạt.' : 'Scan the QR code with an authenticator app, then enter the six-digit code.')}</p>
+      {setup.qr ? <img alt={vi ? 'Mã QR xác thực hai lớp' : 'Two-factor setup QR code'} src={setup.qr} /> : null}
+      {setup.secret ? <details open={setup.target === 'apple'}><summary>{vi ? 'Khóa thiết lập (giữ bí mật)' : 'Setup key (keep private)'}</summary><code>{setup.secret}</code></details> : null}
+      {setup.target === 'apple' ? <p className="bes-mfa-warning">{vi ? 'Touch ID mở khóa ứng dụng Mật khẩu. BRIAN xác minh bằng mã do Mac tạo. Giữ riêng khóa thiết lập này.' : 'Touch ID unlocks Passwords. BRIAN verifies the code generated on Mac. Keep this setup key private.'}</p> : null}
+      <label htmlFor="bes-mfa-setup-code">{vi ? 'Mã xác nhận' : 'Verification code'}</label>
+      <input id="bes-mfa-setup-code" inputMode="numeric" pattern="[0-9]{6}" autoComplete="one-time-code" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))} required />
+      <div className="bes-mfa-actions"><button type="submit" disabled={busy}>{vi ? 'Xác minh và kích hoạt' : 'Verify and enable'}</button><button type="button" className="secondary" disabled={busy} onClick={() => { void cancelSetup(); }}>{vi ? 'Hủy' : 'Cancel'}</button></div>
+    </form>
+  ) : null;
+
+  const dialog = needsVerification || needsAttendanceMfa ? (
     <div className="bes-mfa-shield" role="presentation">
       <section className="bes-mfa-shield-card" role="dialog" aria-modal="true" aria-label={vi ? 'Xác thực bảo mật quản trị viên' : 'Administrator two-factor authentication'}>
         <div className="bes-mfa-shield-mark" aria-hidden="true">B</div>
-        <h2>{vi ? 'Xác thực tài khoản quản trị viên' : 'Verify your administrator account'}</h2>
-        <p>{state.loading ? (vi ? 'Đang kiểm tra phiên bảo mật…' : 'Checking security session…') : state.error || (state.webauthnFactors.length ? (vi ? 'Dùng Touch ID để xác thực mà không nhập mã, hoặc dùng mã 6 số dự phòng.' : 'Use Touch ID without typing a code, or fall back to a six-digit code.') : (vi ? 'Nhập mã từ ứng dụng xác thực để tiếp tục sử dụng BRIAN.' : 'Enter the code from your authenticator app to continue.'))}</p>
+        <h2>{needsAttendanceEnrollment
+          ? (vi ? 'Thiết lập xác thực hai lớp' : 'Set up two-factor authentication')
+          : (vi ? 'Xác thực tài khoản quản trị viên' : 'Verify your administrator account')}</h2>
+        <p>{state.loading
+          ? (vi ? 'Đang kiểm tra phiên bảo mật…' : 'Checking security session…')
+          : state.error || (needsAttendanceEnrollment
+            ? (vi ? 'Tài khoản quản trị cần xác thực hai lớp để mở Điểm danh.' : 'Administrator accounts need two-factor authentication to open Attendance.')
+            : (vi ? 'Dùng mã 6 chữ số từ ứng dụng xác thực để tiếp tục.' : 'Enter the six-digit code from your authenticator app to continue.'))}</p>
+        {needsAttendanceEnrollment ? (enrollmentForm ?? (
+          <div className="bes-mfa-actions">
+            <button type="button" onClick={() => { void begin('app'); }} disabled={busy}>{vi ? 'Thiết lập ứng dụng xác thực' : 'Set up an authenticator app'}</button>
+            <button type="button" className="bes-mfa-text-action" onClick={() => { void begin('apple'); }} disabled={busy}>{vi ? 'Dùng Mật khẩu trên Mac' : 'Use Passwords on Mac'}</button>
+          </div>
+        )) : null}
         {needsVerification && !state.error ? (
           <>
           {webauthnMfaEnabled && state.webauthnFactors.length > 0 && touchIdAvailable && typeof webauthnApi?.authenticate === 'function' ? (
@@ -288,10 +312,10 @@ export default function AdminMfaSecurity({ user, route, language = 'vi' }) {
           ) : null}
           </>
         ) : null}
-        <details className="bes-mfa-mac-help">
+        {route !== 'attendance' && needsVerification ? <details className="bes-mfa-mac-help">
           <summary>{vi ? 'Cách xác thực không cần nhập mã 6 số' : 'Sign in without six-digit codes'}</summary>
           <p>{vi ? 'Vào Cài đặt → Xác thực hai lớp → Thiết lập Touch ID để đăng ký vân tay trực tiếp. Nếu tính năng WebAuthn chưa bật ở Supabase, tiếp tục dùng mã 6 số dự phòng.' : 'Open Settings → MFA → Set up Touch ID to register a biometric factor. If WebAuthn is not enabled on Supabase, use the backup six-digit code.'}</p>
-        </details>
+        </details> : null}
         {feedback ? <p role="alert" className="bes-mfa-error">{feedback}</p> : null}
         {state.error ? <button type="button" onClick={refresh}>{vi ? 'Thử lại' : 'Retry'}</button> : null}
         <button type="button" className="bes-mfa-text-action" onClick={() => { void logoutUser(); }}>{vi ? 'Đăng xuất' : 'Sign out'}</button>
@@ -330,19 +354,7 @@ export default function AdminMfaSecurity({ user, route, language = 'vi' }) {
             {vi ? 'Thêm ứng dụng xác thực khác' : 'Add another authenticator'}
           </button>
         </div>
-      ) : (
-        <form onSubmit={confirmSetup} className="bes-mfa-enroll">
-          <p>{setup.target === 'apple'
-            ? (vi ? 'Mở ứng dụng Mật khẩu (Passwords) trên Mac → chọn tài khoản esl-brian.vercel.app (hoặc tạo mới) → Sửa → Thiết lập mã (Set Up Code). Dán khóa thiết lập bên dưới, sau đó nhập mã 6 số do Mac tạo để xác minh.' : 'Open the Passwords app on Mac → select or create the esl-brian.vercel.app account → Edit → Set Up Code. Paste the setup key below, then enter the code generated on your Mac.')
-            : (vi ? 'Quét mã QR bằng ứng dụng xác thực rồi nhập mã 6 chữ số để kích hoạt.' : 'Scan the QR code with an authenticator app, then enter the six-digit code.')}</p>
-          {setup.qr ? <img alt={vi ? 'Mã QR xác thực hai lớp' : 'Two-factor setup QR code'} src={setup.qr} /> : null}
-          {setup.secret ? <details open={setup.target === 'apple'}><summary>{vi ? 'Khóa thiết lập (giữ bí mật)' : 'Setup key (keep private)'}</summary><code>{setup.secret}</code></details> : null}
-          {setup.target === 'apple' ? <p className="bes-mfa-warning">{vi ? 'Touch ID mở khóa ứng dụng Mật khẩu; việc xác minh với BRIAN vẫn dùng mã được tạo trên Mac. Không lưu hoặc gửi khóa thiết lập này cho người khác.' : 'Touch ID unlocks Passwords; BRIAN still verifies the code generated on Mac. Never share this setup key.'}</p> : null}
-          <label htmlFor="bes-mfa-setup-code">{vi ? 'Mã xác nhận' : 'Verification code'}</label>
-          <input id="bes-mfa-setup-code" inputMode="numeric" pattern="[0-9]{6}" autoComplete="one-time-code" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))} required />
-          <div className="bes-mfa-actions"><button type="submit" disabled={busy}>{vi ? 'Xác minh và kích hoạt' : 'Verify and enable'}</button><button type="button" className="secondary" disabled={busy} onClick={() => { void cancelSetup(); }}>{vi ? 'Hủy' : 'Cancel'}</button></div>
-        </form>
-      )}
+      ) : enrollmentForm}
       {feedback ? <p role="status" className="bes-mfa-feedback">{feedback}</p> : null}
     </section>
   ) : null;
@@ -351,6 +363,7 @@ export default function AdminMfaSecurity({ user, route, language = 'vi' }) {
     <>
       {dialog ? createPortal(dialog, document.body) : null}
       {settings ? createPortal(settings, settingsHost) : null}
+      {needsAttendanceMfa ? null : children}
     </>
   );
 }

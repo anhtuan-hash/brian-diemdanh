@@ -85,16 +85,17 @@ export default function AttendanceSite() {
           </header>
           {signOutError && <p className="attendance-site-status" role="alert">Chưa đăng xuất được. Vui lòng thử lại.</p>}
           {canAccess ? (
-            <main className="attendance-site-content">
-              <AttendanceWorkspace currentUser={user} language="vi" />
-            </main>
+            <AdminMfaSecurity key={user.id} user={user} route="attendance" language="vi" requireForAttendance>
+              <main className="attendance-site-content">
+                <AttendanceWorkspace currentUser={user} language="vi" />
+              </main>
+            </AdminMfaSecurity>
           ) : (
             <main className="attendance-site-status">
               <h1>Điểm danh</h1>
               <p role="alert">Tài khoản này chưa có quyền truy cập Điểm danh.</p>
             </main>
           )}
-          {user.role === 'admin' && <AdminMfaSecurity user={user} route="attendance" language="vi" />}
           <TeacherFirstLoginPasswordGate currentUser={user} language="vi" />
         </>
       )}

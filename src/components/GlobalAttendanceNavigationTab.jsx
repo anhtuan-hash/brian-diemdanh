@@ -51,7 +51,7 @@ import {
   subscribeAttendanceGlobalSettings,
 } from '../utils/attendanceGlobalSettings.js';
 import { canManageSupplementalLearning } from '../supplementalAccess.js';
-import { attachSupplementalProof, beginSupplementalAttendance, cancelSupplementalSession, confirmSupplementalAttendance, loadSupplementalAttendanceActivities, loadSupplementalSessionTeachers } from '../attendance/supplementalLearningApi.js';
+import { attachSupplementalProof, beginSupplementalAttendance, cancelSupplementalSession, confirmSupplementalAttendance, loadSupplementalAttendanceActivities, loadSupplementalHistory, loadSupplementalSessionTeachers } from '../attendance/supplementalLearningApi.js';
 import { archiveAttendanceHistory, listAttendanceArchive, requestAttendanceArchiveDelete, restoreAttendanceArchive, reviewAttendanceArchiveDelete } from '../attendance/attendanceArchiveApi.js';
 import { archiveExtraClass, finalizeExtraClassArchiveDelete, listExtraClassArchive, requestExtraClassArchiveDelete, restoreExtraClassArchive, reviewExtraClassArchiveDelete } from '../attendance/extraClassArchiveApi.js';
 import './attendance/AttendanceMaterial3.css';
@@ -232,6 +232,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
   const [classTeachers, setClassTeachers] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [supplementalHistorySessions, setSupplementalHistorySessions] = useState([]);
+  const [supplementalHistoryError, setSupplementalHistoryError] = useState('');
   const [archiveItems, setArchiveItems] = useState([]);
   const [classArchiveItems, setClassArchiveItems] = useState([]);
   const [archiveLoading, setArchiveLoading] = useState(false);
@@ -386,29 +387,41 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
     if (!canOpenCurrentView) setView(firstAllowedView);
   }, [workspaceVisible, allowed, firstAllowedView, view, currentUser?.permissions, systemRole, canUseQuickAttendance]);
 
+  async function refreshSupplementalHistory() {
+    if (!canSeeSupplementalHistory || !canAccessAttendanceView('history')) {
+      setSupplementalHistorySessions([]);
+      setSupplementalHistoryError('');
+      return;
+    }
+    try {
+      const rows = await loadSupplementalHistory(client, { from: '2000-01-01', to: today });
+      setSupplementalHistorySessions(normalizeSupplementalHistorySessions(rows));
+      setSupplementalHistoryError('');
+    } catch (supplementalError) {
+      setSupplementalHistorySessions([]);
+      setSupplementalHistoryError(supplementalError?.code === '42501' ? '' : 'Chưa tải được lịch sử Học bổ sung.');
+    }
+  }
+
   async function loadAll({ keepSelection = true } = {}) {
     if (!client || !runtime.ready || !runtime.session || !allowed) return;
     setLoading(true);
     setError('');
     try {
-      const supplementalHistoryPromise = canSeeSupplementalHistory && canAccessAttendanceView('history')
-        ? client.rpc('bes_list_supplemental_history', { p_from: '2000-01-01', p_to: today, p_query: '' })
-        : Promise.resolve({ data: [], error: null });
-      const [classResult, memberResult, classTeacherResult, sessionResult, supplementalHistoryResult] = await Promise.all([
+      const [classResult, memberResult, classTeacherResult, sessionResult] = await Promise.all([
         client.from('bes_extra_classes').select(CLASS_COLUMNS).order('class_name', { ascending: true }),
         client.from('bes_extra_class_members').select(MEMBER_COLUMNS).order('student_full_name', { ascending: true }),
         client.from('bes_extra_class_teachers').select(CLASS_TEACHER_COLUMNS).order('position', { ascending: true }),
         client.from('bes_extra_attendance_sessions').select(SESSION_COLUMNS).order('checked_at', { ascending: false }).limit(400),
-        supplementalHistoryPromise,
+        refreshSupplementalHistory(),
       ]);
-      const firstError = classResult.error || memberResult.error || classTeacherResult.error || sessionResult.error || supplementalHistoryResult.error;
+      const firstError = classResult.error || memberResult.error || classTeacherResult.error || sessionResult.error;
       if (firstError) throw firstError;
       const nextClasses = classResult.data || [];
       setClasses(nextClasses);
       setMembers(memberResult.data || []);
       setClassTeachers(classTeacherResult.data || []);
       setSessions(sessionResult.data || []);
-      setSupplementalHistorySessions(normalizeSupplementalHistorySessions(supplementalHistoryResult.data || []));
       if (!keepSelection || !nextClasses.some((row) => String(row.id) === String(selectedClassId))) {
         setSelectedClassId(nextClasses.find((row) => row.active)?.id || '');
       }
@@ -441,17 +454,12 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
 
   async function refreshHistoryData() {
     if (!client || !runtime.ready || !runtime.session || !allowed) return;
-    const supplementalHistoryPromise = canSeeSupplementalHistory && canAccessAttendanceView('history')
-      ? client.rpc('bes_list_supplemental_history', { p_from: '2000-01-01', p_to: today, p_query: '' })
-      : Promise.resolve({ data: [], error: null });
-    const [sessionResult, supplementalHistoryResult] = await Promise.all([
+    const [sessionResult] = await Promise.all([
       client.from('bes_extra_attendance_sessions').select(SESSION_COLUMNS).order('checked_at', { ascending: false }).limit(400),
-      supplementalHistoryPromise,
+      refreshSupplementalHistory(),
     ]);
-    const firstError = sessionResult.error || supplementalHistoryResult.error;
-    if (firstError) throw firstError;
+    if (sessionResult.error) throw sessionResult.error;
     setSessions(sessionResult.data || []);
-    setSupplementalHistorySessions(normalizeSupplementalHistorySessions(supplementalHistoryResult.data || []));
   }
 
   useEffect(() => {
@@ -737,9 +745,9 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
   }, [workspaceVisible, allowed, selectedClassId, attendanceDate]);
 
   useEffect(() => {
-    if (!workspaceVisible || !allowed || !attendanceDate) return;
+    if (!workspaceVisible || !allowed || !attendanceDate || view !== 'quick') return;
     loadTeacherDaySessions(attendanceDate);
-  }, [workspaceVisible, allowed, attendanceDate]);
+  }, [workspaceVisible, allowed, attendanceDate, view]);
 
   useEffect(() => {
     const next = buildAttendanceDraft(selectedMembers);
@@ -1598,7 +1606,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
         aria-label="Điểm danh lớp phụ đạo và bồi dưỡng học sinh giỏi">
         <header className="attendance-topbar">
           <div className="attendance-title"><span><Icon name="attendance" size={28} /></span><div><small>{standalone ? "ESL BRIAN · ỨNG DỤNG ĐIỂM DANH" : "QUẢN LÝ CHUYÊN CẦN"}</small><strong>Điểm danh lớp phụ đạo & bồi dưỡng</strong></div></div>
-          <div className="attendance-top-actions"><button type="button" className="attendance-icon-button" onClick={() => { loadAll(); loadDaySession(); loadTeacherDaySessions(); if (view === 'calendar') loadCalendarSessions(calendarDate); if (view === 'archive') loadArchive(); }} title="Làm mới"><Icon name="refresh" /></button>{!standalone ? <button type="button" className="attendance-icon-button" onClick={() => setOpen(false)} aria-label="Đóng"><Icon name="close" /></button> : null}</div>
+          <div className="attendance-top-actions"><button type="button" className="attendance-icon-button" onClick={() => { loadAll(); if (view === 'quick') { loadDaySession(); loadTeacherDaySessions(); } if (view === 'calendar') loadCalendarSessions(calendarDate); if (view === 'archive') loadArchive(); }} title="Làm mới"><Icon name="refresh" /></button>{!standalone ? <button type="button" className="attendance-icon-button" onClick={() => setOpen(false)} aria-label="Đóng"><Icon name="close" /></button> : null}</div>
         </header>
 
         <nav className="attendance-tabs" aria-label="Phân hệ điểm danh">
@@ -1614,6 +1622,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
 
         {notice ? <div className="attendance-banner is-success">{notice}</div> : null}
         {error ? <div className="attendance-banner is-error">{error}</div> : null}
+        {view === 'history' && supplementalHistoryError ? <div className="attendance-banner is-error" role="status">{supplementalHistoryError}</div> : null}
 
         <main className="attendance-content">
           {standalone ? <>
@@ -1706,7 +1715,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
           {!loading && canAccessAttendanceView('calendar') && view === 'calendar' ? (
             <div className="attendance-calendar-layout">
               <AttendanceDailySchedule
-                classes={activeClasses}
+                classes={classes}
                 sessions={calendarSessions}
                 date={calendarDate}
                 maxDate={today}
