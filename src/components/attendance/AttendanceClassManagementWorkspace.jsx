@@ -1,12 +1,12 @@
 import AttendanceEditorialHeading from './AttendanceEditorialHeading.jsx';
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { AttendancePanelHeading, AttendanceEmpty } from './AttendanceWorkspaceUI.jsx';
-import { attendanceSubjectKey, extraClassTypeLabel } from '../../utils/extraClassAttendance.js';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AttendanceEmpty } from './AttendanceWorkspaceUI.jsx';
 import { roomForExtraClass, weekdaysForExtraClass } from '../../utils/extraClassSchedule2026.js';
 import AttendanceClassEditor from './AttendanceClassEditor.jsx';
 import './AttendanceClassManagementWorkspace.css';
 import './AttendanceClassManagementDetailMockup.css';
-import './AttendanceClassManagementRosterScroll.css';
+
+const ROSTER_PAGE_SIZE = 4;
 
 const WEEKDAY_LABELS = new Map([
   [1, 'Thứ 2'],
@@ -43,14 +43,6 @@ function countTeachers(label) {
   const value = String(label || '').trim();
   if (!value || value === 'Chưa phân công GV') return 0;
   return value.split(',').map((item) => item.trim()).filter(Boolean).length;
-}
-
-function compactTeacherLabel(label) {
-  const value = String(label || '').trim();
-  if (!value || value === 'Chưa phân công GV') return 'Chưa phân công GV';
-  const names = value.split(',').map((item) => item.trim()).filter(Boolean);
-  if (names.length <= 1) return names[0] || 'Chưa phân công GV';
-  return `${names[0]} +${names.length - 1} GV`;
 }
 
 function WorkspaceIcon({ name, size = 18 }) {
@@ -183,6 +175,7 @@ export default function AttendanceClassManagementWorkspace({
   setError,
   setNotice,
   onSelectClass,
+  onOpenSupplemental,
   stateScope = '',
 }) {
   const [initialManageSession] = useState(() => readManageSession(stateScope));
@@ -192,7 +185,7 @@ export default function AttendanceClassManagementWorkspace({
   const [manageTypeFilter, setManageTypeFilter] = useState(() => ['all', 'remedial', 'gifted'].includes(initialManageSession.typeFilter) ? initialManageSession.typeFilter : 'all');
   const [manageGradeFilter, setManageGradeFilter] = useState(() => ['all', '10', '11', '12'].includes(initialManageSession.gradeFilter) ? initialManageSession.gradeFilter : 'all');
   const [manageDisplay, setManageDisplay] = useState(() => initialManageSession.display === 'list' ? 'list' : 'grid');
-  const detailBodyRef = useRef(null);
+  const [rosterPage, setRosterPage] = useState(1);
   const [editingClass, setEditingClass] = useState(false);
   const [schoolStudentQuery, setSchoolStudentQuery] = useState('');
   const [schoolStudents, setSchoolStudents] = useState([]);
@@ -225,14 +218,6 @@ export default function AttendanceClassManagementWorkspace({
 
   const visibleDetailClassId = manageDetailOpen && String(selectedClass?.id || '') === openedClassId
     ? openedClassId : '';
-  useLayoutEffect(() => {
-    if (!visibleDetailClassId || !detailBodyRef.current) return;
-    const saved = readManageSession(stateScope);
-    if (String(saved.scrollClassId || '') === visibleDetailClassId) {
-      detailBodyRef.current.scrollTop = Math.max(0, Number(saved.scrollTop) || 0);
-    }
-  }, [visibleDetailClassId, stateScope]);
-
   useEffect(() => {
     if (!showAddStudent || !client || !manageDetailOpen || !selectedClass) return undefined;
     let alive = true;
@@ -292,7 +277,8 @@ export default function AttendanceClassManagementWorkspace({
 
   function openClass(classRow) {
     const id = String(classRow.id);
-    writeManageSession(stateScope, { detailOpen: true, detailClassId: id, scrollClassId: id, scrollTop: 0 });
+    writeManageSession(stateScope, { detailOpen: true, detailClassId: id });
+    setRosterPage(1);
     setOpenedClassId(id);
     onSelectClass?.(classRow.id);
     setMemberQuery?.('');
@@ -425,72 +411,83 @@ export default function AttendanceClassManagementWorkspace({
     ? []
     : teacher.split(',').map((name) => name.trim()).filter(Boolean);
   const teacherCount = countTeachers(teacher);
-  const teacherSummary = compactTeacherLabel(teacher);
-  const subjectKey = attendanceSubjectKey(selectedClass.subject);
   const isActive = selectedClass.active !== false;
   const activeMemberCount = allSelectedMembers.filter((member) => member.active !== false).length;
   const inactiveMemberCount = allSelectedMembers.length - activeMemberCount;
 
+  const pageCount = Math.max(1, Math.ceil(filteredManagementMembers.length / ROSTER_PAGE_SIZE));
+  const activePage = Math.min(rosterPage, pageCount);
+  const memberIndexOffset = (activePage - 1) * ROSTER_PAGE_SIZE;
+  const visibleMembers = filteredManagementMembers.slice(memberIndexOffset, memberIndexOffset + ROSTER_PAGE_SIZE);
+  const firstPageButton = Math.max(1, Math.min(activePage - 2, pageCount - 4));
+  const pageButtons = Array.from({ length: Math.min(5, pageCount) }, (_, index) => firstPageButton + index);
+  const classFacts = [
+    ['Môn học', selectedClass.subject || 'Chưa ghi'],
+    ['Khối', selectedClass.grade_level || 'Chưa ghi'],
+    ['Phòng học', room],
+    ['Lịch học', weekday],
+    ['Thời gian', time],
+    ['Giáo viên phụ trách', teacher],
+  ];
+
   return (
-    <section className={`attendance-manage-detail is-subject-${subjectKey}`}>
-      <button type="button" className="attendance-manage-detail-back" onClick={backToOverview}>
-        <WorkspaceIcon name="back" size={17} />Quay lại danh sách lớp
-      </button>
-
-      <section className="attendance-manage-detail-hero">
-        <div className="attendance-manage-detail-hero__art" aria-hidden="true"><WorkspaceIcon name="globe" size={88} /></div>
-        <div className="attendance-manage-detail-hero__content">
-          <div className="attendance-manage-detail-hero__main">
-            <span className="attendance-manage-detail-hero__icon"><WorkspaceIcon name="globe" size={34} /></span>
-            <div>
-              <div className="attendance-manage-detail-hero__eyebrow">
-                <span className={`attendance-manage-tile__type is-${selectedClass.class_type}`}>{shortTypeLabel(selectedClass.class_type)}</span>
-                {selectedClass.grade_level ? <span className="attendance-manage-detail-grade">Khối {selectedClass.grade_level}</span> : null}
-              </div>
-              <h2>{selectedClass.class_name}</h2>
-              <p className="attendance-manage-detail-hero__meta">
-                <span>{selectedClass.subject || 'Chưa ghi môn'}</span>
-                <span>Phòng {room}</span>
-                <span>{weekday}</span>
-                <span>{time}</span>
-              </p>
-            </div>
-          </div>
-
-          <div className="attendance-manage-detail-hero__side">
-            <div className="attendance-manage-detail-quick-stats" aria-label="Tóm tắt lớp">
-              <article className="attendance-manage-detail-quick-stat">
-                <span><WorkspaceIcon name="users" size={20} /></span>
-                <div><b>{activeMemberCount}</b><small>học sinh</small></div>
-              </article>
-              <article className="attendance-manage-detail-quick-stat">
-                <span><WorkspaceIcon name="teacher" size={20} /></span>
-                <div><b>{teacherCount}</b><small>giáo viên</small></div>
-              </article>
-              <article className={`attendance-manage-detail-quick-stat is-status ${isActive ? 'is-active' : 'is-inactive'}`}>
-                <i aria-hidden="true" />
-                <div><b>{isActive ? 'Đang hoạt động' : 'Ngừng hoạt động'}</b><small>{isActive ? 'Lớp đang diễn ra' : 'Lớp đã ngừng'}</small></div>
-              </article>
-            </div>
-
-            <div className="attendance-manage-detail-actions">
-              <button type="button" className="attendance-manage-detail-actions__primary" disabled={busy} onClick={() => setShowAddStudent?.((value) => !value)}><WorkspaceIcon name="plus" size={17} />Thêm học sinh</button>
-              <button type="button" disabled={busy} onClick={() => setEditingClass(true)}><WorkspaceIcon name="edit" size={15} />Sửa thông tin lớp</button>
-              <button type="button" disabled={busy} onClick={() => setShowAddTeacher?.((value) => !value)}><WorkspaceIcon name="plus" size={16} />Thêm giáo viên</button>
-              {canArchiveClass ? (<button type="button" className="is-danger" disabled={busy} onClick={() => deleteClass?.(selectedClass)}><WorkspaceIcon name="trash" size={15} />Xóa lớp</button>) : null}
-            </div>
+    <section className="ae-class-detail" aria-labelledby="ae-class-detail-title">
+      <div className="ae-class-detail__utility">
+        <button type="button" className="ae-button" onClick={backToOverview}>
+          <WorkspaceIcon name="back" size={17} />Quay lại danh sách lớp
+        </button>
+        <div className="ae-class-detail__activities">
+          <strong>Loại hoạt động</strong>
+          <div className="ae-segments" role="group" aria-label="Xem danh sách theo loại hoạt động">
+            {[['all', 'Tất cả'], ['remedial', 'Phụ đạo'], ['gifted', 'Bồi dưỡng']].map(([value, label]) => (
+              <button key={value} type="button" aria-pressed={manageTypeFilter === value} onClick={() => {
+                setManageTypeFilter(value);
+                backToOverview();
+              }}>{label}</button>
+            ))}
+            {onOpenSupplemental && <button type="button" onClick={onOpenSupplemental}>Học bổ sung</button>}
           </div>
         </div>
-      </section>
+      </div>
 
-      <section className="attendance-manage-detail-info-strip" aria-label="Thông tin lớp học">
-        <article className="attendance-manage-detail-info-item"><span><WorkspaceIcon name="book" size={20} /></span><div><small>Môn học</small><b>{selectedClass.subject || 'Chưa ghi'}</b></div></article>
-        <article className="attendance-manage-detail-info-item"><span><WorkspaceIcon name="layers" size={20} /></span><div><small>Khối</small><b>{selectedClass.grade_level ? `Khối ${selectedClass.grade_level}` : 'Chưa ghi'}</b></div></article>
-        <article className="attendance-manage-detail-info-item"><span><WorkspaceIcon name="room" size={20} /></span><div><small>Phòng học</small><b>{room}</b></div></article>
-        <article className="attendance-manage-detail-info-item"><span><WorkspaceIcon name="calendar" size={20} /></span><div><small>Lịch học</small><b>{weekday}</b></div></article>
-        <article className="attendance-manage-detail-info-item"><span><WorkspaceIcon name="clock" size={20} /></span><div><small>Thời gian</small><b>{time}</b></div></article>
-        <article className="attendance-manage-detail-info-item"><span><WorkspaceIcon name="teacher" size={20} /></span><div><small>Giáo viên phụ trách</small><b className="attendance-manage-detail-teacher-summary" title={teacher}>{teacherSummary}</b></div></article>
-      </section>
+      <header className="ae-class-detail__heading">
+        <div>
+          <div className="ae-class__badges">
+            <span className={`ae-tag is-${selectedClass.class_type}`}>{shortTypeLabel(selectedClass.class_type)}</span>
+            {selectedClass.grade_level && <span className="ae-tag is-outline">Khối {selectedClass.grade_level}</span>}
+          </div>
+          <h1 id="ae-class-detail-title">{selectedClass.class_name}</h1>
+        </div>
+        <dl className="ae-class-detail__stats" aria-label="Tóm tắt lớp">
+          <div><dt>Học sinh</dt><dd>{activeMemberCount}</dd></div>
+          <div><dt>Giáo viên</dt><dd>{teacherCount}</dd></div>
+          <div className={`ae-class-detail__status ${isActive ? 'is-active' : ''}`}>
+            <dt className="ae-visually-hidden">Trạng thái lớp</dt>
+            <dd>{isActive ? 'Đang hoạt động' : 'Ngừng hoạt động'}</dd>
+          </div>
+        </dl>
+      </header>
+
+      <dl className="ae-class-detail__facts" aria-label="Thông tin lớp học">
+        {classFacts.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
+      </dl>
+
+      {canManageMembers && <div className="ae-class-detail__actions ae-actions">
+        <button type="button" className="ae-button ae-button--primary" disabled={busy} aria-expanded={showAddStudent}
+          onClick={() => { setShowAddTeacher?.(false); setEditingClass(false); setShowAddStudent?.((value) => !value); }}>
+          <WorkspaceIcon name="plus" size={17} />Thêm học sinh
+        </button>
+        <button type="button" className="ae-button" disabled={busy} aria-expanded={editingClass}
+          onClick={() => { setShowAddTeacher?.(false); setShowAddStudent?.(false); setEditingClass(true); }}>
+          <WorkspaceIcon name="edit" size={15} />Sửa thông tin lớp
+        </button>
+        <button type="button" className="ae-button" disabled={busy} aria-expanded={showAddTeacher}
+          onClick={() => { setShowAddStudent?.(false); setEditingClass(false); setShowAddTeacher?.((value) => !value); }}>
+          <WorkspaceIcon name="plus" size={16} />Thêm giáo viên
+        </button>
+        {canArchiveClass && <button type="button" className="ae-button ae-button--danger" disabled={busy}
+          onClick={() => deleteClass?.(selectedClass)}><WorkspaceIcon name="trash" size={15} />Xóa lớp</button>}
+      </div>}
 
       {showAddTeacher ? (
         <form className="attendance-manage-detail-add attendance-add-teacher" onSubmit={addTeacher}>
@@ -536,41 +533,60 @@ export default function AttendanceClassManagementWorkspace({
         </form>
       ) : null}
 
-      <section className="attendance-manage-detail-roster-card">
-        <header className="attendance-manage-detail-roster-toolbar">
-          <div className="attendance-manage-detail-roster-title">
-            <span><WorkspaceIcon name="users" size={21} /></span>
-            <div><strong>Danh sách học sinh</strong><small>{activeMemberCount} đang học · {inactiveMemberCount} đã nghỉ · {allSelectedMembers.length} hồ sơ</small></div>
+      <section className="ae-class-detail__roster" aria-labelledby="ae-class-roster-title">
+        <header className="ae-section-heading ae-class-detail__roster-header">
+          <div>
+            <h2 id="ae-class-roster-title">Danh sách học sinh</h2>
+            <p>{activeMemberCount} đang học · {inactiveMemberCount} đã nghỉ · {allSelectedMembers.length} hồ sơ</p>
           </div>
-          <label data-bes-keep-search="true"><WorkspaceIcon name="search" size={16} /><input value={memberQuery || ''} onChange={(event) => setMemberQuery?.(event.target.value)} placeholder="Tìm kiếm học sinh..." aria-label="Tìm kiếm học sinh" /></label>
-          <button type="button" onClick={() => downloadMemberCsv(selectedClass, allSelectedMembers)}><WorkspaceIcon name="download" size={16} />Xuất danh sách</button>
+          <label className="ae-search" data-bes-keep-search="true">
+            <WorkspaceIcon name="search" size={19} />
+            <input type="search" value={memberQuery || ''} onChange={(event) => {
+              setRosterPage(1);
+              setMemberQuery?.(event.target.value);
+            }} placeholder="Tìm kiếm học sinh…" aria-label="Tìm kiếm học sinh" />
+          </label>
+          <button type="button" className="ae-button" onClick={() => downloadMemberCsv(selectedClass, allSelectedMembers)}>
+            <WorkspaceIcon name="download" size={16} />Xuất danh sách
+          </button>
         </header>
 
-        <div ref={detailBodyRef} className={`attendance-manage-detail-body${editingClass ? ' is-editing-class' : ''}`} tabIndex={0} aria-label="Danh sách học sinh có thể cuộn"
-          onScroll={(event) => writeManageSession(stateScope, {
-            scrollClassId: String(selectedClass.id),
-            scrollTop: event.currentTarget.scrollTop,
-          })}>
-          <AttendanceClassEditor
-            client={client}
-            selectedClass={selectedClass}
-            members={filteredManagementMembers}
-            teacherNames={selectedAssignedTeachers}
-            isAdmin={isAdmin}
-            canManageMembers={canManageMembers}
-            busy={busy}
-            onRemoveStudent={removeStudent}
-            onReload={loadAll}
-            onMemberNoteSaved={onMemberNoteSaved}
-            onError={setError}
-            onNotice={setNotice}
-            editingClass={editingClass}
-            onEditingClassChange={setEditingClass}
-            showEditButton={false}
-            showClassInfo={editingClass}
-            memberTableVariant="mockup"
-          />
-        </div>
+        <AttendanceClassEditor
+          client={client}
+          selectedClass={selectedClass}
+          members={visibleMembers}
+          memberIndexOffset={memberIndexOffset}
+          teacherNames={selectedAssignedTeachers}
+          isAdmin={isAdmin}
+          canManageMembers={canManageMembers}
+          busy={busy}
+          onRemoveStudent={removeStudent}
+          onReload={loadAll}
+          onMemberNoteSaved={onMemberNoteSaved}
+          onError={setError}
+          onNotice={setNotice}
+          editingClass={editingClass}
+          onEditingClassChange={setEditingClass}
+          showEditButton={false}
+          showClassInfo={editingClass}
+          memberTableVariant="mockup"
+        />
+
+        <footer className="ae-class-detail__pagination">
+          <strong role="status">{visibleMembers.length
+            ? `Hiển thị ${memberIndexOffset + 1}–${memberIndexOffset + visibleMembers.length} / ${filteredManagementMembers.length} hồ sơ`
+            : '0 hồ sơ phù hợp'}</strong>
+          {pageCount > 1 && <nav aria-label="Trang danh sách học sinh" className="ae-actions">
+            <button type="button" className="ae-button" aria-label="Trang trước" disabled={activePage === 1}
+              onClick={() => setRosterPage(activePage - 1)}>‹</button>
+            {pageButtons.map((page) => <button key={page} type="button"
+              className={`ae-button${page === activePage ? ' ae-button--primary' : ''}`}
+              aria-current={page === activePage ? 'page' : undefined} aria-label={`Trang ${page}`}
+              onClick={() => setRosterPage(page)}>{page}</button>)}
+            <button type="button" className="ae-button" aria-label="Trang sau" disabled={activePage === pageCount}
+              onClick={() => setRosterPage(activePage + 1)}>›</button>
+          </nav>}
+        </footer>
       </section>
     </section>
   );

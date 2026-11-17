@@ -500,3 +500,314 @@
   .ae-report__teacher-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-inline: 0; }
   .ae-report__teacher-controls { margin-top: 0; }
 }
+
+/* Student reporting and the paginated class roster share the editorial controls. */
+.ae-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.ae-student-report :is(.ae-student-report__toolbar, .ae-student-report__filters, .ae-student-report__settings) {
+  padding-block: 9px;
+  gap: clamp(8px, 1.1vw, 16px);
+}
+
+.ae-student-report {
+  --ae-field-height: 38px;
+}
+
+.ae-student-report__toolbar {
+  grid-template-columns: auto minmax(135px, 260px) minmax(0, 1fr);
+}
+
+.ae-student-report__toolbar > .ae-actions { justify-content: flex-end; }
+
+.ae-student-report__filters {
+  grid-template-columns: repeat(7, minmax(0, 1fr)) minmax(0, 1.35fr);
+}
+
+.ae-student-report__settings {
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.05fr) minmax(0, 1fr) minmax(0, 1.4fr) auto auto;
+}
+
+.ae-student-report__thresholds {
+  position: relative;
+  align-self: end;
+}
+
+.ae-student-report__thresholds summary,
+.ae-student-report__notes summary {
+  cursor: pointer;
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ae-student-report__thresholds summary { padding-block: 9px; }
+
+.ae-student-report__thresholds > .ae-field-row {
+  position: absolute;
+  z-index: 8;
+  inset: 100% 0 auto auto;
+  display: grid;
+  width: min(420px, 85vw);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 12px;
+  border: 1px solid var(--ae-ink);
+  background: var(--ae-paper);
+}
+
+.ae-student-report__scroll {
+  max-height: clamp(190px, calc(100dvh - 535px), 560px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-color: #6f6a62 #e8e3da;
+  border-bottom: 2px solid var(--ae-ink);
+}
+
+.ae-student-report__table {
+  min-width: 910px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: clamp(.8rem, 1.05vw, 1rem);
+}
+
+.ae-student-report__table :is(th, td) { padding: 6px 8px; }
+.ae-student-report__table :is(th, td):first-child { padding-inline-start: 9px; }
+.ae-student-report__table thead th {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  background: #eee9de;
+  white-space: nowrap;
+}
+
+.ae-student-report__table tbody th { min-width: 168px; }
+.ae-student-report__table tbody tr:hover :is(td, th) { background-color: #f0eadf; }
+.ae-student-report__table :is(th, td):nth-child(n+3):nth-child(-n+9) { text-align: center; }
+.ae-student-report__table input { accent-color: var(--ae-red); }
+.ae-student-report__table [data-alert] { --ae-alert-ink: #4d4943; --ae-alert-fill: #e5ded2; }
+.ae-student-report__table [data-alert="danger"] { --ae-alert-ink: #fff; --ae-alert-fill: var(--ae-red); }
+.ae-student-report__table [data-alert="watch"] { --ae-alert-ink: #322100; --ae-alert-fill: #eac071; }
+.ae-student-report__table [data-alert="good"] { --ae-alert-ink: #fff; --ae-alert-fill: var(--ae-green); }
+.ae-student-report__alert { background: var(--ae-alert-fill); color: var(--ae-alert-ink); white-space: nowrap; }
+
+.ae-student-report__rate {
+  display: grid;
+  grid-template-columns: 6ch minmax(36px, 1fr);
+  align-items: center;
+  gap: 7px;
+  min-width: 116px;
+}
+
+.ae-student-report__rate > span { height: 6px; background: #ded7ca; }
+.ae-student-report__rate i { display: block; height: 100%; background: var(--ae-alert-fill); }
+.ae-student-report__table [data-alert="watch"] .ae-student-report__rate i { background: #9d5a0c; }
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-attendance-editorial-view] .ae-student-report__table .ae-button {
+  min-height: 28px;
+  padding: 2px 10px;
+  font-size: .83rem !important;
+}
+
+.ae-student-report__notes { padding-block: 8px; }
+.ae-student-report__notes p { max-width: 75ch; }
+
+.ae-class-detail {
+  --ae-field-height: 37px;
+  color: var(--ae-ink);
+}
+
+.ae-class-detail__utility,
+.ae-class-detail__activities {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.ae-class-detail__utility {
+  justify-content: space-between;
+  padding-block: 10px;
+  border-bottom: 2px solid var(--ae-ink);
+}
+
+.ae-class-detail__heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(10px, 1.5vw, 24px);
+  padding-block: 13px;
+  border-bottom: 1px solid var(--ae-ink);
+}
+
+.ae-class-detail__heading h1 {
+  margin: 5px 0 0;
+  color: var(--ae-ink);
+  font-weight: 900;
+  font-size: clamp(38px, 5.7vw, 95px);
+  line-height: .98;
+  letter-spacing: -.078em;
+  overflow-wrap: anywhere;
+}
+
+.ae-class-detail__stats {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, .9fr) minmax(0, 1.3fr);
+  gap: clamp(7px, 1vw, 16px);
+  margin: 0;
+  padding-inline-start: clamp(7px, 1.25vw, 20px);
+  border-inline-start: 1px solid var(--ae-ink);
+}
+
+.ae-class-detail__stats > div {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: center;
+  padding: 8px clamp(7px, 1.05vw, 16px);
+}
+
+.ae-class-detail__stats > div + div { border-inline-start: 1px solid var(--ae-ink); }
+.ae-class-detail__stats > div:first-child { background: var(--ae-red); color: white; }
+.ae-class-detail__stats dt, .ae-class-detail__stats dd, .ae-class-detail__facts :is(dt, dd) { margin: 0; }
+.ae-class-detail__stats dt { font-size: clamp(13px, 1.42vw, 22px); font-weight: 800; line-height: 1.06; }
+.ae-class-detail__stats dd { font-size: clamp(30px, 4.65vw, 75px); font-weight: 900; line-height: .93; letter-spacing: -.045em; }
+.ae-class-detail__stats .ae-class-detail__status dd { display: flex; align-items: center; gap: 7px; font-size: clamp(13px, 1.37vw, 21px); line-height: 1.13; }
+.ae-class-detail__status dd::before { width: 9px; height: 9px; flex: none; border-radius: 50%; background: #847e75; content: ""; }
+.ae-class-detail__status.is-active dd::before { background: var(--ae-green); }
+
+.ae-class-detail__facts {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(0, 1.3fr);
+  gap: 8px;
+  margin: 0;
+  padding-block: 9px;
+  border-bottom: 1px solid var(--ae-ink);
+}
+
+.ae-class-detail__facts > div + div { border-inline-start: 1px solid var(--ae-lined); padding-inline-start: 12px; }
+.ae-class-detail__facts dt { font-size: .81rem; font-weight: 700; }
+.ae-class-detail__facts dd { margin-top: 2px; font-size: clamp(.86rem, 1.28vw, 1.22rem); font-weight: 850; overflow-wrap: anywhere; }
+
+.ae-class-detail__actions,
+.ae-class-detail__pagination { padding-block: 8px; border-bottom: 2px solid var(--ae-ink); }
+.ae-class-detail__roster-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, .58fr) auto;
+  align-items: center;
+}
+
+.ae-class-detail__roster-header p { margin: 3px 0 0; font-weight: 700; }
+.ae-class-detail__pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; border-top: 1px solid var(--ae-ink); border-bottom: 0; }
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-attendance-editorial-view] .ae-class-detail__pagination .ae-button {
+  min-width: 36px;
+  min-height: 34px;
+  padding: 2px 8px;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-attendance-editorial-view] .ae-class-detail .attendance-member-table.is-mockup {
+  min-width: 0 !important;
+  max-width: none;
+  max-height: none !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-attendance-editorial-view] .ae-class-detail .attendance-member-table.is-mockup > :is(.attendance-member-table-head, .attendance-member-table-row, .is-mockup-row) {
+  display: grid !important;
+  grid-template-columns: 4ch minmax(0, 1.55fr) minmax(0, .8fr) minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, .89fr);
+  gap: clamp(5px, 1vw, 15px);
+  align-items: center;
+  min-height: 39px;
+  padding: 4px 5px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--ae-lined) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--ae-ink) !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-attendance-editorial-view] .ae-class-detail .attendance-member-table.is-mockup .attendance-member-table-head {
+  font-size: clamp(.77rem, 1.12vw, 1.08rem) !important;
+  font-weight: 850;
+}
+
+.ae-class-detail .attendance-member-table :is(.attendance-member-table__index, .attendance-member-name-cell, .attendance-member-name-cell b, .attendance-member-school-class) { color: var(--ae-ink) !important; }
+.ae-class-detail .attendance-member-name-cell b { overflow-wrap: anywhere; white-space: normal; }
+.ae-class-detail .attendance-member-avatar { display: none !important; }
+.ae-class-detail .attendance-member-table .attendance-member-status-pill {
+  padding: 3px 7px;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--ae-green) !important;
+  color: #fff !important;
+  font-weight: 800;
+}
+
+.ae-class-detail .attendance-member-table .attendance-member-status-pill.is-inactive { background: #ddd8cf !important; color: #372f28 !important; }
+.ae-class-detail .attendance-member-status-pill i { background: currentColor !important; box-shadow: none !important; }
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-attendance-editorial-view] .ae-class-detail .attendance-member-table :is(button, textarea, input, select) {
+  min-height: 29px;
+  padding: 3px 7px !important;
+  border: 1px solid var(--ae-ink) !important;
+  border-radius: 0 !important;
+  background: var(--ae-paper) !important;
+  color: var(--ae-ink) !important;
+  box-shadow: none !important;
+}
+.ae-class-detail .attendance-member-row-menu { z-index: 5; border-radius: 0 !important; }
+.ae-class-detail .attendance-member-table.is-mockup .attendance-member-note-cell textarea {
+  resize: none !important;
+}
+.ae-class-detail .attendance-member-table.is-mockup .attendance-member-note-cell textarea::placeholder { color: #6c655b; }
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-attendance-editorial-view] .ae-class-detail__roster-header .ae-search input {
+  border: 0 !important;
+}
+.ae-class-detail .attendance-manage-detail-add { margin-block: 10px; }
+
+@media (max-width: 1100px) {
+  .ae-student-report__filters { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .ae-student-report__settings { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .ae-student-report :is(.ae-student-report__toolbar, .ae-student-report__filters, .ae-student-report__settings) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ae-student-report__toolbar > .ae-segments, .ae-student-report__toolbar > .ae-actions { grid-column: 1 / -1; }
+  .ae-student-report__toolbar > .ae-actions { justify-content: flex-start; }
+  .ae-student-report__thresholds > .ae-field-row { position: static; width: auto; padding: 6px 0; border: 0; grid-template-columns: 1fr; }
+  .ae-class-detail__heading { grid-template-columns: minmax(0, 1fr); }
+  .ae-class-detail__stats { border: 0; padding: 0; }
+  .ae-class-detail__facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ae-class-detail__facts > div:nth-child(3n+1) { border: 0; padding: 0; }
+  .ae-class-detail__roster-header { grid-template-columns: minmax(0, 1fr) auto; }
+  .ae-class-detail__roster-header > div { grid-column: 1 / -1; }
+  .attendance-workspace-page .attendance-shell.is-standalone[data-attendance-editorial-view] .ae-class-detail .attendance-member-table.is-mockup > :is(.attendance-member-table-row, .is-mockup-row) {
+    grid-template-columns: 3ch minmax(0, 1fr) minmax(0, .65fr);
+    grid-template-areas: "index name school" "note note note" "state state actions";
+    gap: 5px;
+  }
+  .attendance-workspace-page .attendance-shell.is-standalone[data-attendance-editorial-view] .ae-class-detail .attendance-member-table.is-mockup > .attendance-member-table-head {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    clip-path: inset(50%);
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .ae-class-detail .attendance-member-table.is-mockup > :is(.attendance-member-table-row, .is-mockup-row) > :nth-child(1) { grid-area: index; }
+  .ae-class-detail .attendance-member-table.is-mockup > :is(.attendance-member-table-row, .is-mockup-row) > :nth-child(2) { grid-area: name; }
+  .ae-class-detail .attendance-member-table.is-mockup > :is(.attendance-member-table-row, .is-mockup-row) > :nth-child(3) { grid-area: school; }
+  .ae-class-detail .attendance-member-table.is-mockup > :is(.attendance-member-table-row, .is-mockup-row) > :nth-child(4) { grid-area: note; }
+  .ae-class-detail .attendance-member-table.is-mockup > :is(.attendance-member-table-row, .is-mockup-row) > :nth-child(5) { grid-area: state; }
+  .ae-class-detail .attendance-member-table.is-mockup > :is(.attendance-member-table-row, .is-mockup-row) > :nth-child(6) { grid-area: actions; }
+}

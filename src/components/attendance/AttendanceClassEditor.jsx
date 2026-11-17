@@ -152,6 +152,11 @@ export default function AttendanceClassEditor({
     setOpenMemberMenuId('');
   }, [selectedClass?.id, selectedClass?.updated_at, teacherNamesKey]);
 
+  useEffect(() => {
+    if (editingMemberId && !members.some((member) => String(member.id) === editingMemberId)) setEditingMemberId('');
+    if (openMemberMenuId && !members.some((member) => String(member.id) === openMemberMenuId)) setOpenMemberMenuId('');
+  }, [members, editingMemberId, openMemberMenuId]);
+
   const currentWeekdays = useMemo(() => weekdaysForExtraClass(selectedClass), [selectedClass]);
   const currentRoom = roomForExtraClass(selectedClass);
   const locked = busy || Boolean(saving);
@@ -392,32 +397,36 @@ export default function AttendanceClassEditor({
     return (
       <>
         {classInfoSection}
-        <div className="attendance-member-table is-mockup">
-          <div className="attendance-member-table-head"><span>STT</span><span>Học sinh</span><span>Lớp chính khóa</span><span>Ghi chú</span><span>Trạng thái</span><span>Hành động</span></div>
+        <div className="attendance-member-table is-mockup" role="table" aria-label="Hồ sơ học sinh trong lớp">
+          <div className="attendance-member-table-head" role="row">
+            {['STT', 'Học sinh', 'Lớp chính khóa', 'Ghi chú', 'Trạng thái', 'Hành động'].map((label) => (
+              <span key={label} role="columnheader">{label}</span>
+            ))}
+          </div>
           {members.map((member, index) => {
             const isEditing = String(editingMemberId) === String(member.id) && canManageMembers;
             if (isEditing) {
               return (
-                <div key={member.id} className="attendance-member-edit-row is-mockup-row">
-                  <span className="attendance-member-table__index">{memberIndexOffset + index + 1}</span>
-                  <span><label><small>Họ và tên *</small><input value={memberForm.student_full_name} onChange={(event) => setMemberForm((current) => ({ ...current, student_full_name: event.target.value }))} /></label></span>
-                  <span><label><small>Lớp chính khóa *</small><input value={memberForm.school_class_name} onChange={(event) => setMemberForm((current) => ({ ...current, school_class_name: event.target.value }))} placeholder="Ví dụ 12.6" /></label></span>
-                  <span><MemberNoteCell member={member} canEdit={canManageMembers} disabled={locked} onSave={saveMemberNote} /></span>
-                  <span><label><small>Trạng thái</small><select value={memberForm.active ? 'active' : 'inactive'} onChange={(event) => setMemberForm((current) => ({ ...current, active: event.target.value === 'active' }))}><option value="active">Đang học</option><option value="inactive">Đã nghỉ</option></select></label></span>
-                  <span className="attendance-member-edit-actions"><button type="button" disabled={locked} onClick={cancelMemberEdit}>Hủy</button><button className="is-primary" type="button" disabled={locked || !memberForm.student_full_name.trim() || !memberForm.school_class_name.trim()} onClick={() => saveMemberInfo(member)}>{saving === `member:${member.id}` ? 'Đang lưu…' : 'Lưu'}</button></span>
+                <div key={member.id} role="row" className="attendance-member-edit-row is-mockup-row">
+                  <span role="cell" className="attendance-member-table__index">{String(memberIndexOffset + index + 1).padStart(2, '0')}</span>
+                  <span role="cell"><label><small>Họ và tên *</small><input value={memberForm.student_full_name} onChange={(event) => setMemberForm((current) => ({ ...current, student_full_name: event.target.value }))} /></label></span>
+                  <span role="cell"><label><small>Lớp chính khóa *</small><input value={memberForm.school_class_name} onChange={(event) => setMemberForm((current) => ({ ...current, school_class_name: event.target.value }))} placeholder="Ví dụ 12.6" /></label></span>
+                  <span role="cell"><MemberNoteCell member={member} canEdit={canManageMembers} disabled={locked} onSave={saveMemberNote} /></span>
+                  <span role="cell"><label><small>Trạng thái</small><select value={memberForm.active ? 'active' : 'inactive'} onChange={(event) => setMemberForm((current) => ({ ...current, active: event.target.value === 'active' }))}><option value="active">Đang học</option><option value="inactive">Đã nghỉ</option></select></label></span>
+                  <span role="cell" className="attendance-member-edit-actions"><button type="button" disabled={locked} onClick={cancelMemberEdit}>Hủy</button><button className="is-primary" type="button" disabled={locked || !memberForm.student_full_name.trim() || !memberForm.school_class_name.trim()} onClick={() => saveMemberInfo(member)}>{saving === `member:${member.id}` ? 'Đang lưu…' : 'Lưu'}</button></span>
                 </div>
               );
             }
 
             const menuOpen = String(openMemberMenuId) === String(member.id);
             return (
-              <div key={member.id} className={`attendance-member-table-row${member.active === false ? ' is-inactive' : ''}`}>
-                <span className="attendance-member-table__index">{memberIndexOffset + index + 1}</span>
-                <span className="attendance-member-name-cell"><span className="attendance-member-avatar">{studentInitials(member.student_full_name)}</span><b>{member.student_full_name}</b></span>
-                <span className="attendance-member-school-class">{member.school_class_name || '—'}</span>
-                <span><MemberNoteCell member={member} canEdit={canManageMembers} disabled={locked} onSave={saveMemberNote} /></span>
-                <span><em className={`attendance-member-status-pill ${member.active === false ? 'is-inactive' : 'is-active'}`}><i aria-hidden="true" />{member.active === false ? 'Đã nghỉ' : 'Đang học'}</em></span>
-                <span className="attendance-member-row-actions is-compact">
+              <div key={member.id} role="row" className={`attendance-member-table-row${member.active === false ? ' is-inactive' : ''}`}>
+                <span role="cell" className="attendance-member-table__index">{String(memberIndexOffset + index + 1).padStart(2, '0')}</span>
+                <span role="cell" className="attendance-member-name-cell"><span className="attendance-member-avatar">{studentInitials(member.student_full_name)}</span><b>{member.student_full_name}</b></span>
+                <span role="cell" className="attendance-member-school-class">{member.school_class_name || '—'}</span>
+                <span role="cell"><MemberNoteCell member={member} canEdit={canManageMembers} disabled={locked} onSave={saveMemberNote} /></span>
+                <span role="cell"><em className={`attendance-member-status-pill ${member.active === false ? 'is-inactive' : 'is-active'}`}><i aria-hidden="true" />{member.active === false ? 'Đã nghỉ' : 'Đang học'}</em></span>
+                <span role="cell" className="attendance-member-row-actions is-compact">
                   {canManageMembers ? <button type="button" className="attendance-member-edit-button" disabled={locked} onClick={() => startEditMember(member)}>Sửa</button> : null}
                   {canManageMembers ? (
                     <button
@@ -438,7 +447,7 @@ export default function AttendanceClassEditor({
               </div>
             );
           })}
-          {!members.length ? <div className="attendance-empty">Không có học sinh phù hợp.</div> : null}
+          {!members.length ? <div className="attendance-empty" role="row"><span role="cell" aria-colspan={6}>Không có học sinh phù hợp.</span></div> : null}
         </div>
       </>
     );
