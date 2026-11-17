@@ -33,9 +33,7 @@
   text-decoration: none;
 }
 
-.attendance-site:is([data-attendance-editorial-account], :has(.attendance-shell:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open))) .attendance-site-header img {
-  width: 35px;
-  height: 35px;
+.attendance-site:is([data-attendance-editorial-account], :has(.attendance-shell:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open))) .attendance-site-header .attendance-brand-mark {
   filter: grayscale(1) contrast(1.1);
 }
 
@@ -48,6 +46,7 @@
   font-size: clamp(19px, 2vw, 31px);
   font-weight: 900;
   letter-spacing: -.045em;
+  text-transform: none;
 }
 
 .attendance-site:is([data-attendance-editorial-account], :has(.attendance-shell:is([data-editorial-quick], [data-editorial-page], [data-attendance-editorial-view], .is-standalone.bes-supplemental-admin-open))) .attendance-editorial-site-caption {

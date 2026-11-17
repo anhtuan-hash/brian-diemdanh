@@ -441,3 +441,5 @@
 @media(prefers-reduced-motion:reduce){
   .stud-att-profile *, .stud-att-profile *::before, .stud-att-profile *::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}
 }
+
+.stud-att-profile .attendance-profile-wordmark { text-transform: none; }

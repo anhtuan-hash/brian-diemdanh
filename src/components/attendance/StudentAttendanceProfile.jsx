@@ -107,7 +107,7 @@ export default function StudentAttendanceProfile({
   return <main className="stud-att-profile" data-student-attendance-profile aria-label={'Hồ sơ chuyên cần '+student.name}>
     <div className="sap-backline">
       <button type="button" className="sap-back" onClick={onBack}><ArrowLeft size={17}/> Quay lại báo cáo điểm danh</button>
-      <span className="sap-backline__crumb">BRIAN ENGLISH <ChevronRight size={12}/> ĐIỂM DANH <ChevronRight size={12}/> HỒ SƠ HỌC SINH</span>
+      <span className="sap-backline__crumb"><span className="attendance-profile-wordmark">@brianverse</span> <ChevronRight size={12}/> ĐIỂM DANH <ChevronRight size={12}/> HỒ SƠ HỌC SINH</span>
     </div>
 
     <div className="sap-paper-head">

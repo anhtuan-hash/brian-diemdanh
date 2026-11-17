@@ -195,10 +195,10 @@ export default function AuthPage({ mode = 'login', language, onLogin, setGlobalL
     <div className="attendance-auth">
       <header className="attendance-auth-masthead">
         <a className="attendance-auth-brand" href="#/attendance">
-          <span className="attendance-auth-mark" aria-hidden="true">
+          <span className="attendance-brand-mark" aria-hidden="true">
             <img src="/brian-english-brand-logo.png" alt="" width="940" height="760" />
           </span>
-          <span>Brian English</span>
+          <span>@brianverse</span>
         </a>
       </header>
 
