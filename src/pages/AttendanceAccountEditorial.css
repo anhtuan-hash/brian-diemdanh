@@ -1,0 +1,227 @@
+.attendance-site[data-attendance-editorial-account] .attendance-site-header a[aria-current="page"] {
+  text-decoration: underline 3px var(--attendance-red);
+  text-underline-offset: .5em;
+}
+
+.attendance-site[data-attendance-editorial-account] :is(.attendance-permissions, .attendance-account-security) {
+  margin-inline: var(--attendance-gutter);
+  padding-bottom: 3rem;
+  color: var(--attendance-ink);
+}
+
+.attendance-site[data-attendance-editorial-account] .attendance-editorial-heading {
+  padding-block: clamp(1.2rem, 3.4vw, 3.2rem);
+}
+
+.attendance-site[data-attendance-editorial-account] .attendance-editorial-heading h1 {
+  font-size: clamp(2.7rem, 8vw, 8.2rem) !important;
+  line-height: 1.04 !important;
+}
+
+.attendance-permissions__layout,
+.attendance-account-security__setting {
+  display: grid;
+  grid-template-columns: minmax(0, 30%) minmax(0, 1fr);
+  border-bottom: 1px solid var(--attendance-ink);
+}
+
+.attendance-permissions__layout > aside,
+.attendance-account-security__setting > :first-child {
+  min-width: 0;
+  padding: 1.25rem clamp(12px, 2vw, 28px) 1.25rem 0;
+  border-inline-end: 1px solid var(--attendance-ink);
+}
+
+.attendance-permissions__layout > form,
+.attendance-account-security__setting > :last-child {
+  min-width: 0;
+  padding: 1.25rem 0 1rem clamp(12px, 2vw, 28px);
+}
+
+.attendance-permissions__list-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: .5rem;
+  align-items: baseline;
+  margin-bottom: .7rem;
+}
+
+.attendance-permissions__list-heading label {
+  font-size: clamp(1.16rem, 1.9vw, 1.6rem);
+  font-weight: 850;
+  letter-spacing: -.035em;
+}
+
+.attendance-permissions__list-heading span {
+  font-size: .82rem;
+  color: #555148;
+}
+
+.attendance-permissions input[type="search"] {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: 1rem;
+  padding: .6rem .75rem;
+  background: transparent;
+  border: 1px solid var(--attendance-ink);
+  border-radius: 0;
+  color: inherit;
+  font: inherit;
+}
+
+.attendance-permissions ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: clamp(18rem, 58dvh, 38rem);
+  overflow: auto;
+  border-top: 1px solid var(--attendance-ink);
+}
+
+.attendance-permissions li button {
+  display: grid;
+  gap: .24rem;
+  width: 100%;
+  min-height: 48px;
+  padding: .7rem .9rem;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--attendance-line);
+  border-radius: 0;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  overflow-wrap: anywhere;
+}
+
+.attendance-permissions li button[aria-pressed="true"] {
+  background: var(--attendance-selection);
+  box-shadow: inset 4px 0 var(--attendance-red);
+}
+
+.attendance-permissions :is(legend span, li span, li small, .attendance-permissions__option small) {
+  color: #555148;
+  font-size: .88rem;
+}
+
+.attendance-permissions fieldset {
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  border: 0;
+}
+
+.attendance-permissions legend {
+  display: grid;
+  gap: .3rem;
+  width: 100%;
+  padding: 0 0 .85rem;
+  border-bottom: 2px solid var(--attendance-ink);
+  overflow-wrap: anywhere;
+}
+
+.attendance-permissions legend strong,
+.attendance-account-security h2 {
+  margin: 0;
+  font-size: clamp(1.4rem, 2.7vw, 2.5rem);
+  font-weight: 850;
+  letter-spacing: -.045em;
+  line-height: 1.1;
+}
+
+.attendance-permissions__option {
+  display: flex;
+  align-items: flex-start;
+  gap: .85rem;
+  min-height: 44px;
+  padding: .75rem .3rem;
+  border-bottom: 1px solid var(--attendance-line);
+  cursor: pointer;
+}
+
+.attendance-permissions__option input {
+  flex: 0 0 auto;
+  width: 19px;
+  height: 19px;
+  margin: .1rem 0 0;
+  accent-color: var(--attendance-red);
+}
+
+.attendance-permissions__option small { display: block; margin-top: .22rem; }
+
+.attendance-permissions footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: .75rem;
+  padding-top: .9rem;
+}
+
+.attendance-permissions footer p { margin: 0; color: #176345; }
+.attendance-permissions footer button { margin-inline-start: auto; }
+
+.attendance-site[data-attendance-editorial-account] :is(.attendance-permissions footer button, .attendance-account__action, .attendance-permissions__error button) {
+  min-height: 44px;
+  padding: .55rem 1rem;
+  border: 1px solid var(--attendance-red);
+  border-radius: 0;
+  background: var(--attendance-red);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+}
+
+.attendance-site[data-attendance-editorial-account] :is(.attendance-account__action[data-variant="outline"], .attendance-permissions__error button) {
+  border-color: var(--attendance-ink);
+  background: transparent;
+  color: var(--attendance-ink);
+}
+
+.attendance-site[data-attendance-editorial-account] button:disabled {
+  opacity: .55;
+  cursor: default;
+}
+
+.attendance-account-security__status {
+  display: inline-block;
+  margin-top: .85rem;
+  padding: .32rem .58rem;
+  border: 1px solid var(--attendance-ink);
+  font-weight: 800;
+}
+
+.attendance-account-security__status[data-enabled="true"] {
+  border-color: #176345;
+  background: #176345;
+  color: #fff;
+}
+
+.attendance-account-security__setting p {
+  max-width: 54ch;
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+
+.attendance-account-security__setting :is(.attendance-account__notice, .attendance-account__error) { margin: 1rem 0 0; }
+.attendance-account__notice { color: #176345; }
+.attendance-account__error, .attendance-permissions__error { color: #a3261b; }
+.attendance-permissions__error button { margin-inline-start: .5rem; }
+
+@media (max-width: 680px) {
+  .attendance-permissions__layout,
+  .attendance-account-security__setting { grid-template-columns: minmax(0, 1fr); }
+
+  .attendance-permissions__layout > aside,
+  .attendance-account-security__setting > :first-child {
+    padding: .9rem 0;
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--attendance-ink);
+  }
+
+  .attendance-permissions__layout > form,
+  .attendance-account-security__setting > :last-child { padding: .9rem 0; }
+  .attendance-permissions ul { max-height: 13rem; }
+}

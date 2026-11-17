@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { getRuntimeClient } from '../services/runtime/core.js';
 import { ATTENDANCE_PERMISSION_ITEMS, ATTENDANCE_ACTION_PERMISSION_ITEMS } from '../utils/permissions.js';
-import './AttendancePermissions.css';
+import AttendanceEditorialHeading from '../components/attendance/AttendanceEditorialHeading.jsx';
+import './AttendanceAccountEditorial.css';
 
 const sections = [...ATTENDANCE_PERMISSION_ITEMS, ...ATTENDANCE_ACTION_PERMISSION_ITEMS];
 
@@ -78,18 +79,22 @@ export default function AttendancePermissions() {
 
   return (
     <section className="attendance-permissions" aria-labelledby="attendance-permissions-title">
-      <header><h1 id="attendance-permissions-title">Phân quyền Điểm danh</h1><p>Chọn tài khoản và đánh dấu các mục được phép sử dụng.</p></header>
+      <AttendanceEditorialHeading title="Phân quyền" titleId="attendance-permissions-title"
+        metrics={[{ label: 'Tài khoản', value: error && !accounts.length ? '—' : accounts.length }]} loading={loading} />
       {error && <p role="alert" className="attendance-permissions__error">{error} <button type="button" onClick={() => setRevision(revision + 1)}>Tải lại danh sách</button></p>}
       {loading ? <p role="status">Đang tải tài khoản…</p> : (
         <div className="attendance-permissions__layout">
           <aside aria-label="Tài khoản">
-            <label htmlFor="attendance-account-search">Tìm tài khoản</label>
+            <div className="attendance-permissions__list-heading">
+              <label htmlFor="attendance-account-search">Tìm tài khoản</label>
+              {query.trim() && <span>{filteredAccounts.length} kết quả</span>}
+            </div>
             <input id="attendance-account-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tên hoặc email" />
             <ul>
               {filteredAccounts.map((account) => <li key={account.id}>
                 <button type="button" aria-pressed={selectedId === account.id} disabled={saving} onClick={() => selectAccount(account)}>
                   <strong>{account.full_name || account.email}</strong>
-                  <span>{account.email}</span>
+                  {account.full_name && account.email && account.email !== account.full_name && <span>{account.email}</span>}
                   {!account.approved && <small>Chờ duyệt</small>}
                 </button>
               </li>)}
@@ -98,7 +103,10 @@ export default function AttendancePermissions() {
           </aside>
           {selected && <form onSubmit={save}>
             <fieldset disabled={saving}>
-              <legend>{selected.full_name || selected.email}</legend>
+              <legend>
+                <strong>{selected.full_name || selected.email}</strong>
+                {selected.full_name && selected.email && <span>{selected.email}</span>}
+              </legend>
               {sections.map(({ id, titleVi, descVi }) => <label key={id} className="attendance-permissions__option">
                 <input type="checkbox" checked={draft.includes(id)} onChange={(event) => {
                   const checked = event.target.checked;

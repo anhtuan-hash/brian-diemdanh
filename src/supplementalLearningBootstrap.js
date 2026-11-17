@@ -203,7 +203,52 @@ function memberRows(item) {
 function classEditor(item) {
   const isNew = !item.id;
   const teachers = item.teachers?.length ? item.teachers : [{}];
-  return `<div class="bes-supplemental-class-editor"><div class="bes-supplemental-editor-heading"><button type="button" data-action="back-to-classes">← Danh sách lớp</button><div><span>${isNew ? 'TẠO MỚI' : 'QUẢN LÝ LỚP'}</span><h3>${isNew ? 'Tạo lớp học bổ sung' : esc(item.className || item.groupName)}</h3></div></div><form class="bes-supplemental-class-form" data-form="class"><section class="bes-supplemental-editor-card"><header><div><h4>Thông tin lớp</h4><p>Nhập trực tiếp thông tin dùng cho lịch học và điểm danh.</p></div></header><div class="bes-supplemental-form-grid"><label>Tên lớp<input name="className" value="${esc(item.className || item.groupName || '')}" required></label><label>Môn học<input name="subject" value="${esc(item.subject || '')}" required></label><label>Khối<input name="gradeLevel" value="${esc(item.gradeLevel || '')}" placeholder="10, 11 hoặc 12" required></label><label>Phòng học<input name="room" value="${esc(item.room || '')}" placeholder="Không bắt buộc"></label><label>Từ ngày<input name="startDate" type="date" value="${esc(item.startDate || today())}" required></label><label>Đến ngày<input name="endDate" type="date" value="${esc(item.endDate || plusMonths())}" required></label><label>Giờ bắt đầu<input name="startTime" type="time" value="${esc(item.startTime || '16:40')}" required></label><label>Giờ kết thúc<input name="endTime" type="time" value="${esc(item.endTime || '17:15')}" required></label></div><fieldset class="bes-supplemental-weekdays"><legend>Ngày học trong tuần</legend>${weekdayChecks(item.weekdays || [2])}</fieldset><label>Ghi chú<textarea name="note" rows="3" placeholder="Không bắt buộc">${esc(item.note || '')}</textarea></label><label class="bes-supplemental-switch"><input type="checkbox" name="active" ${item.active !== false ? 'checked' : ''}><span>Lớp đang hoạt động</span></label></section><section class="bes-supplemental-editor-card"><header><div><h4>Giáo viên phụ trách</h4><p>Thông tin phụ trách không tự cấp quyền truy cập Học bổ sung.</p></div><button type="button" data-add-teacher>+ Thêm giáo viên</button></header><div class="bes-supplemental-teacher-list" data-teacher-list>${teachers.map(teacherRow).join('')}</div></section><div class="bes-supplemental-savebar"><button type="button" data-action="back-to-classes">Hủy</button><button class="is-primary" type="submit" ${busy ? 'disabled' : ''}>${isNew ? 'Tạo lớp học bổ sung' : 'Lưu thay đổi'}</button></div></form>${isNew ? '<section class="bes-supplemental-editor-card is-disabled"><h4>Học sinh</h4><p>Hãy lưu lớp trước khi thêm học sinh.</p></section>' : `<section class="bes-supplemental-editor-card bes-supplemental-students-card"><header><div><h4>Học sinh</h4><p>Quản lý danh sách riêng của lớp và trạng thái đang học/ngừng học.</p></div><div><span>${Number(item.activeStudentCount || 0)} đang học</span><label class="bes-supplemental-import-members">Tải file Excel<input type="file" data-import-members accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden></label></div></header><form class="bes-supplemental-add-member" data-form="add-member"><label>Họ và tên<input name="fullName" required placeholder="Họ tên học sinh"></label><label>Mã học sinh<input name="studentCode" placeholder="Không bắt buộc"></label><label>Lớp chính khóa<input name="schoolClassName" placeholder="VD: 12.6"></label><button class="is-primary" type="submit" ${busy ? 'disabled' : ''}>+ Thêm học sinh</button></form>${memberRows(item)}</section>`}</div>`;
+  return `<div class="bes-supplemental-class-editor">
+    <header class="bes-supplemental-editor-heading">
+      <div>${isNew ? '' : '<span>QUẢN LÝ LỚP</span>'}<h3>${isNew ? 'Tạo lớp học bổ sung' : esc(item.className || item.groupName)}</h3></div>
+      <button type="button" data-action="back-to-classes">← Danh sách lớp</button>
+    </header>
+    <form class="bes-supplemental-class-form" data-form="class">
+      <section class="bes-supplemental-editor-card">
+        <header><h4>Thông tin lớp</h4></header>
+        <div class="bes-supplemental-form-grid">
+          <label>Tên lớp<input name="className" value="${esc(item.className || item.groupName || '')}" required></label>
+          <label>Môn học<input name="subject" value="${esc(item.subject || '')}" required></label>
+          <label>Khối<input name="gradeLevel" value="${esc(item.gradeLevel || '')}" placeholder="10, 11 hoặc 12" required></label>
+          <label>Phòng học<input name="room" value="${esc(item.room || '')}" placeholder="Không bắt buộc"></label>
+          <label>Từ ngày<input name="startDate" type="date" value="${esc(item.startDate || today())}" required></label>
+          <label>Đến ngày<input name="endDate" type="date" value="${esc(item.endDate || plusMonths())}" required></label>
+          <label>Giờ bắt đầu<input name="startTime" type="time" value="${esc(item.startTime || '16:40')}" required></label>
+          <label>Giờ kết thúc<input name="endTime" type="time" value="${esc(item.endTime || '17:15')}" required></label>
+        </div>
+        <fieldset class="bes-supplemental-weekdays"><legend>Ngày học trong tuần</legend><div>${weekdayChecks(item.weekdays || [2])}</div></fieldset>
+        <label>Ghi chú<textarea name="note" rows="3" placeholder="Không bắt buộc">${esc(item.note || '')}</textarea></label>
+        <label class="bes-supplemental-switch"><input type="checkbox" name="active" ${item.active !== false ? 'checked' : ''}><span>Lớp đang hoạt động</span></label>
+      </section>
+      <section class="bes-supplemental-editor-card">
+        <header><div><h4>Giáo viên phụ trách</h4><p>Thông tin phụ trách không tự cấp quyền truy cập Học bổ sung.</p></div><button type="button" data-add-teacher>+ Thêm giáo viên</button></header>
+        <div class="bes-supplemental-teacher-list" data-teacher-list>${teachers.map(teacherRow).join('')}</div>
+      </section>
+      ${isNew ? '<p class="bes-supplemental-editor-hint">Sau khi lưu lớp, thầy cô có thể thêm học sinh.</p>' : ''}
+      <div class="bes-supplemental-savebar">
+        <p data-class-feedback role="alert"></p>
+        <div>
+          <button type="button" data-action="back-to-classes">Hủy</button>
+          <button class="is-primary" type="submit" ${busy ? 'disabled' : ''}>${isNew ? 'Tạo lớp học bổ sung' : 'Lưu thay đổi'}</button>
+        </div>
+      </div>
+    </form>
+    ${isNew ? '' : `<section class="bes-supplemental-editor-card bes-supplemental-students-card">
+      <header><div><h4>Học sinh</h4><p>Quản lý danh sách riêng của lớp và trạng thái đang học/ngừng học.</p></div><div><span>${Number(item.activeStudentCount || 0)} đang học</span><label class="bes-supplemental-import-members">Tải file Excel<input type="file" data-import-members accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden></label></div></header>
+      <form class="bes-supplemental-add-member" data-form="add-member">
+        <label>Họ và tên<input name="fullName" required placeholder="Họ tên học sinh"></label>
+        <label>Mã học sinh<input name="studentCode" placeholder="Không bắt buộc"></label>
+        <label>Lớp chính khóa<input name="schoolClassName" placeholder="VD: 12.6"></label>
+        <button class="is-primary" type="submit" ${busy ? 'disabled' : ''}>+ Thêm học sinh</button>
+      </form>
+      ${memberRows(item)}
+    </section>`}
+  </div>`;
 }
 
 function renderPanel() {
@@ -257,13 +302,44 @@ async function runMutation(task, success, { keepSelection = true } = {}) {
   finally { busy = false; renderPanel(); }
 }
 async function saveClass(form, item) {
+  if (busy || !canManage()) return;
   const payload = classPayload(form, item);
-  if (!payload.weekdays.length) return setMessage('Hãy chọn ít nhất một ngày học trong tuần.', 'error');
-  await runMutation(async () => {
+  const feedback = form.querySelector('[data-class-feedback]');
+  if (!payload.weekdays.length) {
+    feedback.textContent = 'Hãy chọn ít nhất một ngày học trong tuần.';
+    form.querySelector('[name="weekday"]')?.focus();
+    return;
+  }
+
+  const submit = form.querySelector('button[type="submit"]');
+  const label = submit.textContent;
+  const controls = [...form.elements].filter((element) => !element.disabled);
+  controls.forEach((element) => { element.disabled = true; });
+  feedback.textContent = '';
+  submit.textContent = 'Đang lưu…';
+  form.setAttribute('aria-busy', 'true');
+  busy = true;
+
+  try {
     const saved = await upsertSupplementalClass(client, payload);
+    if (!form.isConnected || !canManage()) return;
     selectedClassId = saved?.id || item?.id || '';
     creatingClass = false;
-  }, item?.id ? 'Đã lưu thay đổi lớp.' : 'Đã tạo lớp học bổ sung.');
+    message = item?.id ? 'Đã lưu thay đổi lớp.' : 'Đã tạo lớp học bổ sung.';
+    await reload();
+  } catch (error) {
+    feedback.textContent = error?.message || 'Không thể lưu thay đổi.';
+  } finally {
+    busy = false;
+    if (form.isConnected) {
+      controls.forEach((element) => { element.disabled = false; });
+      submit.textContent = label;
+      form.removeAttribute('aria-busy');
+      submit.focus();
+    } else if (document.getElementById(HOST_ID)) {
+      renderPanel();
+    }
+  }
 }
 async function saveMember(form, classId, studentId = null) {
   const values = new FormData(form);
