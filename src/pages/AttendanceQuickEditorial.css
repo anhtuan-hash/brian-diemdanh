@@ -1,0 +1,909 @@
+/* Theme for the standalone roll-call screen. Legacy tabs share the workspace
+   and keep their existing styles. Extra specificity clears older UI patches. */
+.attendance-site-header .attendance-editorial-wordmark,
+.attendance-site-header .attendance-editorial-site-caption,
+.attendance-site-header .attendance-editorial-avatar {
+  display: none;
+}
+
+.attendance-site:has(.attendance-shell[data-editorial-quick]:not(.bes-supplemental-admin-open)) {
+  --attendance-paper: #f7f5ef;
+  --brian-document-canvas: var(--attendance-paper);
+  --attendance-ink: #161612;
+  --attendance-red: #bb291c;
+  --attendance-line: #c6c1b5;
+  --attendance-selection: #f0e4ca;
+  --attendance-gutter: clamp(16px, 2.4vw, 38px);
+  background: var(--attendance-paper) !important;
+  color: var(--attendance-ink);
+  font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+}
+
+.attendance-site:has(.attendance-shell[data-editorial-quick]:not(.bes-supplemental-admin-open)) .attendance-site-header {
+  min-height: 58px;
+  margin-inline: var(--attendance-gutter);
+  padding: 8px 0;
+  gap: 8px 16px;
+  background: transparent;
+  border-color: var(--attendance-ink);
+  color: inherit;
+  font-family: inherit;
+}
+
+.attendance-site:has(.attendance-shell[data-editorial-quick]:not(.bes-supplemental-admin-open)) .attendance-site-header > a {
+  text-decoration: none;
+}
+
+.attendance-site:has(.attendance-shell[data-editorial-quick]:not(.bes-supplemental-admin-open)) .attendance-site-header img {
+  width: 35px;
+  height: 35px;
+  filter: grayscale(1) contrast(1.1);
+}
+
+.attendance-site:has(.attendance-shell[data-editorial-quick]:not(.bes-supplemental-admin-open)) .attendance-site-title {
+  display: none;
+}
+
+.attendance-site:has(.attendance-shell[data-editorial-quick]:not(.bes-supplemental-admin-open)) .attendance-editorial-wordmark {
+  display: inline;
+  font-size: clamp(19px, 2vw, 31px);
+  font-weight: 900;
+  letter-spacing: -.045em;
+}
+
+.attendance-site:has(.attendance-shell[data-editorial-quick]:not(.bes-supplemental-admin-open)) .attendance-editorial-site-caption {
+  display: inline;
+  padding-inline-start: 14px;
+  border-inline-start: 1px solid var(--attendance-ink);
+  font-weight: 700;
+}
+
+.attendance-site:has(.attendance-shell[data-editorial-quick]:not(.bes-supplemental-admin-open)) .attendance-site-header > div {
+  gap: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.attendance-site:has(.attendance-shell[data-editorial-quick]:not(.bes-supplemental-admin-open)) .attendance-editorial-avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--attendance-ink);
+  color: white;
+  font-weight: 850;
+}
+
+.attendance-site:has(.attendance-shell[data-editorial-quick]:not(.bes-supplemental-admin-open)) .attendance-site-account-name {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.attendance-site:has(.attendance-shell[data-editorial-quick]:not(.bes-supplemental-admin-open)) .attendance-site-header :is(button, div > a) {
+  padding: 5px 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  font: inherit;
+}
+
+.attendance-site:has(.attendance-shell[data-editorial-quick]:not(.bes-supplemental-admin-open)) .attendance-site-header button {
+  padding-inline-start: 12px;
+  border-inline-start: 1px solid var(--attendance-ink);
+}
+
+.attendance-site .attendance-workspace-page:has(.attendance-shell[data-editorial-quick]:not(.bes-supplemental-admin-open)) {
+  max-width: none;
+  margin: 0;
+  padding: 0 var(--attendance-gutter) 24px !important;
+  background: transparent !important;
+  color: inherit;
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick]:not(.bes-supplemental-admin-open) {
+  --quick-roster-grid: 3.35rem minmax(0, 1fr) minmax(7rem, 19%) minmax(13rem, 33%);
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--attendance-ink);
+  font-family: inherit;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick]:not(.bes-supplemental-admin-open) > .attendance-topbar {
+  position: absolute;
+  z-index: 2;
+  inset: 0 0 auto auto;
+  width: 42px !important;
+  min-height: 0 !important;
+  height: 50px;
+  padding: 0 !important;
+  border: 0 !important;
+  background: var(--attendance-paper) !important;
+}
+
+.attendance-shell.is-standalone[data-editorial-quick]:not(.bes-supplemental-admin-open) .attendance-topbar .attendance-title {
+  display: none;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick]:not(.bes-supplemental-admin-open) .attendance-top-actions .attendance-icon-button {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--attendance-ink) !important;
+  box-shadow: none !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick]:not(.bes-supplemental-admin-open) > .attendance-tabs {
+  display: flex !important;
+  flex-wrap: nowrap;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+  width: calc(100% - 42px) !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  min-height: 50px;
+  overflow-x: auto !important;
+  scrollbar-width: thin;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick]:not(.bes-supplemental-admin-open) > .attendance-tabs > button {
+  position: relative;
+  flex: 0 0 auto;
+  min-height: 49px !important;
+  margin: 0 !important;
+  padding: 0 clamp(10px, 1.35vw, 24px) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  color: var(--attendance-ink) !important;
+  font: 750 clamp(.83rem, 1.21vw, 1.08rem)/1.1 Inter, "Helvetica Neue", Arial, sans-serif !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick]:not(.bes-supplemental-admin-open) > .attendance-tabs > button:first-child {
+  padding-inline-start: 2px !important;
+}
+
+.attendance-shell[data-editorial-quick]:not(.bes-supplemental-admin-open) > .attendance-tabs > button + button::before {
+  position: absolute;
+  content: "";
+  inset: 27% auto 27% 0;
+  border-inline-start: 1px solid var(--attendance-ink);
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick]:not(.bes-supplemental-admin-open) > .attendance-tabs > .is-active::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute !important;
+  inset: auto 10px 0 2px !important;
+  height: 5px !important;
+  background: var(--attendance-red) !important;
+  border-radius: 0 !important;
+}
+
+.attendance-shell[data-editorial-quick]:not(.bes-supplemental-admin-open) > .attendance-tabs button > :is(svg, [aria-hidden="true"]) {
+  display: none;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick]:not(.bes-supplemental-admin-open) .attendance-tab-badge {
+  background: var(--attendance-red) !important;
+  color: white !important;
+  border-radius: 0 !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick]:not(.bes-supplemental-admin-open) > .attendance-content {
+  min-width: 0;
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  border-block-start: 2px solid var(--attendance-ink);
+  border-radius: 0 !important;
+  background: transparent !important;
+  overflow: visible !important;
+}
+
+.attendance-editorial-masthead {
+  display: grid;
+  grid-template-columns: minmax(0, 57%) minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding: clamp(16px, 1.85vw, 29px) 0;
+  border-bottom: 2px solid var(--attendance-ink);
+}
+
+.attendance-editorial-masthead h1 {
+  margin: 0;
+  color: var(--attendance-ink);
+  font-family: inherit;
+  font-size: clamp(45px, 9.7vw, 147px);
+  white-space: nowrap;
+  font-weight: 900;
+  letter-spacing: -.093em;
+  line-height: .99;
+}
+
+.attendance-editorial-metrics {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.7fr);
+  align-items: center;
+  gap: clamp(7px, 1.25vw, 21px);
+  border-inline-start: 1px solid var(--attendance-ink);
+  padding-inline-start: clamp(8px, 1.45vw, 22px);
+}
+
+.attendance-editorial-metric {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px clamp(6px, 1.1vw, 16px);
+  border-inline-start: 1px solid var(--attendance-ink);
+}
+
+.attendance-editorial-metric.is-primary {
+  background: var(--attendance-red);
+  color: white;
+  border: 0;
+  padding: 12px clamp(8px, 1.8vw, 26px);
+}
+
+.attendance-editorial-metric strong {
+  font-size: clamp(32px, 5vw, 78px);
+  font-weight: 900;
+  letter-spacing: -.095em;
+  line-height: .94;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.attendance-editorial-metric.is-primary strong {
+  font-size: clamp(34px, 5.35vw, 85px);
+}
+
+.attendance-editorial-metric.is-primary[data-compact-value] strong {
+  font-size: clamp(25px, 3.7vw, 62px);
+}
+
+.attendance-editorial-metric span {
+  font-size: clamp(.8rem, 1.45vw, 1.32rem);
+  font-weight: 800;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-quick-layout {
+  grid-template-columns: minmax(0, 27.5%) minmax(0, 1fr) !important;
+  gap: 0 !important;
+  align-items: stretch !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-quick-layout[data-no-class-list] {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] :is(.attendance-class-list, .attendance-rollcall, .attendance-rollcall-head, .att-m3-class-discovery, .attendance-session-controls, .attendance-roster, .att-m3-proof-card, .attendance-confirm-bar, .att-m3-period-field, .attendance-day-open, .attendance-day-lock) {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--attendance-ink) !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-class-list {
+  padding: 20px clamp(12px, 1.6vw, 24px) 16px 0 !important;
+  border-inline-end: 1px solid var(--attendance-ink) !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-class-list > header {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  padding: 0 0 12px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--attendance-ink) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-class-list > header strong {
+  font-size: clamp(17px, 2vw, 30px) !important;
+  font-weight: 850 !important;
+  line-height: 1.1 !important;
+  letter-spacing: -.045em !important;
+  color: var(--attendance-ink) !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-class-list > header span {
+  padding: 0 !important;
+  background: transparent !important;
+  color: var(--attendance-ink) !important;
+  font-weight: 650 !important;
+  white-space: nowrap;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-class-discovery {
+  padding: 12px 0 10px !important;
+  margin: 0 !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-class-search {
+  display: flex !important;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 0 10px !important;
+  color: var(--attendance-ink);
+  border: 1px solid var(--attendance-ink);
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-class-search > input {
+  min-width: 0;
+  min-height: 39px;
+  padding-inline: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  color: var(--attendance-ink) !important;
+}
+
+.attendance-editorial-subjects {
+  margin-block-start: 6px;
+}
+
+.attendance-editorial-subjects summary {
+  width: fit-content;
+  padding-block: 3px;
+  color: #4e4b41;
+  font-size: .78rem;
+  cursor: pointer;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-subject-hub button {
+  border: 1px solid var(--attendance-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--attendance-ink) !important;
+  box-shadow: none !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-subject-hub button.is-active {
+  background: var(--attendance-ink) !important;
+  color: white !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-class-list > div:last-child {
+  max-height: min(40rem, 68vh);
+  margin: 0 !important;
+  padding: 0 !important;
+  scrollbar-width: thin;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-class-list > div:last-child > button {
+  display: block !important;
+  width: 100%;
+  min-height: 49px !important;
+  padding: 10px 11px !important;
+  margin: 0 !important;
+  opacity: 1 !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--attendance-ink) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--attendance-ink) !important;
+  text-align: start;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-class-list > div:last-child > button.is-selected {
+  background: var(--attendance-selection) !important;
+  border-bottom-color: var(--attendance-ink) !important;
+  box-shadow: inset 5px 0 var(--attendance-red) !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-class-list > div:last-child > button:not(.is-selected):hover {
+  background: #ede9df !important;
+}
+
+.attendance-shell[data-editorial-quick] .attendance-class-list > div:last-child > button :is(.attendance-type-dot, .attendance-count, time, small, em) {
+  display: none !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-class-name-row {
+  display: flex !important;
+  gap: 9px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-class-name-row b {
+  color: var(--attendance-ink) !important;
+  font-size: clamp(13px, 1.3vw, 19px) !important;
+  font-weight: 800 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  letter-spacing: -.025em !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-room-chip {
+  padding: 0 !important;
+  color: var(--attendance-ink) !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  font-size: .9rem !important;
+  white-space: nowrap;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-rollcall {
+  display: grid !important;
+  grid-template-columns: minmax(0, .38fr) minmax(0, .62fr);
+  align-content: start;
+  align-items: start;
+  gap: 0 18px !important;
+  padding: 0 0 0 clamp(12px, 1.5vw, 24px) !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-rollcall > :not(.att-m3-proof-card, .attendance-confirm-bar) {
+  grid-column: 1 / -1;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-rollcall-head {
+  align-items: start !important;
+  padding: 20px 0 12px !important;
+  margin: 0 !important;
+  border-bottom: 1px solid var(--attendance-ink) !important;
+}
+
+.attendance-shell[data-editorial-quick] .attendance-rollcall-head > div > :is(span,p) {
+  display: none;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-rollcall-title-row {
+  display: flex !important;
+  align-items: center;
+  gap: 6px clamp(9px, 1.5vw, 21px);
+  flex-wrap: wrap;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-rollcall-head h2 {
+  margin: 0 !important;
+  font-size: clamp(24px, 3.55vw, 52px) !important;
+  line-height: 1.06 !important;
+  font-weight: 900 !important;
+  letter-spacing: -.063em !important;
+  color: var(--attendance-ink) !important;
+  overflow-wrap: anywhere;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-rollcall-title-row .attendance-room-chip {
+  padding-inline-start: 12px !important;
+  border-inline-start: 1px solid var(--attendance-ink) !important;
+  color: var(--attendance-red) !important;
+  font-size: clamp(17px, 2.2vw, 31px) !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-session-controls {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 1.22fr) minmax(0, .86fr) minmax(0, 1.08fr) minmax(0, 1.02fr) !important;
+  grid-template-areas: "date teacher room time period" "lock lock lock lock lock";
+  align-items: start !important;
+  gap: 5px clamp(8px, 1.15vw, 17px) !important;
+  padding: 12px 0 !important;
+  margin: 0 !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-session-controls > :is(label, .att-m3-period-field, .attendance-day-open, .attendance-day-lock) {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  width: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  gap: 5px !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-session-date { grid-area: date !important; }
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-session-controls > .is-teacher { grid-area: teacher !important; }
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-session-room { grid-area: room !important; }
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-session-time { grid-area: time !important; }
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-period-field { grid-area: period !important; }
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] :is(.attendance-day-open, .attendance-day-lock) { grid-area: lock !important; }
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-session-controls > :is(label, .att-m3-period-field) > span,
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-confirm-bar > label > span {
+  font: 800 clamp(.82rem, 1.11vw, 1rem)/1.2 Inter, "Helvetica Neue", Arial, sans-serif !important;
+  text-transform: none !important;
+  letter-spacing: -.02em !important;
+  color: var(--attendance-ink) !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] :is(.attendance-session-controls, .attendance-confirm-bar, .att-m3-absence-detail) :is(input:not([type="checkbox"]), select) {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 38px !important;
+  height: auto !important;
+  padding: 7px 8px !important;
+  color: var(--attendance-ink) !important;
+  background: transparent !important;
+  border: 1px solid var(--attendance-ink) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-size: clamp(.83rem, 1.1vw, 1rem) !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] :is(.attendance-day-lock, .attendance-day-open) :is(b,span) {
+  color: #535047 !important;
+  font-size: 11px !important;
+}
+
+.attendance-shell[data-editorial-quick] .attendance-day-open > span {
+  display: none;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-period-policy {
+  padding: 0 !important;
+  margin: 4px 0 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--attendance-ink) !important;
+  align-items: start;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-period-policy :is(b,small) {
+  color: #535047 !important;
+  font-size: 10.5px !important;
+  line-height: 1.25 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.attendance-shell[data-editorial-quick] .att-m3-period-policy input {
+  accent-color: var(--attendance-red);
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] :is(.att-m3-period-segment, .att-m3-attendance-status) {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  margin: 0 !important;
+  min-width: 0 !important;
+  height: auto !important;
+  background: transparent !important;
+  border: 1px solid var(--attendance-ink) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-period-segment.is-single {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] :is(.att-m3-period-segment, .att-m3-attendance-status) > button {
+  min-width: 0 !important;
+  min-height: 36px !important;
+  height: auto !important;
+  padding: 4px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--attendance-ink) !important;
+  box-shadow: none !important;
+  font-size: clamp(.74rem, 1.1vw, 1rem) !important;
+  font-weight: 800 !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] :is(.att-m3-period-segment, .att-m3-attendance-status) > button + button {
+  border-inline-start: 1px solid var(--attendance-ink) !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] :is(.att-m3-period-segment, .att-m3-attendance-status) > .is-active {
+  background: var(--attendance-red) !important;
+  color: white !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-attendance-status > button[data-status="present"].is-active.is-present {
+  background: #176345 !important;
+  color: white !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-attendance-status > button[data-status="late"].is-active.is-late {
+  background: #855009 !important;
+  color: white !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-attendance-status > button[data-status="absent"].is-active.is-absent {
+  background: var(--attendance-red) !important;
+  color: white !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-roster-head,
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-roster-entry > label {
+  display: grid !important;
+  grid-template-columns: var(--quick-roster-grid) !important;
+  align-items: center;
+  gap: 0 10px !important;
+  margin: 0 !important;
+  padding: 7px 0 !important;
+  color: var(--attendance-ink) !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-roster-head {
+  margin: 0 !important;
+  border-block: 1px solid var(--attendance-ink) !important;
+}
+
+.attendance-shell[data-editorial-quick] .attendance-roster-head::after {
+  content: none !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-roster-head > span {
+  display: block !important;
+  grid-area: auto !important;
+  text-align: start !important;
+  color: var(--attendance-ink) !important;
+  font-size: clamp(.75rem, 1.2vw, 1.04rem) !important;
+  font-weight: 800 !important;
+  text-transform: none !important;
+  letter-spacing: -.025em !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-rollcall .attendance-roster > .att-m3-roster-entry {
+  margin: 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--attendance-ink) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-roster-entry > label {
+  min-height: 52px !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-roster-entry :is(.attendance-index, .attendance-school-class, label b) {
+  color: var(--attendance-ink) !important;
+  font-size: clamp(.87rem, 1.3vw, 1.14rem) !important;
+  font-weight: 750 !important;
+  letter-spacing: -.015em !important;
+  overflow-wrap: anywhere;
+  white-space: normal !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-roster-entry label small {
+  color: #5a5548 !important;
+  font-size: .72rem !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-absence-detail {
+  margin: 0 0 10px !important;
+  padding: 8px !important;
+  background: #f2e6de !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-reason-chips > button {
+  border-radius: 0 !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-proof-card {
+  grid-column: 1;
+  margin: 14px 0 0 !important;
+  padding: 10px 0 0 !important;
+  border-top: 1px solid var(--attendance-ink) !important;
+}
+
+.attendance-shell[data-editorial-quick] :is(.att-m3-proof-card-head > span, .att-m3-proof-card-head small, .att-m3-proof-picker small) {
+  display: none !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] :is(.att-m3-proof-card-head, .att-m3-proof-card-head > div) {
+  padding: 0 !important;
+  margin: 0 0 3px !important;
+  min-height: 0 !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-proof-card-head strong {
+  color: var(--attendance-ink) !important;
+  font-size: clamp(.82rem, 1.25vw, 1.08rem) !important;
+  font-weight: 800 !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-proof-picker {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  min-height: 43px !important;
+  padding: 6px 10px !important;
+  color: var(--attendance-ink) !important;
+  border: 1px solid var(--attendance-ink) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-proof-picker b {
+  color: inherit !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-confirm-bar {
+  display: contents !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-confirm-bar > label {
+  display: grid !important;
+  grid-column: 2;
+  gap: 6px;
+  width: 100% !important;
+  margin: 14px 0 0 !important;
+  padding: 10px 0 0 !important;
+  border-top: 1px solid var(--attendance-ink);
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-confirm-bar > label > input {
+  min-height: 43px !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-session-actions {
+  grid-column: 1 / -1;
+  display: flex !important;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px !important;
+  width: auto !important;
+  margin: 12px 0 0 !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-session-actions > button {
+  min-height: 46px !important;
+  height: auto !important;
+  padding: 9px clamp(12px, 1.55vw, 23px) !important;
+  border: 1px solid var(--attendance-red) !important;
+  border-radius: 0 !important;
+  background: var(--attendance-red) !important;
+  color: white !important;
+  box-shadow: none !important;
+  font-size: clamp(.89rem, 1.4vw, 1.17rem) !important;
+  font-weight: 850 !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-session-actions > .att-m3-cancel-button {
+  background: transparent !important;
+  color: var(--attendance-ink) !important;
+  border-color: var(--attendance-ink) !important;
+}
+
+.attendance-shell[data-editorial-quick] .att-m3-session-actions > button svg {
+  display: none;
+}
+
+.attendance-site:has(.attendance-shell[data-editorial-quick]:not(.bes-supplemental-admin-open)) :is(a,button,input,select,summary):focus-visible {
+  outline: 2px solid var(--attendance-red) !important;
+  outline-offset: 2px !important;
+}
+
+.attendance-shell[data-editorial-quick] .attendance-tabs > button:focus-visible {
+  outline-offset: -4px !important;
+}
+
+@media (max-width: 1050px) {
+  .attendance-site:has(.attendance-shell[data-editorial-quick]:not(.bes-supplemental-admin-open)) .attendance-editorial-site-caption {
+    display: none;
+  }
+}
+
+@media (max-width: 890px) {
+  .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-session-controls {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-areas: "date teacher room" "time period period" "lock lock lock";
+    gap: 8px !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .attendance-editorial-masthead {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    padding-block: 16px 13px;
+  }
+
+  .attendance-editorial-masthead h1 {
+    font-size: clamp(45px, 13.8vw, 90px);
+  }
+
+  .attendance-editorial-metrics {
+    border: 0;
+    padding-inline-start: 0;
+  }
+
+  .attendance-editorial-metric,
+  .attendance-editorial-metric.is-primary {
+    padding: 8px 12px;
+  }
+
+  .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-quick-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-class-list {
+    padding: 13px 0 14px !important;
+    border-inline: 0 !important;
+    border-bottom: 1px solid var(--attendance-ink) !important;
+  }
+
+  .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-class-list > div:last-child {
+    max-height: 165px;
+  }
+
+  .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-rollcall {
+    padding-inline-start: 0 !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .attendance-site:has(.attendance-shell[data-editorial-quick]:not(.bes-supplemental-admin-open)) .attendance-site-header > div {
+    font-size: 12px;
+  }
+
+  .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-session-controls {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    grid-template-areas: "date teacher" "room time" "period period" "lock lock";
+  }
+
+  .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-rollcall {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-confirm-bar > label {
+    grid-column: 1;
+  }
+
+  .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-roster-head,
+  .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-roster-entry > label {
+    grid-template-columns: 2rem minmax(0, 1fr) minmax(0, 28%) !important;
+    gap: 5px 8px !important;
+  }
+
+  .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-roster-head > span:last-child {
+    display: none !important;
+  }
+
+  .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-attendance-status {
+    grid-column: 1 / -1 !important;
+  }
+
+  .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] :is(.att-m3-session-actions, .att-m3-session-actions > button) {
+    width: 100% !important;
+  }
+}

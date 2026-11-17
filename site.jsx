@@ -32,6 +32,8 @@ export default function AttendanceSite() {
   );
   const user = runtime.profile;
   const admin = user?.role === 'admin';
+  const accountNames = String(user?.name || '').trim().split(/\s+/).filter(Boolean);
+  const accountInitials = (accountNames[0]?.[0] || '') + (accountNames.length > 1 ? accountNames.at(-1)[0] : '');
   const isSignedIn = user?.provider === 'supabase' && user.approved === true;
   const showLogin = !isSignedIn || route === 'login';
   const canAccess = isSignedIn && hasRouteAccess(withAttendanceReadOnlyAccess(user), 'attendance');
@@ -81,10 +83,15 @@ export default function AttendanceSite() {
           <header className="attendance-site-header">
             <a href="#/attendance" aria-label="Trang chính Điểm danh">
               <img src="/brian-english-brand-logo.png" alt="" width="38" height="38" />
-              <strong>Điểm danh</strong>
+              <strong className="attendance-site-title">Điểm danh</strong>
+              <strong className="attendance-editorial-wordmark">BRIAN ENGLISH</strong>
+              <span className="attendance-editorial-site-caption">Điểm danh lớp phụ đạo &amp; bồi dưỡng</span>
             </a>
             <div>
-              <span>{user.name}</span>
+              <span className="attendance-site-account" title={user.name}>
+                <span className="attendance-editorial-avatar" aria-hidden="true">{accountInitials.toLocaleUpperCase('vi-VN')}</span>
+                <span className="attendance-site-account-name">{user.name}</span>
+              </span>
               {admin && <a href="#/phan-quyen" aria-current={route === 'permissions' ? 'page' : undefined}>Phân quyền</a>}
               {admin && <a href="#/bao-mat" aria-current={route === 'security' ? 'page' : undefined}>Bảo mật</a>}
               <button type="button" onClick={handleLogout}>Đăng xuất</button>
