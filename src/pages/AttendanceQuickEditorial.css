@@ -456,6 +456,7 @@
 }
 
 .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-rollcall {
+  --quick-control-height: 44px;
   display: grid !important;
   grid-template-columns: minmax(0, .38fr) minmax(0, .62fr);
   align-content: start;
@@ -526,14 +527,33 @@
 }
 
 .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] [data-calendar-roll-call] .attendance-rollcall-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 31%);
-  gap: 15px 20px;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 15px 20px !important;
   align-items: center !important;
   padding-block: 10px 14px !important;
 }
 
+[data-calendar-roll-call] .attendance-editorial-metrics {
+  grid-template-columns: max-content;
+  grid-auto-columns: minmax(3.75rem, max-content);
+  align-items: stretch;
+}
+
+[data-calendar-roll-call] .attendance-editorial-metric {
+  align-content: center;
+  padding-block: 10px;
+}
+
+[data-calendar-roll-call] .attendance-editorial-metric.is-primary {
+  padding: 10px clamp(9px, 1.3vw, 19px);
+}
+
 [data-calendar-roll-call] .attendance-editorial-metric strong {
+  font-size: clamp(24px, 3.1vw, 44px);
+}
+
+[data-calendar-roll-call] .attendance-editorial-metric.is-primary[data-compact-value] strong {
   font-size: clamp(24px, 3.1vw, 44px);
 }
 
@@ -545,6 +565,10 @@
 @media (max-width: 700px) {
   .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] [data-calendar-roll-call] .attendance-rollcall-head {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-calendar-roll-call] .attendance-editorial-metrics {
+    grid-auto-columns: minmax(0, 1fr);
   }
 }
 
@@ -580,6 +604,7 @@
 
 .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-session-controls > :is(label, .att-m3-period-field) > span,
 .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-confirm-bar > label > span {
+  margin: 0 !important;
   font: 800 clamp(.82rem, 1.11vw, 1rem)/1.2 Inter, "Helvetica Neue", Arial, sans-serif !important;
   text-transform: none !important;
   letter-spacing: -.02em !important;
@@ -598,6 +623,24 @@
   border-radius: 0 !important;
   box-shadow: none !important;
   font-size: clamp(.83rem, 1.1vw, 1rem) !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] :is(.attendance-session-controls, .attendance-confirm-bar) > label > :is(input:not([type="checkbox"]), select) {
+  display: block;
+  box-sizing: border-box;
+  max-inline-size: 100%;
+  height: var(--quick-control-height) !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-session-date > input {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.attendance-shell[data-editorial-quick] .attendance-session-date > input::-webkit-date-and-time-value {
+  min-inline-size: 0;
+  margin: 0;
+  text-align: start;
 }
 
 .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] :is(.attendance-day-lock, .attendance-day-open) :is(b,span) {
@@ -646,6 +689,11 @@
 
 .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-period-segment.is-single {
   grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-period-segment {
+  box-sizing: border-box;
+  min-height: var(--quick-control-height);
 }
 
 .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] :is(.att-m3-period-segment, .att-m3-attendance-status) > button {
@@ -723,6 +771,19 @@
   overflow-wrap: anywhere;
 }
 
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] [data-calendar-roll-call] :is(.attendance-roster-head > span:nth-child(3), .attendance-roster-head > span:last-child, .attendance-school-class) {
+  text-align: center !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] [data-calendar-roll-call] .att-m3-roster-entry > label {
+  grid-template-rows: auto !important;
+}
+
+.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] [data-calendar-roll-call] .att-m3-attendance-status {
+  grid-column: 4 !important;
+  grid-row: 1 !important;
+}
+
 .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-rollcall .attendance-roster > .att-m3-roster-entry {
   margin: 0 !important;
   border: 0 !important;
@@ -763,7 +824,9 @@
 }
 
 .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-proof-card {
+  display: grid;
   grid-column: 1;
+  gap: 6px;
   margin: 14px 0 0 !important;
   padding: 10px 0 0 !important;
   border-top: 1px solid var(--attendance-ink) !important;
@@ -775,21 +838,24 @@
 
 .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] :is(.att-m3-proof-card-head, .att-m3-proof-card-head > div) {
   padding: 0 !important;
-  margin: 0 0 3px !important;
+  margin: 0 !important;
   min-height: 0 !important;
 }
 
 .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-proof-card-head strong {
   color: var(--attendance-ink) !important;
-  font-size: clamp(.82rem, 1.25vw, 1.08rem) !important;
-  font-weight: 800 !important;
+  font: 800 clamp(.82rem, 1.11vw, 1rem)/1.2 Inter, "Helvetica Neue", Arial, sans-serif !important;
+  letter-spacing: -.02em;
 }
 
 .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-proof-picker {
   display: flex !important;
   align-items: center;
   gap: 8px;
-  min-height: 43px !important;
+  box-sizing: border-box;
+  min-height: var(--quick-control-height) !important;
+  height: var(--quick-control-height) !important;
+  margin: 0 !important;
   padding: 6px 10px !important;
   color: var(--attendance-ink) !important;
   border: 1px solid var(--attendance-ink) !important;
@@ -814,10 +880,6 @@
   margin: 14px 0 0 !important;
   padding: 10px 0 0 !important;
   border-top: 1px solid var(--attendance-ink);
-}
-
-.attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-confirm-bar > label > input {
-  min-height: 43px !important;
 }
 
 .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .att-m3-session-actions {
@@ -913,6 +975,23 @@
 
   .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] .attendance-rollcall {
     padding-inline-start: 0 !important;
+  }
+
+  .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] [data-calendar-roll-call] {
+    --quick-roster-grid: 2rem minmax(0, 1fr) minmax(0, 28%);
+  }
+
+  .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] [data-calendar-roll-call] .attendance-roster-head > span:last-child {
+    display: none !important;
+  }
+
+  .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] [data-calendar-roll-call] .att-m3-roster-entry > label {
+    row-gap: 6px !important;
+  }
+
+  .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-quick] [data-calendar-roll-call] .att-m3-attendance-status {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
   }
 }
 
