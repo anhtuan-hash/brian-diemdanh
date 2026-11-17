@@ -247,7 +247,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
   const [view, setView] = useState(() => {
     if (!standalone || typeof window === 'undefined') return 'quick';
     const candidate = new URLSearchParams(window.location.hash.split('?')[1] || '').get('tab');
-    return ['quick','calendar','manage','history','report','archive'].includes(candidate) ? candidate : 'quick';
+    return ['quick','calendar','manage','history','report','archive'].includes(candidate) ? candidate : 'calendar';
   });
   const workspaceVisible = open || standalone;
   const editorialView = standalone && ['manage', 'archive', 'report'].includes(view);
@@ -339,8 +339,12 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
     ...ATTENDANCE_PERMISSION_ITEMS.filter((item) => item.tab === 'quick' ? canUseQuickAttendance : canAccessAttendanceView(item.tab)),
     ...(canOpenArchive ? [archiveTab] : []),
   ];
+  const navigationTabs = standalone
+    ? availableAttendanceTabs.filter((item) => item.tab !== 'quick')
+    : availableAttendanceTabs;
   const archiveCount = archiveItems.length + classArchiveItems.length;
-  const firstAllowedView = canUseQuickAttendance ? 'quick' : getFirstAllowedAttendanceTab(currentUser);
+  const firstAllowedView = (standalone ? navigationTabs[0]?.tab : '')
+    || (canUseQuickAttendance ? 'quick' : getFirstAllowedAttendanceTab(currentUser));
   const allowed = Boolean(currentUser?.id && (isAttendanceAdmin || hasAnyAttendanceAccess(currentUser)));
   const canSeeSupplementalHistory = canManageSupplementalLearning(runtime);
   const canOpenQuickView = canUseQuickAttendance || (canSeeSupplementalHistory && String(selectedClassId).startsWith('supplemental:'));
@@ -1708,7 +1712,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
         </header>}
 
         <nav ref={attendanceTabsRef} className="attendance-tabs" aria-label="Phân hệ điểm danh">
-          {availableAttendanceTabs.map((item) => (
+          {navigationTabs.map((item) => (
             <button key={item.id} type="button" className={view === item.tab ? 'is-active' : ''} aria-current={view === item.tab ? 'page' : undefined} onClick={() => {
               if (item.tab !== view) {
                 setNotice('');
@@ -1717,7 +1721,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
               setView(item.tab);
               if (standalone) window.history.replaceState(null, '', '#/attendance?tab=' + encodeURIComponent(item.tab));
             }}>
-              <Icon name={ATTENDANCE_TAB_ICONS[item.tab] || 'attendance'} size={18} />{standalone && item.tab === 'quick' ? 'Điểm danh' : item.titleVi}{item.tab === 'archive' && archiveCount > 0 ? <span className="attendance-tab-badge">{archiveCount > 99 ? '99+' : archiveCount}</span> : null}
+              <Icon name={ATTENDANCE_TAB_ICONS[item.tab] || 'attendance'} size={18} />{item.titleVi}{item.tab === 'archive' && archiveCount > 0 ? <span className="attendance-tab-badge">{archiveCount > 99 ? '99+' : archiveCount}</span> : null}
             </button>
           ))}
           {editorialView && (
@@ -1734,7 +1738,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
 
         <main className="attendance-content">
           {standalone && !useEditorialQuick && !editorialView && !showEditorialPage ? <>
-            <AttendanceFeatureDeck items={availableAttendanceTabs} showSupplemental={canSeeSupplementalHistory} activeView={view}
+            <AttendanceFeatureDeck items={navigationTabs} showSupplemental={canSeeSupplementalHistory} activeView={view}
               onNavigate={(nextView) => {
                 if (nextView === 'supplemental') {
                   const launcher = document.querySelector('.attendance-tabs .bes-supplemental-nav-tab');
