@@ -8,6 +8,7 @@ import {
   updatePassword,
 } from '../utils/auth.js';
 import AttendanceLoginFooter from '../components/attendance/AttendanceLoginFooter.jsx';
+import schoolSketch from '../assets/attendance-school-sketch.webp';
 import './AttendanceAuth.css';
 
 export default function AuthPage({ mode = 'login', language, onLogin, setGlobalLoading }) {
@@ -193,7 +194,7 @@ export default function AuthPage({ mode = 'login', language, onLogin, setGlobalL
   };
 
   return (
-    <div className="attendance-auth">
+    <div className={isLogin ? 'attendance-auth attendance-auth--login' : 'attendance-auth'}>
       <header className="attendance-auth-masthead">
         <a className="attendance-auth-brand" href="#/attendance">
           <span className="attendance-brand-mark" aria-hidden="true">
@@ -201,96 +202,104 @@ export default function AuthPage({ mode = 'login', language, onLogin, setGlobalL
           </span>
           <span>@brianverse</span>
         </a>
+        {isLogin && <span className="attendance-auth-caption">
+          {vi ? 'Điểm danh lớp phụ đạo & bồi dưỡng' : 'Attendance for tutoring & enrichment classes'}
+        </span>}
       </header>
 
-      <main className={`attendance-auth-main${isLogin ? '' : ' attendance-auth-main--account'}`}>
-        <h1 id="attendance-auth-title">
-          {isLogin ? <>{loginTitle}{' '}<span>{vi ? 'giáo viên' : 'for teachers'}</span></> : title}
-        </h1>
+      <main className={isLogin ? 'attendance-auth-layout' : undefined}>
+        {isLogin && <div className="attendance-auth-art">
+          <img src={schoolSketch} alt="" width="919" height="510" decoding="async" />
+        </div>}
+        <section className={`attendance-auth-main${isLogin ? '' : ' attendance-auth-main--account'}`} aria-labelledby="attendance-auth-title">
+          <h1 id="attendance-auth-title">
+            {isLogin ? <>{loginTitle}{' '}<span>{vi ? 'giáo viên' : 'for teachers'}</span></> : title}
+          </h1>
 
-        <form id="teacher-login-form" className="attendance-auth-form" aria-labelledby="attendance-auth-title" onSubmit={submit}>
-          {isRegister && !recoveryMode && (
-            <>
-              <div className="attendance-auth-field">
-                <label htmlFor="auth-name">{vi ? 'Họ và tên' : 'Full name'}</label>
-                <input id="auth-name" name="name" value={form.name} onChange={updateField}
-                  autoComplete="name" placeholder={vi ? 'Nhập họ và tên' : 'Enter full name'} />
-              </div>
-              <div className="attendance-auth-field">
-                <label htmlFor="auth-school">{vi ? 'Trường / Trung tâm' : 'School / Center'}</label>
-                <input id="auth-school" name="school" value={form.school} onChange={updateField}
-                  autoComplete="organization" placeholder={vi ? 'Nhập trường hoặc trung tâm' : 'Enter school or center'} />
-              </div>
-            </>
-          )}
+          <form id="teacher-login-form" className="attendance-auth-form" aria-labelledby="attendance-auth-title" onSubmit={submit}>
+            {isRegister && !recoveryMode && (
+              <>
+                <div className="attendance-auth-field">
+                  <label htmlFor="auth-name">{vi ? 'Họ và tên' : 'Full name'}</label>
+                  <input id="auth-name" name="name" value={form.name} onChange={updateField}
+                    autoComplete="name" placeholder={vi ? 'Nhập họ và tên' : 'Enter full name'} />
+                </div>
+                <div className="attendance-auth-field">
+                  <label htmlFor="auth-school">{vi ? 'Trường / Trung tâm' : 'School / Center'}</label>
+                  <input id="auth-school" name="school" value={form.school} onChange={updateField}
+                    autoComplete="organization" placeholder={vi ? 'Nhập trường hoặc trung tâm' : 'Enter school or center'} />
+                </div>
+              </>
+            )}
 
-          {!recoveryMode && (
+            {!recoveryMode && (
+              <div className="attendance-auth-field">
+                <label htmlFor="auth-email">{isRegister ? 'Email' : vi ? 'Tên đăng nhập hoặc email' : 'Username or email'}</label>
+                <input id="auth-email" name="email" type={isRegister ? 'email' : 'text'}
+                  value={form.email} onChange={updateField} autoComplete={isRegister ? 'email' : 'username'}
+                  autoCapitalize="none" spellCheck={false}
+                  placeholder={isRegister
+                    ? (vi ? 'ten@truong.edu.vn' : 'name@school.edu')
+                    : (vi ? 'Nhập tên đăng nhập hoặc email' : 'Enter username or email')} />
+              </div>
+            )}
+
             <div className="attendance-auth-field">
-              <label htmlFor="auth-email">{isRegister ? 'Email' : vi ? 'Tên đăng nhập hoặc email' : 'Username or email'}</label>
-              <input id="auth-email" name="email" type={isRegister ? 'email' : 'text'}
-                value={form.email} onChange={updateField} autoComplete={isRegister ? 'email' : 'username'}
-                autoCapitalize="none" spellCheck={false}
-                placeholder={isRegister
-                  ? (vi ? 'ten@truong.edu.vn' : 'name@school.edu')
-                  : (vi ? 'Ví dụ: gv001' : 'Example: gv001')} />
-            </div>
-          )}
-
-          <div className="attendance-auth-field">
-            <div className="attendance-auth-label-row">
-              <label htmlFor="auth-password">
-                {recoveryMode ? (vi ? 'Mật khẩu mới' : 'New password') : (vi ? 'Mật khẩu' : 'Password')}
-              </label>
-              {isLogin && configured && (
-                <button className="attendance-auth-link" type="button" onClick={resetPassword}>
-                  {vi ? 'Quên mật khẩu?' : 'Forgot password?'}
+              <div className="attendance-auth-label-row">
+                <label htmlFor="auth-password">
+                  {recoveryMode ? (vi ? 'Mật khẩu mới' : 'New password') : (vi ? 'Mật khẩu' : 'Password')}
+                </label>
+                {isLogin && configured && (
+                  <button className="attendance-auth-link" type="button" onClick={resetPassword}>
+                    {vi ? 'Quên mật khẩu?' : 'Forgot password?'}
+                  </button>
+                )}
+              </div>
+              <div className="attendance-auth-secret">
+                <input id="auth-password" name="password" type={showPassword ? 'text' : 'password'}
+                  value={form.password} onChange={updateField} autoComplete={isLogin ? 'current-password' : 'new-password'}
+                  placeholder={vi ? 'Nhập mật khẩu' : 'Enter password'} />
+                <button type="button" className="attendance-auth-toggle"
+                  aria-controls="auth-password"
+                  aria-label={showPassword ? (vi ? 'Ẩn mật khẩu' : 'Hide password') : (vi ? 'Hiện mật khẩu' : 'Show password')}
+                  onClick={() => setShowPassword((visible) => !visible)}>
+                  {showPassword ? (vi ? 'Ẩn' : 'Hide') : (vi ? 'Hiện' : 'Show')}
                 </button>
-              )}
+              </div>
             </div>
-            <div className="attendance-auth-secret">
-              <input id="auth-password" name="password" type={showPassword ? 'text' : 'password'}
-                value={form.password} onChange={updateField} autoComplete={isLogin ? 'current-password' : 'new-password'}
-                placeholder={vi ? 'Nhập mật khẩu' : 'Enter password'} />
-              <button type="button" className="attendance-auth-toggle"
-                aria-controls="auth-password"
-                aria-label={showPassword ? (vi ? 'Ẩn mật khẩu' : 'Hide password') : (vi ? 'Hiện mật khẩu' : 'Show password')}
-                onClick={() => setShowPassword((visible) => !visible)}>
-                {showPassword ? (vi ? 'Ẩn' : 'Hide') : (vi ? 'Hiện' : 'Show')}
-              </button>
-            </div>
-          </div>
 
-          {!isLogin && (
-            <div className="attendance-auth-field">
-              <label htmlFor="auth-confirm">{vi ? 'Xác nhận mật khẩu' : 'Confirm password'}</label>
-              <input id="auth-confirm" name="confirm" type="password" value={form.confirm} onChange={updateField}
-                autoComplete="new-password" placeholder={vi ? 'Nhập lại mật khẩu' : 'Confirm password'} />
-            </div>
-          )}
+            {!isLogin && (
+              <div className="attendance-auth-field">
+                <label htmlFor="auth-confirm">{vi ? 'Xác nhận mật khẩu' : 'Confirm password'}</label>
+                <input id="auth-confirm" name="confirm" type="password" value={form.confirm} onChange={updateField}
+                  autoComplete="new-password" placeholder={vi ? 'Nhập lại mật khẩu' : 'Confirm password'} />
+              </div>
+            )}
 
-          {msg && <p role="alert" className="attendance-auth-message attendance-auth-message--error">{msg}</p>}
-          {okMsg && <p role="status" className="attendance-auth-message">{okMsg}</p>}
+            {msg && <p role="alert" className="attendance-auth-message attendance-auth-message--error">{msg}</p>}
+            {okMsg && <p role="status" className="attendance-auth-message">{okMsg}</p>}
 
-          <button className="attendance-auth-submit" type="submit" disabled={submitLoading} aria-busy={submitLoading}>
-            <span>{submitLoading ? (vi ? 'Đang xử lý…' : 'Working…') : submitLabel}</span>
-            <svg width="30" height="24" viewBox="0 0 30 24" fill="none" stroke="currentColor" strokeWidth="2"
-              aria-hidden="true">
-              <path d="M1 12h26M19 4l8 8-8 8" />
-            </svg>
-          </button>
-        </form>
+            <button className="attendance-auth-submit" type="submit" disabled={submitLoading} aria-busy={submitLoading}>
+              <span>{submitLoading ? (vi ? 'Đang xử lý…' : 'Working…') : submitLabel}</span>
+              <svg width="30" height="24" viewBox="0 0 30 24" fill="none" stroke="currentColor" strokeWidth="2"
+                aria-hidden="true">
+                <path d="M1 12h26M19 4l8 8-8 8" />
+              </svg>
+            </button>
+          </form>
 
-        <p className="attendance-auth-secondary">
-          {isLogin ? (
-            <>{vi ? 'Chưa có tài khoản?' : 'New here?'}{' '}
-              <a className="attendance-auth-link" href="#/register">{vi ? 'Tạo tài khoản' : 'Create account'}</a>
-            </>
-          ) : (
-            <a className="attendance-auth-link" href="#/login" onClick={() => setRecoveryMode(false)}>
-              {vi ? 'Quay lại đăng nhập' : 'Back to sign in'}
-            </a>
-          )}
-        </p>
+          <p className="attendance-auth-secondary">
+            {isLogin ? (
+              <>{vi ? 'Chưa có tài khoản?' : 'New here?'}{' '}
+                <a className="attendance-auth-link" href="#/register">{vi ? 'Tạo tài khoản' : 'Create account'}</a>
+              </>
+            ) : (
+              <a className="attendance-auth-link" href="#/login" onClick={() => setRecoveryMode(false)}>
+                {vi ? 'Quay lại đăng nhập' : 'Back to sign in'}
+              </a>
+            )}
+          </p>
+        </section>
       </main>
       {isLogin && <AttendanceLoginFooter />}
     </div>
