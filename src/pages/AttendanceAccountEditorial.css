@@ -234,13 +234,15 @@
   gap: .75rem 1rem;
 }
 
-.attendance-quick-account__fields label {
+.attendance-quick-account__fields label,
+.attendance-password-form label {
   display: grid;
   gap: .35rem;
   font-weight: 750;
 }
 
-.attendance-quick-account__fields input {
+.attendance-quick-account__fields input,
+.attendance-password-form input {
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
@@ -252,6 +254,16 @@
   background: transparent;
   font: inherit;
 }
+
+.attendance-password-form {
+  display: grid;
+  gap: 1rem;
+  max-width: 32rem;
+}
+
+.attendance-password-form .attendance-account__action { justify-self: start; }
+.attendance-password-form small { font-weight: 500; }
+.attendance-account-security__setting .attendance-password-form p { margin: 0; }
 
 .attendance-quick-account__password button { margin-top: .4rem; }
 
