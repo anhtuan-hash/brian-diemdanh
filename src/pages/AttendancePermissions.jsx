@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getRuntimeClient } from '../services/runtime/core.js';
 import { ATTENDANCE_PERMISSION_ITEMS, ATTENDANCE_ACTION_PERMISSION_ITEMS } from '../utils/permissions.js';
 import AttendanceEditorialHeading from '../components/attendance/AttendanceEditorialHeading.jsx';
+import AttendanceQuickAccount from '../components/attendance/AttendanceQuickAccount.jsx';
 import './AttendanceAccountEditorial.css';
 
 const sections = [...ATTENDANCE_PERMISSION_ITEMS, ...ATTENDANCE_ACTION_PERMISSION_ITEMS];
@@ -16,6 +17,7 @@ export default function AttendancePermissions() {
   const [revision, setRevision] = useState(0);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [creating, setCreating] = useState(false);
   const client = getRuntimeClient();
   const selected = accounts.find((account) => account.id === selectedId);
   const filteredAccounts = accounts.filter((account) =>
@@ -81,6 +83,20 @@ export default function AttendancePermissions() {
     <section className="attendance-permissions" aria-labelledby="attendance-permissions-title">
       <AttendanceEditorialHeading title="Phân quyền" titleId="attendance-permissions-title"
         metrics={[{ label: 'Tài khoản', value: error && !accounts.length ? '—' : accounts.length }]} loading={loading} />
+      {creating ? (
+        <AttendanceQuickAccount client={client} sections={sections} onClose={() => setCreating(false)}
+          onCreated={(account) => {
+            setAccounts((current) => [...current.filter(({ id }) => id !== account.id), account]
+              .sort((a, b) => Number(b.approved) - Number(a.approved)
+                || (a.full_name || a.email).localeCompare(b.full_name || b.email, 'vi')));
+            setQuery('');
+          }} />
+      ) : (
+        <div className="attendance-quick-account__toolbar">
+          <button type="button" className="attendance-account__action" disabled={loading || saving || !client}
+            onClick={() => setCreating(true)}>Tạo tài khoản nhanh</button>
+        </div>
+      )}
       {error && <p role="alert" className="attendance-permissions__error">{error} <button type="button" onClick={() => setRevision(revision + 1)}>Tải lại danh sách</button></p>}
       {loading ? <p role="status">Đang tải tài khoản…</p> : (
         <div className="attendance-permissions__layout">
