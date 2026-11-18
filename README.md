@@ -17,7 +17,7 @@ Trên Vercel, để Root Directory ở thư mục gốc repo. Các thiết lập
 ## Supabase và dữ liệu
 
 - `supabase/migrations/` ghi lại cấu trúc và quyền đã áp dụng trên Supabase B. Giáo viên có quyền xem theo lớp được phân công, còn quyền điểm danh và báo cáo toàn trường dựa trên quyền được cấp trong hồ sơ. Quyền quản trị yêu cầu phiên có mức xác thực `aal2`.
-- `supabase/functions/teacher-accounts/` giữ mã dịch vụ tài khoản của ứng dụng cũ để hoàn thiện luồng giáo viên trên project B. Dịch vụ cần được cấu hình và kiểm thử trước khi dùng.
+- `supabase/functions/attendance-quick-account/` tạo tài khoản giáo viên từ trang Phân quyền, kiểm tra hồ sơ admin và thiết lập MFA hiện hành trước khi cấp quyền. Triển khai function trên Supabase B cùng bản cập nhật giao diện. `supabase/functions/teacher-accounts/` lưu dịch vụ tài khoản cũ.
 - Supabase B đã được thử nghiệm với đăng nhập mật khẩu, quyền đọc theo lớp, chốt, sửa, hủy buổi và chống ghi trùng. Quản lý danh sách lớp, ghi chú học sinh, lưu trữ và khôi phục lớp hoặc buổi đã được kiểm tra trên B bằng dữ liệu tạm. Học bổ sung đã qua thử nghiệm tạo lớp, thêm học sinh, chốt buổi, lưu trữ và khôi phục. Danh sách gợi ý học sinh của Học bổ sung lấy từ các lớp điểm danh đang hoạt động trên B.
 - Kho lưu trữ hỗ trợ gửi yêu cầu xóa vĩnh viễn. Phiên Admin có MFA mới được duyệt, từ chối hoặc hoàn tất xóa. Ảnh minh chứng đang dùng ở mục khác được giữ lại. Khi xóa lớp Học bổ sung, cần xử lý các buổi có minh chứng và các mục liên quan trong kho lưu trữ trước.
 - Danh sách lớp chính khóa dùng bảng riêng trong schema `private`. RPC chỉ trả danh sách theo quyền và phân công. Bản ghi thật cần được nhập từ nguồn bằng luồng quản trị riêng.
