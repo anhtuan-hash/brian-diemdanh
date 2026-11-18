@@ -43,6 +43,7 @@ import AttendanceClassManagementWorkspace from './attendance/AttendanceClassMana
 import AttendanceDailySchedule from './attendance/AttendanceDailySchedule.jsx';
 import AttendanceEditorialHeading from './attendance/AttendanceEditorialHeading.jsx';
 import AttendanceHistoryRecords from './attendance/AttendanceHistoryRecords.jsx';
+import AttendanceAdjustment from './attendance/AttendanceAdjustment.jsx';
 import AttendanceArchivePanel from './attendance/AttendanceArchivePanel.jsx';
 import { ATTENDANCE_PROOF_BUCKET, buildAttendanceProofPath, prepareAttendanceProofImage } from '../utils/attendanceProofImage.js';
 import { filterAndSortAttendanceHistory } from '../utils/attendanceHistoryFilters.js';
@@ -1429,6 +1430,29 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
       setHistoryRecordPhase('error');
     }
   }
+  function applyAttendanceAdjustment(updatedSession, updatedRecords) {
+    const replaceSession = (items) => items.map((item) => (
+      item.id === updatedSession.id ? { ...item, ...updatedSession } : item
+    ));
+    if (isSupplementalHistorySession(updatedSession)) {
+      setSupplementalHistorySessions(replaceSession);
+    } else {
+      setSessions(replaceSession);
+      setCalendarSessions(replaceSession);
+      if (daySession?.id === updatedSession.id) {
+        setDaySession(updatedSession);
+        setDayRecords(updatedRecords);
+      }
+    }
+    if (selectedSessionId === updatedSession.id) {
+      historyRecordRequest.current += 1;
+      setRecords(updatedRecords);
+      setHistoryRecordPhase('ready');
+    }
+    setError('');
+    setNotice('Đã lưu điều chỉnh điểm danh.');
+  }
+
   async function deleteAttendanceSession(session) {
     if (!session || busy || !client || !canDeleteAttendanceHistory) return;
     const confirmed = window.confirm(`Đưa buổi điểm danh của lớp “${session.class_name}” ngày ${formatDate(session.attendance_date)} vào Kho lưu trữ?\n\nBuổi này sẽ không còn xuất hiện trong Lịch sử/Báo cáo và có thể khôi phục lại sau.`);
@@ -1871,6 +1895,10 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
                     {isDayLocked ? <div className={`attendance-day-lock ${daySession.session_status === 'cancelled' ? 'is-cancelled' : ''}`}><Icon name="check" size={18} /><div><b>{daySession.session_status === 'cancelled' ? `Đã hủy ${formatDate(daySession.attendance_date)}` : `Đã điểm danh ${formatDate(daySession.attendance_date)}`}</b><span>{daySession.session_status === 'cancelled' ? `${daySession.cancellation_reason} · 0 tiết` : `GV ${daySession.teacher_name} · ${String(daySession.lesson_periods || 1).replace('.', ',')} tiết · ${formatDateTime(daySession.checked_at)}`}</span></div></div> : <div className="attendance-day-open"><b>Chưa chốt ngày này</b><span>{isFutureDate ? 'Không thể chọn ngày tương lai.' : 'Có thể điểm danh hoặc hủy buổi học.'}</span></div>}
                   </div>
 
+                  {attendanceSource === 'extra' && selectedDayLookup?.status === 'ready' && daySession?.session_status === 'completed' && (
+                    <AttendanceAdjustment key={daySession.id} client={client} session={daySession}
+                      recordColumns={RECORD_COLUMNS} disabled={busy} onSaved={applyAttendanceAdjustment} />
+                  )}
                   <div className="attendance-roster-head"><span className="attendance-roster-head__index">STT</span><span>Học sinh</span><span>Lớp chính khóa</span><span>Trạng thái</span></div>
                   <div className="attendance-roster">{draft.map((member, index) => <div key={member.id || member.member_key} className={`att-m3-roster-entry ${member.status === ATTENDANCE_STATUS.ABSENT ? 'is-absent' : member.status === ATTENDANCE_STATUS.LATE ? 'is-late' : 'is-present'}`}><label><span className="attendance-index">{String(index + 1).padStart(2, '0')}</span><div><b>{member.student_full_name}</b><small>{member.student_code || 'Không có mã HS'}</small></div><span className="attendance-school-class">{member.school_class_name || '—'}</span><div className="att-m3-attendance-status" role="group" aria-label={`Trạng thái ${member.student_full_name}`}>
                           <button type="button" data-status="present" aria-pressed={member.status === ATTENDANCE_STATUS.PRESENT} disabled={isDayLocked} className={member.status === ATTENDANCE_STATUS.PRESENT ? 'is-active is-present' : ''} onClick={() => setAttendanceStatus(member.member_key, ATTENDANCE_STATUS.PRESENT)}>Có mặt</button>
@@ -2058,7 +2086,12 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
                 <div className="ahv3__hero">
                   <div className="ahv3__hero-copy"><span className={`att-m3-status-chip is-${selectedSession.session_status === 'cancelled' ? 'cancelled' : 'completed'}`}>{selectedSession.session_status === 'cancelled' ? 'Đã hủy' : 'Đã điểm danh'}</span><h2>{selectedSession.class_name}</h2><div className="ahv3__hero-chips"><span className={`ahv3__type is-${selectedSession.class_type}`}>{historyClassTypeLabel(selectedSession)}</span><span className="att-m3-period-chip">{selectedSession.session_status === 'cancelled' ? '0 tiết' : `${String(selectedSession.lesson_periods || 1).replace('.', ',')} tiết`}</span><span>{formatDate(selectedSession.attendance_date)}</span><span>{selectedSession.teaching_room || 'Chưa ghi phòng'}</span></div></div>
                   <div className="ahv3__hero-art" aria-hidden="true"><span className="is-leaf is-leaf-1" /><span className="is-leaf is-leaf-2" /><span className="is-book is-book-1" /><span className="is-book is-book-2" /><span className="is-book is-book-3" /></div>
-                  <div className="ahv3__actions">{selectedSession.proof_path ? <a className="ahv3__view-photo" href={historyProofUrl || undefined} target="_blank" rel="noopener noreferrer" aria-disabled={!historyProofUrl} onClick={(event) => { if (!historyProofUrl) { event.preventDefault(); setError(historyProofLoading ? 'Ảnh đang được tải, vui lòng thử lại.' : 'Chưa thể tải ảnh minh chứng lúc này.'); } }}><Icon name="camera" size={16} />{historyProofLoading ? 'Đang tải ảnh…' : 'Xem ảnh đã chụp'}</a> : null}{canAccessAttendanceView('report') && !isSupplementalHistorySession(selectedSession) ? <button type="button" className="ahv3__report-button" onClick={() => { if (selectedSession.attendance_date) setReportMonth(selectedSession.attendance_date.slice(0, 7)); setView('report'); if (standalone) window.history.replaceState(null, '', '#/attendance?tab=report'); }}>Xem báo cáo tháng</button> : null}{canDeleteAttendanceHistory ? <button type="button" className="ahv3__delete-button" disabled={busy} onClick={() => deleteAttendanceSession(selectedSession)}><Icon name="trash" size={17} />Đưa vào Kho lưu trữ</button> : null}</div>
+                  <div className="ahv3__actions">
+                    {selectedSession.session_status === 'completed' && (
+                      <AttendanceAdjustment key={selectedSession.id} client={client} session={selectedSession}
+                        recordColumns={RECORD_COLUMNS} disabled={busy} onSaved={applyAttendanceAdjustment} />
+                    )}
+                    {selectedSession.proof_path ? <a className="ahv3__view-photo" href={historyProofUrl || undefined} target="_blank" rel="noopener noreferrer" aria-disabled={!historyProofUrl} onClick={(event) => { if (!historyProofUrl) { event.preventDefault(); setError(historyProofLoading ? 'Ảnh đang được tải, vui lòng thử lại.' : 'Chưa thể tải ảnh minh chứng lúc này.'); } }}><Icon name="camera" size={16} />{historyProofLoading ? 'Đang tải ảnh…' : 'Xem ảnh đã chụp'}</a> : null}{canAccessAttendanceView('report') && !isSupplementalHistorySession(selectedSession) ? <button type="button" className="ahv3__report-button" onClick={() => { if (selectedSession.attendance_date) setReportMonth(selectedSession.attendance_date.slice(0, 7)); setView('report'); if (standalone) window.history.replaceState(null, '', '#/attendance?tab=report'); }}>Xem báo cáo tháng</button> : null}{canDeleteAttendanceHistory ? <button type="button" className="ahv3__delete-button" disabled={busy} onClick={() => deleteAttendanceSession(selectedSession)}><Icon name="trash" size={17} />Đưa vào Kho lưu trữ</button> : null}</div>
                 </div>
 
                 <h3 className="ahv3__section-title is-info"><span aria-hidden="true"><Icon name="calendar" size={14} /></span>Thông tin buổi học</h3>
