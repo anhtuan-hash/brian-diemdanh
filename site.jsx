@@ -3,6 +3,7 @@ import AdminMfaSecurity from './src/components/AdminMfaSecurity.jsx';
 import AttendanceWorkspace from './src/pages/AttendanceWorkspace.jsx';
 import AttendancePermissions from './src/pages/AttendancePermissions.jsx';
 import AttendanceAdminSecurity from './src/pages/AttendanceAdminSecurity.jsx';
+import AttendanceTeacherSettings from './src/pages/AttendanceTeacherSettings.jsx';
 import AuthPage from './src/pages/AuthPage.jsx';
 import { bootRuntimeCore } from './src/services/runtime/core.js';
 import { useRuntimeCore } from './src/services/runtime/useRuntimeCore.js';
@@ -20,6 +21,7 @@ function readRoute() {
   if (/^#\/register(?:$|\?)/.test(hash)) return 'register';
   if (hash === '#/phan-quyen') return 'permissions';
   if (hash === '#/bao-mat') return 'security';
+  if (hash === '#/cai-dat') return 'settings';
   return 'attendance';
 }
 
@@ -28,16 +30,19 @@ export default function AttendanceSite() {
   const [route, setRoute] = useState(readRoute);
   const [signOutError, setSignOutError] = useState(false);
   const attendanceHash = useRef(
-    /^#\/(?:attendance|phan-quyen|bao-mat)(?:$|\?)/.test(window.location.hash) ? window.location.hash : '#/attendance',
+    /^#\/(?:attendance|phan-quyen|bao-mat|cai-dat)(?:$|\?)/.test(window.location.hash) ? window.location.hash : '#/attendance',
   );
   const user = runtime.profile;
   const admin = user?.role === 'admin';
+  const teacher = user?.role === 'teacher' || user?.role === 'department_head';
   const accountNames = String(user?.name || '').trim().split(/\s+/).filter(Boolean);
   const accountInitials = (accountNames[0]?.[0] || '') + (accountNames.length > 1 ? accountNames.at(-1)[0] : '');
   const isSignedIn = user?.provider === 'supabase' && user.approved === true;
   const showLogin = !isSignedIn || route === 'login';
   const canAccess = isSignedIn && hasRouteAccess(withAttendanceReadOnlyAccess(user), 'attendance');
   const adminPage = route === 'permissions' || route === 'security';
+  const canOpenPage = route === 'settings' ? teacher : canAccess && (!adminPage || admin);
+  const accountPage = adminPage || route === 'settings';
 
   useEffect(() => {
     const syncRoute = () => setRoute(readRoute());
@@ -75,7 +80,7 @@ export default function AttendanceSite() {
 
   return (
     <div className="app-shell attendance-site" data-route={showLogin ? 'login' : 'attendance'}
-      data-attendance-editorial-account={!showLogin && canAccess && admin && adminPage ? route : undefined}>
+      data-attendance-editorial-account={!showLogin && canOpenPage && accountPage ? route : undefined}>
       {showLogin ? (
         <AuthPage language="vi" mode={route === 'register' ? 'register' : 'login'}
           onLogin={() => { window.location.hash = attendanceHash.current; }} />
@@ -97,15 +102,17 @@ export default function AttendanceSite() {
               </span>
               {admin && <a href="#/phan-quyen" aria-current={route === 'permissions' ? 'page' : undefined}>Phân quyền</a>}
               {admin && <a href="#/bao-mat" aria-current={route === 'security' ? 'page' : undefined}>Bảo mật</a>}
+              {teacher && <a href="#/cai-dat" aria-current={route === 'settings' ? 'page' : undefined}>Cài đặt</a>}
               <button type="button" onClick={handleLogout}>Đăng xuất</button>
             </div>
           </header>
           {signOutError && <p className="attendance-site-status" role="alert">Chưa đăng xuất được. Vui lòng thử lại.</p>}
-          {canAccess && (!adminPage || admin) ? (
+          {canOpenPage ? (
             <AdminMfaSecurity key={user.id} user={user} route="attendance" language="vi" requireForAttendance>
               <main className="attendance-site-content">
                 {route === 'permissions' && <AttendancePermissions />}
                 {route === 'security' && <AttendanceAdminSecurity required={user.attendanceMfaRequired} />}
+                {route === 'settings' && <AttendanceTeacherSettings />}
                 {route === 'attendance' && <AttendanceWorkspace key={JSON.stringify(user.permissions.allowed)} currentUser={user} language="vi" />}
               </main>
             </AdminMfaSecurity>

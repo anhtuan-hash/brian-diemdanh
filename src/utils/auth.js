@@ -519,14 +519,14 @@ export async function changeCurrentPassword({ currentPassword = '', newPassword 
   const { data: userData, error: userError } = await supabase.auth.getUser();
   const authUser = userData?.user;
   if (userError || !authUser?.email) {
-    return { ok: false, message: userError?.message || 'No active account was found.' };
+    return { ok: false, code: userError?.code || 'session_not_found', message: userError?.message || 'No active account was found.' };
   }
 
   const providers = getAuthProviders(authUser);
   const hasEmailPassword = providers.includes('email');
   const cleanCurrentPassword = String(currentPassword || '');
 
-  if (hasEmailPassword) {
+  if (hasEmailPassword || cleanCurrentPassword) {
     if (!cleanCurrentPassword) {
       return { ok: false, message: 'Enter your current password before changing it.' };
     }
@@ -535,14 +535,18 @@ export async function changeCurrentPassword({ currentPassword = '', newPassword 
       password: cleanCurrentPassword,
     });
     if (verify.error) {
-      return { ok: false, message: 'Current password is incorrect.' };
+      return {
+        ok: false,
+        code: verify.error.code,
+        message: verify.error.code === 'invalid_credentials' ? 'Current password is incorrect.' : verify.error.message,
+      };
     }
   }
 
   const payload = { password: nextPassword };
   if (cleanCurrentPassword) payload.current_password = cleanCurrentPassword;
   const { error } = await supabase.auth.updateUser(payload);
-  if (error) return { ok: false, message: error.message };
+  if (error) return { ok: false, code: error.code, message: error.message };
   return { ok: true, createdPassword: !hasEmailPassword };
 }
 
