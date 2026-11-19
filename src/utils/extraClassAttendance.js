@@ -90,6 +90,7 @@ export function normalizeExtraClassType(value) {
   ) return 'remedial';
   if (
     normalized === 'gifted'
+    || normalized === 'boi duong'
     || normalized.includes('boi duong hsg')
     || normalized.includes('boi duong hoc sinh gioi')
     || normalized.includes('hoc sinh gioi')
@@ -142,12 +143,23 @@ function cleanSchoolClassName(value) {
     .replace(/\s+/g, '');
 }
 
+// Some XLSX writers store Vietnamese characters as numeric XML references.
+function decodeSpreadsheetCell(value) {
+  if (typeof value !== 'string') return value;
+  return value.replace(/&#(?:(\d+)|x([\da-f]+));/gi, (reference, decimal, hexadecimal) => {
+    const code = decimal ? Number(decimal) : Number.parseInt(hexadecimal, 16);
+    return code > 0 && code <= 0x10ffff && (code < 0xd800 || code > 0xdfff)
+      ? String.fromCodePoint(code)
+      : reference;
+  });
+}
+
 export function parseExtraClassRosterRows(rows = []) {
   if (!Array.isArray(rows) || rows.length < 2) {
     throw new Error('Tệp Excel chưa có dữ liệu lớp phụ đạo/bồi dưỡng.');
   }
 
-  const headers = rows[0] || [];
+  const headers = (rows[0] || []).map(decodeSpreadsheetCell);
   const columns = {
     classType: headerIndex(headers, ['loai lop', 'loai', 'class type', 'type']),
     extraClassName: headerIndex(headers, ['ten lop', 'lop phu dao boi duong', 'ten lop phu dao boi duong', 'extra class', 'extra class name']),
@@ -169,7 +181,8 @@ export function parseExtraClassRosterRows(rows = []) {
 
   const entries = [];
   const warnings = [];
-  rows.slice(1).forEach((row, offset) => {
+  rows.slice(1).forEach((cells, offset) => {
+    const row = cells?.map(decodeSpreadsheetCell);
     const rowNumber = offset + 2;
     const fullName = text(row?.[columns.fullName]);
     const extraClassName = text(row?.[columns.extraClassName]);

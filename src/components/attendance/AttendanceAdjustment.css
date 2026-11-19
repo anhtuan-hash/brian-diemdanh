@@ -131,3 +131,63 @@
 .attendance-adjustment-dialog .attendance-adjustment-error {
   color: #a52b1d;
 }
+
+.attendance-adjustment-dialog .attendance-admin-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.attendance-admin-fields__wide {
+  grid-column: 1 / -1;
+}
+
+.attendance-time-settings {
+  margin-block: 0.75rem;
+  padding-block: 0.7rem;
+  border-block: 1px solid currentColor;
+}
+
+.attendance-time-settings summary {
+  width: fit-content;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.attendance-time-settings form {
+  margin-top: 0.65rem;
+}
+
+.attendance-time-settings fieldset {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+}
+
+.attendance-time-settings .attendance-time-settings__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.attendance-report-class-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block: 0.75rem;
+}
+
+.attendance-rollcall-time-window {
+  margin-block: 0.65rem;
+}
+
+.attendance-adjustment-status:empty {
+  display: none;
+}
+
+.attendance-adjustment-status {
+  flex: 0 0 100%;
+  display: grid;
+  gap: 0.2rem;
+  overflow-wrap: anywhere;
+}
