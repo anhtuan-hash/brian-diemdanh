@@ -175,6 +175,7 @@ export default function AttendanceClassManagementWorkspace({
   setError,
   setNotice,
   onSelectClass,
+  createClassAction,
   onOpenSupplemental,
   stateScope = '',
 }) {
@@ -322,6 +323,7 @@ export default function AttendanceClassManagementWorkspace({
             <WorkspaceIcon name="upload" size={17} />
             {busy ? 'Đang xử lý…' : 'Chọn file Excel'}
           </button>
+          {createClassAction}
         </div>
 
         <div className="ae-manage__filters" aria-label="Bộ lọc lớp">

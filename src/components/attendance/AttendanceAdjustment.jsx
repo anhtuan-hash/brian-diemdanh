@@ -10,6 +10,15 @@ import {
 } from '../../utils/extraClassAttendance.js';
 import './AttendanceAdjustment.css';
 
+const auditTime = new Intl.DateTimeFormat('vi-VN', {
+  timeZone: 'Asia/Ho_Chi_Minh', dateStyle: 'short', timeStyle: 'short',
+});
+const lockedReasons = {
+  edit_window_expired: 'Đã hết 30 phút điều chỉnh kể từ lúc chốt điểm danh.',
+  not_session_teacher: 'Chỉ người đã chốt buổi này được điều chỉnh trong thời gian cho phép.',
+  invalid_checked_at: 'Không xác định được thời điểm chốt buổi.',
+  missing_permission: 'Tài khoản chưa có quyền điều chỉnh điểm danh.',
+};
 const REASONS = [...ABSENCE_REASON_OPTIONS, { value: 'unspecified', label: 'Chưa xác định' }];
 
 function editableRecord(record) {
@@ -48,7 +57,10 @@ export default function AttendanceAdjustment({
   const sessionId = session.supplemental_session_id || session.id;
   const [access, setAccess] = useState(null);
   const [accessFailed, setAccessFailed] = useState(false);
-  const [expired, setExpired] = useState(false);
+  const [deadline, setDeadline] = useState(0);
+  const [now, setNow] = useState(Date.now);
+  const [latestChange, setLatestChange] = useState(null);
+  const [auditRevision, setAuditRevision] = useState(0);
   const [phase, setPhase] = useState('idle');
   const [draft, setDraft] = useState([]);
   const [note, setNote] = useState('');
@@ -57,30 +69,60 @@ export default function AttendanceAdjustment({
   const dialog = useRef(null);
   const operation = useRef(0);
   const headingId = useId();
+  const remaining = Math.max(0, Math.ceil((deadline - now) / 1000));
+  const expired = access?.reason === 'edit_window_expired'
+    || (isAllowed(access) && !access.bypass && !remaining);
   const allowed = isAllowed(access) && !expired;
+
+  function updateAccess(next) {
+    const observedAt = Date.now();
+    setAccess(next);
+    setDeadline(isAllowed(next) && !next.bypass ? observedAt + accessDuration(next) : 0);
+    setNow(observedAt);
+  }
 
   useEffect(() => {
     const controller = { active: true };
-    const request = supplemental
-      ? getSupplementalAttendanceEditSnapshot(client, sessionId).then((snapshot) => snapshot?.access)
+    const permissionRequest = supplemental
+      ? getSupplementalAttendanceEditSnapshot(client, sessionId).then((snapshot) => {
+        if (controller.active) setLatestChange(snapshot?.latestChange);
+        return snapshot?.access;
+      })
       : getExtraAccess(client, sessionId);
 
-    request.then((result) => {
-      if (controller.active) setAccess(result);
+    if (!supplemental) {
+      void Promise.resolve(client.from('bes_extra_attendance_record_changes')
+        .select('changed_at,changed_by_name').eq('session_id', sessionId)
+        .order('changed_at', { ascending: false }).limit(1).maybeSingle()).then(({ data, error }) => {
+          if (controller.active && !error) setLatestChange(data);
+        }).catch(() => {});
+    }
+
+    permissionRequest.then((result) => {
+      if (controller.active) {
+        updateAccess(result);
+        setAccessFailed(false);
+      }
     }, () => {
       if (controller.active) setAccessFailed(true);
     });
     return () => {
       controller.active = false;
-      operation.current += 1;
     };
-  }, [client, sessionId, supplemental]);
+  }, [client, sessionId, supplemental, auditRevision]);
 
+  const countingDown = remaining > 0;
   useEffect(() => {
-    if (!isAllowed(access) || access.bypass) return undefined;
-    const timer = window.setTimeout(() => setExpired(true), accessDuration(access));
-    return () => window.clearTimeout(timer);
-  }, [access]);
+    if (!deadline || !countingDown) return undefined;
+    const tick = window.setInterval(() => setNow(Date.now()), 1000);
+    const expire = window.setTimeout(() => setNow(Date.now()), Math.max(0, deadline - Date.now()));
+    return () => {
+      window.clearInterval(tick);
+      window.clearTimeout(expire);
+    };
+  }, [deadline, countingDown]);
+
+  useEffect(() => () => { operation.current += 1; }, []);
 
   async function openEditor() {
     const request = ++operation.current;
@@ -103,14 +145,11 @@ export default function AttendanceAdjustment({
       }
 
       if (request !== operation.current) return;
-      setAccess(snapshot?.access);
+      updateAccess(snapshot?.access);
       setAccessFailed(false);
-      setExpired(false);
       if (!isAllowed(snapshot?.access)) {
         setPhase('unavailable');
-        setError(snapshot?.access?.reason === 'edit_window_expired'
-          ? 'Đã hết 30 phút điều chỉnh kể từ lúc chốt điểm danh.'
-          : 'Tài khoản hiện không có quyền điều chỉnh buổi này.');
+        setError(lockedReasons[snapshot?.access?.reason] || 'Tài khoản hiện không có quyền điều chỉnh buổi này.');
         return;
       }
       setDraft((snapshot.records || []).map(editableRecord));
@@ -175,6 +214,7 @@ export default function AttendanceAdjustment({
       if (!updatedSession?.id) throw new Error('Chưa nhận được xác nhận lưu điều chỉnh.');
       if (request !== operation.current) return;
       onSaved(updatedSession, updatedRecords);
+      setAuditRevision((revision) => revision + 1);
       dialog.current?.close();
     } catch (saveError) {
       if (request !== operation.current) return;
@@ -186,9 +226,23 @@ export default function AttendanceAdjustment({
 
   const saving = phase === 'saving';
   const formReady = phase === 'ready' || saving;
-  const expiredMessage = 'Đã hết 30 phút điều chỉnh kể từ lúc chốt điểm danh.';
+  const expiredMessage = lockedReasons.edit_window_expired;
+  const countdown = allowed && !access.bypass
+    ? `Còn ${Math.floor(remaining / 60)} phút ${String(remaining % 60).padStart(2, '0')} giây để điều chỉnh.`
+    : '';
+  const locked = expired ? expiredMessage : access && !allowed
+    ? lockedReasons[access.reason] || 'Tài khoản hiện không có quyền điều chỉnh buổi này.'
+    : '';
+  const changeTime = Date.parse(latestChange?.changed_at);
 
   return <>
+    <div className="attendance-adjustment-status">
+      {(countdown || locked) && <small>{countdown || locked}</small>}
+      {Number.isFinite(changeTime) && (
+        <small><strong>Điều chỉnh gần nhất</strong> · {latestChange.changed_by_name || 'Không ghi nhận người sửa'}
+          {' · '}{auditTime.format(changeTime)}</small>
+      )}
+    </div>
     {(allowed || accessFailed) && (
       <button ref={trigger} type="button" className="attendance-adjustment-trigger"
         disabled={disabled} onClick={openEditor}>Điều chỉnh điểm danh</button>
@@ -201,7 +255,7 @@ export default function AttendanceAdjustment({
           <p>{session.class_name}</p>
         </header>
         {phase === 'loading' && <p role="status">Đang tải danh sách điểm danh…</p>}
-        {formReady && !access?.bypass && !expired && <p>Hạn điều chỉnh tính trong 30 phút kể từ lúc chốt.</p>}
+        {formReady && countdown && <p>{countdown}</p>}
         {formReady && (
           <fieldset disabled={saving || !allowed}>
             <legend>Trạng thái học sinh</legend>

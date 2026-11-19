@@ -44,6 +44,8 @@ import AttendanceDailySchedule from './attendance/AttendanceDailySchedule.jsx';
 import AttendanceEditorialHeading from './attendance/AttendanceEditorialHeading.jsx';
 import AttendanceHistoryRecords from './attendance/AttendanceHistoryRecords.jsx';
 import AttendanceAdjustment from './attendance/AttendanceAdjustment.jsx';
+import AttendanceClassCreation, { createAttendanceClass } from './attendance/AttendanceClassCreation.jsx';
+import AttendanceTimeSettings, { useAttendanceTimeSettings } from './attendance/AttendanceTimeSettings.jsx';
 import AttendanceArchivePanel from './attendance/AttendanceArchivePanel.jsx';
 import { ATTENDANCE_PROOF_BUCKET, buildAttendanceProofPath, prepareAttendanceProofImage } from '../utils/attendanceProofImage.js';
 import { filterAndSortAttendanceHistory } from '../utils/attendanceHistoryFilters.js';
@@ -329,6 +331,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
   const [historyProofUrl, setHistoryProofUrl] = useState('');
   const [historyProofLoading, setHistoryProofLoading] = useState(false);
   const fileRef = useRef(null);
+  const newClassesFileRef = useRef(null);
   const proofInputRef = useRef(null);
 
   const systemRole = normalizeSystemRole(currentUser?.role, SYSTEM_ROLES.GUEST);
@@ -358,6 +361,11 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
   const canSeeSupplementalHistory = canManageSupplementalLearning(runtime);
   const canOpenQuickView = canUseQuickAttendance || (canSeeSupplementalHistory && String(selectedClassId).startsWith('supplemental:'));
   const allowTeacherPeriodSelection = attendanceGlobalSettings.allowTeacherPeriodSelection === true;
+  const reportOnlyCreator = hasAttendanceReportOverride && !canAccessAttendanceView('manage');
+  const attendanceTime = useAttendanceTimeSettings(client, workspaceVisible && allowed
+    && (isQuickView || (isAttendanceAdmin && view === 'calendar')));
+  const timeWindow = attendanceTime.settings;
+  const outsideTimeWindow = attendanceTime.blocked;
 
   useEffect(() => {
     if (!client || !runtime.ready || !currentUser?.id) return undefined;
@@ -696,7 +704,9 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
         })));
         setView('quick');
       } catch (openError) {
-        setError(openError?.message || 'Không thể mở điểm danh Học bổ sung.');
+        setError(openError?.message === 'outside_time'
+          ? 'Ngoài khung giờ điểm danh Học bổ sung.'
+          : openError?.message || 'Không thể mở điểm danh Học bổ sung.');
       } finally {
         setBusy(false);
       }
@@ -1025,6 +1035,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
   }
 
   async function confirmAttendance() {
+    if (outsideTimeWindow) return;
     if (attendanceSource === 'supplemental') return confirmSupplementalSharedAttendance();
     if (!selectedClass || busy || !client || isDayLocked) return;
     if (!attendanceDate || isFutureDate) {
@@ -1116,7 +1127,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
   }
 
   async function cancelClassSession() {
-    if (!selectedClass || busy || !client || isDayLocked || isFutureDate) return;
+    if (!selectedClass || busy || !client || isDayLocked || isFutureDate || outsideTimeWindow) return;
     const reason = cancellationReason.trim();
     if (!reason) {
       setError('Vui lòng nhập Lý do hủy buổi học.');
@@ -1194,6 +1205,71 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
     await loadSessionRecords(session.id);
     setView('history');
     if (standalone) window.history.replaceState(null, '', '#/attendance?tab=history');
+  }
+
+  function onClassCreated(created) {
+    setError('');
+    setNotice(created?.class_name ? `Đã tạo lớp “${created.class_name}”.` : 'Đã tạo lớp.');
+    void loadAll();
+  }
+
+  async function importNewReportClasses(file) {
+    if (!reportOnlyCreator || !file || !client || busy) return;
+    setBusy(true);
+    setError('');
+    setNotice('');
+    let count = 0;
+    let skipped = 0;
+    try {
+      const { groups, warnings } = parseExtraClassRosterRows(await readSheet(file));
+      const messages = [...warnings];
+
+      const newClasses = new Map();
+      for (const group of groups) {
+        const assignment = giftedAssignmentForClass({ subject: group.subject, className: group.class_name });
+        const subject = assignment?.subject || group.subject || '';
+        const key = JSON.stringify([group.class_type, fold(group.class_name), fold(subject)]);
+        const entry = newClasses.get(key) || { ...group, subject, assignment, teachers: new Set(), membersByKey: new Map() };
+        const teachers = assignment?.teachers?.length ? assignment.teachers : [String(group.teacher_name || '').trim()].filter(Boolean);
+        teachers.forEach((name) => entry.teachers.add(name));
+        group.members.forEach((member) => entry.membersByKey.set(member.member_key, member));
+        newClasses.set(key, entry);
+      }
+
+      for (const entry of newClasses.values()) {
+        if (classes.some((row) => row.active !== false && sameClassIdentity(row, entry))) {
+          skipped += 1;
+          continue;
+        }
+        if (!entry.teachers.size) {
+          messages.push(`${entry.class_name}: thiếu giáo viên phụ trách.`);
+          continue;
+        }
+        try {
+          await createAttendanceClass(client, {
+            type: entry.class_type, name: entry.class_name, subject: entry.subject,
+            sourceKey: entry.assignment?.sourceKey,
+            year: entry.assignment ? '2026-2027' : '',
+            grade: entry.assignment?.gradeLevel || '',
+            teachers: [...entry.teachers],
+          }, [...entry.membersByKey.values()].map(({ member_key, student_code, student_full_name, school_class_name }) => ({
+            member_key, student_code, student_full_name, school_class_name,
+          })));
+          count += 1;
+        } catch (classError) {
+          if (classError?.code === '23505' && classError?.details === 'attendance_class_exists') skipped += 1;
+          else messages.push(`${entry.class_name}: ${classError?.message || 'Chưa tạo được lớp.'}`);
+        }
+      }
+      if (count) await loadAll();
+      setNotice(`Đã tạo ${count} lớp mới · Bỏ qua ${skipped} lớp đã tồn tại.`);
+      if (messages.length) setError(messages.join(' · '));
+    } catch (importError) {
+      setError(importError?.message || 'Không đọc được file Excel.');
+    } finally {
+      setBusy(false);
+      if (newClassesFileRef.current) newClassesFileRef.current.value = '';
+    }
   }
 
   async function importExcel(file) {
@@ -1895,6 +1971,15 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
                     {isDayLocked ? <div className={`attendance-day-lock ${daySession.session_status === 'cancelled' ? 'is-cancelled' : ''}`}><Icon name="check" size={18} /><div><b>{daySession.session_status === 'cancelled' ? `Đã hủy ${formatDate(daySession.attendance_date)}` : `Đã điểm danh ${formatDate(daySession.attendance_date)}`}</b><span>{daySession.session_status === 'cancelled' ? `${daySession.cancellation_reason} · 0 tiết` : `GV ${daySession.teacher_name} · ${String(daySession.lesson_periods || 1).replace('.', ',')} tiết · ${formatDateTime(daySession.checked_at)}`}</span></div></div> : <div className="attendance-day-open"><b>Chưa chốt ngày này</b><span>{isFutureDate ? 'Không thể chọn ngày tương lai.' : 'Có thể điểm danh hoặc hủy buổi học.'}</span></div>}
                   </div>
 
+                  {!isDayLocked && timeWindow && (
+                    <p className="attendance-rollcall-time-window" role="status">
+                      {timeWindow.enforce_teacher_time_window
+                        ? `Khung giờ điểm danh: ${timeWindow.teacher_start_time}–${timeWindow.teacher_end_time} · ${outsideTimeWindow
+                          ? 'Ngoài khung giờ, chỉ được xem phiếu.'
+                          : timeWindow.bypass_time_window ? 'Tài khoản được phép thao tác ngoài khung giờ.' : attendanceTime.unavailable ? 'Chưa kiểm tra được giờ máy chủ.' : 'Đang trong khung giờ.'}`
+                        : 'Giới hạn khung giờ điểm danh đang tắt.'}
+                    </p>
+                  )}
                   {attendanceSource === 'extra' && selectedDayLookup?.status === 'ready' && daySession?.session_status === 'completed' && (
                     <AttendanceAdjustment key={daySession.id} client={client} session={daySession}
                       recordColumns={RECORD_COLUMNS} disabled={busy} onSaved={applyAttendanceAdjustment} />
@@ -1910,14 +1995,18 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
                     <input ref={proofInputRef} type="file" accept="image/*" capture="environment" hidden disabled={isDayLocked} onChange={(event) => chooseProofFile(event.target.files?.[0])} />
                     {proofPreviewUrl && !isDayLocked ? <div className="att-m3-proof-preview"><img src={proofPreviewUrl} alt="Ảnh minh chứng đang chọn" /><div><b>Ảnh đã sẵn sàng</b><span>Ảnh sẽ được nén và lưu khi xác nhận điểm danh.</span><p><button type="button" onClick={() => proofInputRef.current?.click()}>Đổi ảnh</button><button type="button" className="is-remove" onClick={clearProofSelection}>Xóa ảnh</button></p></div></div> : !isDayLocked ? <button className="att-m3-proof-picker" type="button" onClick={() => proofInputRef.current?.click()}><Icon name="camera" size={20} /><b>Chọn ảnh / Chụp ảnh</b><small>Tùy chọn, không ảnh hưởng việc xác nhận điểm danh</small></button> : <div className="att-m3-proof-locked-note">{daySession?.proof_path ? 'Buổi này đã có ảnh minh chứng. Xem ảnh tại tab Lịch sử.' : 'Buổi này đã chốt và không có ảnh minh chứng.'}</div>}
                   </section>
-                  <footer className="attendance-confirm-bar"><label><span>Ghi chú buổi học</span><input disabled={isDayLocked} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Không bắt buộc" /></label><div className="att-m3-session-actions"><button className="att-m3-cancel-button" type="button" disabled={busy || isDayLocked || isFutureDate} onClick={() => setShowCancelSession((value) => !value)}>Hủy buổi học</button><button type="button" disabled={busy || !draft.length || isDayLocked || isFutureDate || !sessionTeacher || isTeacherBlocked || !teachingRoom.trim() || !teachingTimeRange.trim() || invalidAbsentRows.length > 0} onClick={confirmAttendance}><Icon name="check" size={18} />{isDayLocked ? (daySession.session_status === 'cancelled' ? 'Đã hủy' : `Đã chốt ${formatDate(daySession.attendance_date)}`) : busy ? 'Đang lưu…' : 'Xác nhận điểm danh'}</button></div></footer>
-                  {showCancelSession && !isDayLocked ? <div className="att-m3-cancel-surface"><label><span>Lý do hủy *</span><input value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value)} placeholder="Ví dụ: Giáo viên bận công tác" autoFocus /></label><button type="button" onClick={() => { setShowCancelSession(false); setCancellationReason(''); }}>Không hủy</button><button className="is-confirm" type="button" disabled={busy || !cancellationReason.trim()} onClick={cancelClassSession}>{busy ? 'Đang lưu…' : 'Xác nhận hủy'}</button></div> : null}
+                  <footer className="attendance-confirm-bar"><label><span>Ghi chú buổi học</span><input disabled={isDayLocked} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Không bắt buộc" /></label><div className="att-m3-session-actions"><button className="att-m3-cancel-button" type="button" disabled={busy || isDayLocked || isFutureDate || outsideTimeWindow} onClick={() => setShowCancelSession((value) => !value)}>Hủy buổi học</button><button type="button" disabled={busy || !draft.length || isDayLocked || isFutureDate || outsideTimeWindow || !sessionTeacher || isTeacherBlocked || !teachingRoom.trim() || !teachingTimeRange.trim() || invalidAbsentRows.length > 0} onClick={confirmAttendance}><Icon name="check" size={18} />{isDayLocked ? (daySession.session_status === 'cancelled' ? 'Đã hủy' : `Đã chốt ${formatDate(daySession.attendance_date)}`) : busy ? 'Đang lưu…' : 'Xác nhận điểm danh'}</button></div></footer>
+                  {showCancelSession && !isDayLocked ? <div className="att-m3-cancel-surface"><label><span>Lý do hủy *</span><input value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value)} placeholder="Ví dụ: Giáo viên bận công tác" autoFocus /></label><button type="button" onClick={() => { setShowCancelSession(false); setCancellationReason(''); }}>Không hủy</button><button className="is-confirm" type="button" disabled={busy || outsideTimeWindow || !cancellationReason.trim()} onClick={cancelClassSession}>{busy ? 'Đang lưu…' : 'Xác nhận hủy'}</button></div> : null}
                   </>}
                 </> : <div className="attendance-empty is-large">Chọn một lớp để bắt đầu điểm danh.</div>}
               </section>
             </div>
           ) : null}
 
+          {canAccessAttendanceView('calendar') && view === 'calendar' && isAttendanceAdmin && (
+            <AttendanceTimeSettings client={client} settings={timeWindow}
+              unavailable={attendanceTime.unavailable} onSaved={attendanceTime.acceptSettings} />
+          )}
           {!loading && canAccessAttendanceView('calendar') && view === 'calendar' ? (
             <div className="attendance-calendar-layout">
               <AttendanceDailySchedule
@@ -1999,6 +2088,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
               setError={setError}
               setNotice={setNotice}
               onSelectClass={setSelectedClassId}
+              createClassAction={<AttendanceClassCreation client={client} disabled={busy} onCreated={onClassCreated} />}
               onOpenSupplemental={canSeeSupplementalHistory ? () => {
                 const launcher = attendanceTabsRef.current?.querySelector('.bes-supplemental-nav-tab');
                 if (launcher) launcher.click();
@@ -2008,6 +2098,16 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
             />
           ) : null}
 
+          {reportOnlyCreator && view === 'report' && (
+            <div className="attendance-report-class-actions" aria-label="Tạo lớp phụ đạo và bồi dưỡng">
+              <AttendanceClassCreation client={client} disabled={busy} onCreated={onClassCreated} />
+              <input ref={newClassesFileRef} type="file" accept=".xlsx" hidden
+                onChange={(event) => void importNewReportClasses(event.target.files?.[0])} />
+              <button type="button" className="ae-button" disabled={busy} onClick={() => newClassesFileRef.current?.click()}>
+                Nhập Excel tạo lớp mới
+              </button>
+            </div>
+          )}
           {!loading && canAccessAttendanceView('report') && view === 'report' ? <AttendanceMonthlyReport client={client} language={language} classes={classes} includeSupplemental={canSeeSupplementalHistory} month={reportMonth} onMonthChange={setReportMonth} onError={setError} /> : null}
 
           {canOpenArchive && view === 'archive' ? <AttendanceArchivePanel
