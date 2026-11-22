@@ -412,14 +412,22 @@ export default function AttendanceDailySchedule({
               key={group.key}
               className={`attendance-daily-floor-card ${showFloorCards ? '' : 'is-filtered'}`}
               data-floor={group.floor || undefined}
+              aria-label={editorial ? (group.floor ? `Lầu ${group.floor}` : 'Phòng khác') : undefined}
             >
-              <div className="attendance-daily-floor-group" data-floor={group.floor || undefined}>
+              {editorial ? (
+                <div className="attendance-daily-floor-index">
+                  <h2 className="attendance-daily-floor-index__heading">
+                    {group.floor ? <>Lầu <span>{String(group.floor).padStart(2, '0')}</span></> : 'Phòng khác'}
+                  </h2>
+                  <span className="attendance-daily-floor-index__count">{group.rows.length} lớp/buổi</span>
+                </div>
+              ) : <div className="attendance-daily-floor-group" data-floor={group.floor || undefined}>
                 <strong className="attendance-daily-floor-card__title">
                   <AttendanceDailyIcon name="building" />
                   {group.floor ? <>Lầu {group.floor}<span> · {group.rows.length} lớp/buổi</span></> : <>Khác<span> · {group.rows.length} lớp/buổi</span></>}
                 </strong>
                 {group.floor ? <span className="attendance-daily-floor-card__badge">Tầng {group.floor}</span> : null}
-              </div>
+              </div>}
               <div className="attendance-daily-floor-card__rows">
                 {group.rows.map((row) => (row.source === 'supplemental' ? renderSupplementalRow(row.activity) : renderClassRow(row.classRow)))}
               </div>
