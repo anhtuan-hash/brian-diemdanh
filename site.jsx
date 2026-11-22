@@ -6,7 +6,7 @@ import AttendancePermissions from './src/pages/AttendancePermissions.jsx';
 import AttendanceAdminSecurity from './src/pages/AttendanceAdminSecurity.jsx';
 import AttendanceTeacherSettings from './src/pages/AttendanceTeacherSettings.jsx';
 import AuthPage from './src/pages/AuthPage.jsx';
-import { bootRuntimeCore } from './src/services/runtime/core.js';
+import { bootRuntimeCore, getRuntimeClient } from './src/services/runtime/core.js';
 import { useRuntimeCore } from './src/services/runtime/useRuntimeCore.js';
 import { withAttendanceReadOnlyAccess } from './src/utils/attendanceReadonlyAccess.js';
 import { initializeAuthSession, logoutUser } from './src/utils/auth.js';
@@ -45,7 +45,10 @@ export default function AttendanceSite() {
   const canOpenPage = route === 'settings' ? teacher : canAccess && (!adminPage || admin);
   const accountPage = adminPage || route === 'settings';
   const canSetDisplay = !showLogin && canAccess && admin;
-  const [display, updateDisplay] = useAttendanceDisplay(canSetDisplay ? user.id : null);
+  const displaySettings = useAttendanceDisplay(getRuntimeClient(), !showLogin && canAccess ? user.id : null);
+  const [displayPreview, setDisplayPreview] = useState(null);
+  const draftDisplay = canSetDisplay && displayPreview?.accountId === user.id ? displayPreview.value : null;
+  const display = draftDisplay ?? displaySettings.display;
 
   useEffect(() => {
     const syncRoute = () => setRoute(readRoute());
@@ -107,7 +110,10 @@ export default function AttendanceSite() {
                 <span className="attendance-editorial-avatar" aria-hidden="true">{accountInitials.toLocaleUpperCase('vi-VN')}</span>
                 <span className="attendance-site-account-name">{user.name}</span>
               </span>
-              {canSetDisplay && <AttendanceDisplaySettings key={user.id} display={display} onChange={updateDisplay} />}
+              {canSetDisplay && (
+                <AttendanceDisplaySettings key={user.id} settings={displaySettings} draft={draftDisplay}
+                  onPreview={(value) => setDisplayPreview(value ? { accountId: user.id, value } : null)} />
+              )}
               {admin && <a href="#/phan-quyen" aria-current={route === 'permissions' ? 'page' : undefined}>Phân quyền</a>}
               {admin && <a href="#/bao-mat" aria-current={route === 'security' ? 'page' : undefined}>Bảo mật</a>}
               {teacher && <a href="#/cai-dat" aria-current={route === 'settings' ? 'page' : undefined}>Cài đặt</a>}
