@@ -73,6 +73,12 @@ const CLASS_TEACHER_COLUMNS = 'id,class_id,teacher_id,teacher_name,teacher_email
 const SESSION_COLUMNS = 'id,class_id,class_type,class_name,subject,teacher_id,teacher_name,teacher_email,attendance_date,checked_at,checked_by,checked_by_name,total_students,present_count,absent_count,note,session_status,lesson_periods,cancellation_reason,teaching_room,teaching_time_range,proof_path,created_at';
 const RECORD_COLUMNS = 'id,session_id,class_id,member_id,member_key,student_code,student_full_name,school_class_name,status,recorded_at,absence_reason_code,absence_note';
 const VIETNAM_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+const STANDALONE_ATTENDANCE_TABS = ['quick', 'calendar', 'manage', 'history', 'report', 'archive'];
+
+function readStandaloneAttendanceTab() {
+  const tab = new URLSearchParams(window.location.hash.split('?')[1] || '').get('tab');
+  return STANDALONE_ATTENDANCE_TABS.includes(tab) ? tab : null;
+}
 
 async function listExtraAttendanceSessions(client) {
   const pageSize = 400;
@@ -251,15 +257,38 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
   const supplementalRouteHandledRef = useRef('');
   const [view, setView] = useState(() => {
     if (!standalone || typeof window === 'undefined') return 'quick';
-    const candidate = new URLSearchParams(window.location.hash.split('?')[1] || '').get('tab');
-    return ['quick','calendar','manage','history','report','archive'].includes(candidate) ? candidate : 'calendar';
+    return readStandaloneAttendanceTab() || 'calendar';
   });
+  const [isAttendanceHome, setIsAttendanceHome] = useState(
+    () => standalone && typeof window !== 'undefined' && !readStandaloneAttendanceTab(),
+  );
   const isCalendarRollCall = view === 'calendar-class';
   const isQuickView = view === 'quick' || isCalendarRollCall;
   const activeTab = isCalendarRollCall ? 'calendar' : view;
   const workspaceVisible = open || standalone;
   const editorialView = standalone && ['manage', 'archive', 'report'].includes(view);
   const attendanceTabsRef = useRef(null);
+
+  function openAttendanceTab(tab) {
+    setView(tab);
+    if (standalone) {
+      setIsAttendanceHome(false);
+      window.history.replaceState(null, '', '#/attendance?tab=' + encodeURIComponent(tab));
+    }
+  }
+
+  useEffect(() => {
+    if (!standalone) return undefined;
+    function syncAttendanceLocation() {
+      const path = window.location.hash.split('?')[0];
+      if (path && path !== '#/' && path !== '#/attendance') return;
+      const tab = readStandaloneAttendanceTab();
+      setIsAttendanceHome(!tab);
+      setView(tab || 'calendar');
+    }
+    window.addEventListener('hashchange', syncAttendanceLocation);
+    return () => window.removeEventListener('hashchange', syncAttendanceLocation);
+  }, [standalone]);
 
   useEffect(() => {
     if (!editorialView) return;
@@ -435,12 +464,11 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
         return;
       }
       setError('');
-      setView('quick');
-      window.history.replaceState(null, '', '#/attendance?tab=quick');
+      openAttendanceTab('quick');
     };
     window.addEventListener('bes-attendance-quick-open', openQuickAttendance);
     return () => window.removeEventListener('bes-attendance-quick-open', openQuickAttendance);
-  }, [allowed, canUseQuickAttendance]);
+  }, [allowed, canUseQuickAttendance, standalone]);
 
   useEffect(() => {
     if (!workspaceVisible || !allowed || !firstAllowedView) return;
@@ -1203,8 +1231,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
       return;
     }
     await loadSessionRecords(session.id);
-    setView('history');
-    if (standalone) window.history.replaceState(null, '', '#/attendance?tab=history');
+    openAttendanceTab('history');
   }
 
   function onClassCreated(created) {
@@ -1848,6 +1875,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
         aria-modal={standalone ? undefined : 'true'}
         data-editorial-quick={useEditorialQuick || undefined}
         data-editorial-page={showEditorialPage ? view : undefined}
+        data-attendance-wallpaper={!isAttendanceHome && (editorialView || showEditorialPage) || undefined}
         aria-label="Điểm danh lớp phụ đạo và bồi dưỡng học sinh giỏi">
         {!editorialView && !showEditorialPage && <header className="attendance-topbar">
           <div className="attendance-title"><span><Icon name="attendance" size={28} /></span><div><small>{standalone ? "ESL BRIAN · ỨNG DỤNG ĐIỂM DANH" : "QUẢN LÝ CHUYÊN CẦN"}</small><strong>Điểm danh lớp phụ đạo & bồi dưỡng</strong></div></div>
@@ -1861,8 +1889,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
                 setNotice('');
                 setError('');
               }
-              setView(item.tab);
-              if (standalone) window.history.replaceState(null, '', '#/attendance?tab=' + encodeURIComponent(item.tab));
+              openAttendanceTab(item.tab);
             }}>
               <Icon name={ATTENDANCE_TAB_ICONS[item.tab] || 'attendance'} size={18} />{item.titleVi}{item.tab === 'archive' && archiveCount > 0 ? <span className="attendance-tab-badge">{archiveCount > 99 ? '99+' : archiveCount}</span> : null}
             </button>
@@ -1889,8 +1916,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
                   else setError('Phân hệ Học bổ sung đang được khởi tạo. Vui lòng chọn lại sau khi tải xong.');
                   return;
                 }
-                setView(nextView);
-                window.history.replaceState(null, '', '#/attendance?tab=' + encodeURIComponent(nextView));
+                openAttendanceTab(nextView);
               }} />
           </> : null}
 
@@ -2191,7 +2217,7 @@ export default function GlobalAttendanceNavigationTab({ currentUser, standalone 
                       <AttendanceAdjustment key={selectedSession.id} client={client} session={selectedSession}
                         recordColumns={RECORD_COLUMNS} disabled={busy} onSaved={applyAttendanceAdjustment} />
                     )}
-                    {selectedSession.proof_path ? <a className="ahv3__view-photo" href={historyProofUrl || undefined} target="_blank" rel="noopener noreferrer" aria-disabled={!historyProofUrl} onClick={(event) => { if (!historyProofUrl) { event.preventDefault(); setError(historyProofLoading ? 'Ảnh đang được tải, vui lòng thử lại.' : 'Chưa thể tải ảnh minh chứng lúc này.'); } }}><Icon name="camera" size={16} />{historyProofLoading ? 'Đang tải ảnh…' : 'Xem ảnh đã chụp'}</a> : null}{canAccessAttendanceView('report') && !isSupplementalHistorySession(selectedSession) ? <button type="button" className="ahv3__report-button" onClick={() => { if (selectedSession.attendance_date) setReportMonth(selectedSession.attendance_date.slice(0, 7)); setView('report'); if (standalone) window.history.replaceState(null, '', '#/attendance?tab=report'); }}>Xem báo cáo tháng</button> : null}{canDeleteAttendanceHistory ? <button type="button" className="ahv3__delete-button" disabled={busy} onClick={() => deleteAttendanceSession(selectedSession)}><Icon name="trash" size={17} />Đưa vào Kho lưu trữ</button> : null}</div>
+                    {selectedSession.proof_path ? <a className="ahv3__view-photo" href={historyProofUrl || undefined} target="_blank" rel="noopener noreferrer" aria-disabled={!historyProofUrl} onClick={(event) => { if (!historyProofUrl) { event.preventDefault(); setError(historyProofLoading ? 'Ảnh đang được tải, vui lòng thử lại.' : 'Chưa thể tải ảnh minh chứng lúc này.'); } }}><Icon name="camera" size={16} />{historyProofLoading ? 'Đang tải ảnh…' : 'Xem ảnh đã chụp'}</a> : null}{canAccessAttendanceView('report') && !isSupplementalHistorySession(selectedSession) ? <button type="button" className="ahv3__report-button" onClick={() => { if (selectedSession.attendance_date) setReportMonth(selectedSession.attendance_date.slice(0, 7)); openAttendanceTab('report'); }}>Xem báo cáo tháng</button> : null}{canDeleteAttendanceHistory ? <button type="button" className="ahv3__delete-button" disabled={busy} onClick={() => deleteAttendanceSession(selectedSession)}><Icon name="trash" size={17} />Đưa vào Kho lưu trữ</button> : null}</div>
                 </div>
 
                 <h3 className="ahv3__section-title is-info"><span aria-hidden="true"><Icon name="calendar" size={14} /></span>Thông tin buổi học</h3>
