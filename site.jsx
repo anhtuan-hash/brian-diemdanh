@@ -86,6 +86,7 @@ export default function AttendanceSite() {
           onLogin={() => { window.location.hash = attendanceHash.current; }} />
       ) : (
         <>
+          <div className="attendance-wallpaper" aria-hidden="true" />
           <header className="attendance-site-header">
             <a href="#/attendance" aria-label="@brianverse · Trang chính Điểm danh">
               <span className="attendance-brand-mark" aria-hidden="true">

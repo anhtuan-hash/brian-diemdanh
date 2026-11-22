@@ -1,0 +1,54 @@
+.attendance-site:has(.attendance-shell.is-standalone:is([data-editorial-page="calendar"], [data-attendance-editorial-view="manage"])) {
+  isolation: isolate;
+}
+
+.attendance-wallpaper {
+  display: none;
+  opacity: .4;
+}
+
+.attendance-site:has(.attendance-shell.is-standalone:is([data-editorial-page="calendar"], [data-attendance-editorial-view="manage"])) > .attendance-wallpaper {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: url("../assets/ngo-mon-hue-wallpaper.webp") center / cover no-repeat;
+}
+
+.attendance-site .attendance-workspace-page:has(.attendance-shell.is-standalone[data-attendance-editorial-view="manage"]),
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-attendance-editorial-view="manage"],
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-attendance-editorial-view="manage"] > .attendance-content {
+  background: transparent !important;
+}
+
+.attendance-wallpaper-credit {
+  display: none;
+}
+
+.attendance-workspace-page:has(.attendance-shell.is-standalone:is([data-editorial-page="calendar"], [data-attendance-editorial-view="manage"])) > .attendance-wallpaper-credit {
+  display: block;
+  max-width: max-content;
+  margin: 20px 0 0 auto;
+  padding: 4px 6px;
+  background: var(--attendance-paper);
+  color: #575248;
+  font-size: .75rem;
+  line-height: 1.5;
+}
+
+.attendance-wallpaper-credit a {
+  color: inherit;
+}
+
+@media (max-width: 700px) {
+  .attendance-wallpaper {
+    opacity: .27;
+  }
+}
+
+@media print, (forced-colors: active) {
+  .attendance-wallpaper {
+    visibility: hidden;
+  }
+}
