@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import AdminMfaSecurity from './src/components/AdminMfaSecurity.jsx';
+import AttendanceDisplaySettings, { useAttendanceDisplay } from './src/components/AttendanceDisplaySettings.jsx';
 import AttendanceWorkspace from './src/pages/AttendanceWorkspace.jsx';
 import AttendancePermissions from './src/pages/AttendancePermissions.jsx';
 import AttendanceAdminSecurity from './src/pages/AttendanceAdminSecurity.jsx';
@@ -43,6 +44,8 @@ export default function AttendanceSite() {
   const adminPage = route === 'permissions' || route === 'security';
   const canOpenPage = route === 'settings' ? teacher : canAccess && (!adminPage || admin);
   const accountPage = adminPage || route === 'settings';
+  const canSetDisplay = !showLogin && canAccess && admin;
+  const [display, updateDisplay] = useAttendanceDisplay(canSetDisplay ? user.id : null);
 
   useEffect(() => {
     const syncRoute = () => setRoute(readRoute());
@@ -80,6 +83,9 @@ export default function AttendanceSite() {
 
   return (
     <div className="app-shell attendance-site" data-route={showLogin ? 'login' : 'attendance'}
+      style={{ '--attendance-wallpaper-opacity': display.opacity / 100 }}
+      data-attendance-wallpaper-off={display.opacity === 0 || undefined}
+      data-attendance-clear-surfaces={display.clearSurfaces || undefined}
       data-attendance-editorial-account={!showLogin && canOpenPage && accountPage ? route : undefined}>
       {showLogin ? (
         <AuthPage language="vi" mode={route === 'register' ? 'register' : 'login'}
@@ -101,6 +107,7 @@ export default function AttendanceSite() {
                 <span className="attendance-editorial-avatar" aria-hidden="true">{accountInitials.toLocaleUpperCase('vi-VN')}</span>
                 <span className="attendance-site-account-name">{user.name}</span>
               </span>
+              {canSetDisplay && <AttendanceDisplaySettings key={user.id} display={display} onChange={updateDisplay} />}
               {admin && <a href="#/phan-quyen" aria-current={route === 'permissions' ? 'page' : undefined}>Phân quyền</a>}
               {admin && <a href="#/bao-mat" aria-current={route === 'security' ? 'page' : undefined}>Bảo mật</a>}
               {teacher && <a href="#/cai-dat" aria-current={route === 'settings' ? 'page' : undefined}>Cài đặt</a>}
