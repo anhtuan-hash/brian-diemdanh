@@ -127,21 +127,69 @@
   box-shadow: none !important;
 }
 
+[data-editorial-page="calendar"] {
+  --calendar-floor-width: clamp(6.5rem, 12%, 12rem);
+  --calendar-floor-gap: clamp(8px, 1.1vw, 18px);
+  --calendar-cell-pad: clamp(8px, 1vw, 16px);
+  --calendar-row-rule: #aaa59c;
+}
+
+[data-editorial-page="calendar"] .attendance-time-settings {
+  margin-block: 0;
+}
+
+[data-editorial-page="calendar"] .attendance-time-settings summary {
+  margin-inline-start: auto;
+}
+
 [data-editorial-page="calendar"] .attendance-editorial-heading {
   display: grid;
-  grid-template-columns: minmax(0, 56%) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.04fr);
+  gap: clamp(12px, 2vw, 32px);
+  padding-block: clamp(25px, 3vw, 48px);
+  border-bottom-width: 1px;
 }
 
 [data-editorial-page="calendar"] .attendance-editorial-heading h1 {
-  font-size: clamp(2.1rem, 6.9vw, 7.85rem) !important;
-  white-space: normal;
+  font-size: clamp(2.3rem, 5.45vw, 6.2rem) !important;
+  letter-spacing: -.065em;
   text-wrap: balance;
+}
+
+@media (min-width: 941px) {
+  [data-editorial-page="calendar"] .attendance-editorial-heading h1 {
+    white-space: nowrap;
+  }
 }
 
 [data-editorial-page="calendar"] .attendance-editorial-heading__metrics {
   display: grid;
-  grid-template-columns: 1.25fr 1fr 1fr .8fr;
-  gap: clamp(4px, .8vw, 14px);
+  grid-template-columns: 1fr 1.12fr 1.28fr .88fr;
+  gap: 0;
+  padding-inline-start: 0;
+  border-inline-start: 0;
+}
+
+[data-editorial-page="calendar"] .attendance-editorial-heading__metrics > div {
+  min-height: clamp(68px, 7.8vw, 125px);
+  justify-items: center;
+  text-align: center;
+  gap: clamp(4px, .5vw, 8px);
+  padding: 10px 5px;
+}
+
+[data-editorial-page="calendar"] .attendance-editorial-heading__metrics > .is-primary + div {
+  border-inline-start: 0;
+}
+
+[data-editorial-page="calendar"] .attendance-editorial-heading__metrics dd {
+  font-size: clamp(1.85rem, 4.75vw, 4.75rem);
+}
+
+[data-editorial-page="calendar"] .attendance-editorial-heading__metrics dt {
+  font-size: clamp(.76rem, 1.48vw, 1.36rem);
+  font-weight: 680;
+  text-wrap: balance;
 }
 
 .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-compact-toolbar {
@@ -156,7 +204,7 @@
   margin: 0 !important;
   padding: 12px 0 !important;
   border: 0 !important;
-  border-bottom: 2px solid var(--attendance-ink) !important;
+  border-bottom: 1px solid var(--attendance-ink) !important;
   border-radius: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
@@ -208,12 +256,11 @@
 }
 
 .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-calendar-room-chip.is-active {
-  background: var(--attendance-red) !important;
+  background: var(--attendance-ink) !important;
   color: white !important;
-  border-color: var(--attendance-red) !important;
 }
 
-.attendance-shell[data-editorial-page="calendar"] :is(.attendance-daily-date-card__icon, .attendance-daily-date-card__label, .attendance-daily-floor-card__badge) {
+.attendance-shell[data-editorial-page="calendar"] :is(.attendance-daily-date-card__icon, .attendance-daily-date-card__label) {
   display: none !important;
 }
 
@@ -225,7 +272,7 @@
   width: 100% !important;
   min-height: 0 !important;
   margin: 0 !important;
-  padding: 8px clamp(8px, 1.25vw, 18px) !important;
+  padding: 13px var(--calendar-cell-pad) !important;
   text-align: start !important;
   color: var(--attendance-ink) !important;
   background: transparent !important;
@@ -233,8 +280,8 @@
   border-bottom: 1px solid var(--attendance-ink) !important;
   border-radius: 0 !important;
   box-shadow: none !important;
-  font-weight: 800 !important;
-  font-size: clamp(.84rem, 1.35vw, 1.16rem) !important;
+  font-weight: 740 !important;
+  font-size: clamp(.84rem, 1.4vw, 1.25rem) !important;
   line-height: 1.25 !important;
 }
 
@@ -303,40 +350,134 @@ html body .attendance-site .attendance-workspace-page .attendance-shell.is-stand
   color: #535047 !important;
 }
 
-.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row__status.is-completed { color: #176345 !important; }
-.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row__status.is-missing { color: #86560d !important; }
-.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row__status.is-cancelled { color: var(--attendance-red) !important; }
-
 .attendance-site [data-editorial-page="calendar"] .attendance-daily-class-row:is(:hover, :focus-visible) .attendance-daily-class-row__status-label {
   opacity: 1;
   transform: none;
 }
 
-.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-floor-group {
-  display: block !important;
-  margin: 8px 0 0 !important;
-  padding: 6px 12px !important;
-  border: 0 !important;
-  border-inline-start: 6px solid #ac751c !important;
-  border-radius: 0 !important;
-  background: #f0e4cc !important;
-  box-shadow: none !important;
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-table-header {
+  padding: 16px var(--calendar-cell-pad) !important;
+  font-size: clamp(.72rem, 1.25vw, 1.15rem) !important;
 }
 
-.attendance-site .attendance-shell[data-editorial-page="calendar"] .attendance-daily-floor-group[data-floor="2"] {
-  background: #e6e9da !important;
-  border-inline-start-color: #176345 !important;
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-class-row {
+  min-height: 64px !important;
+  border-bottom-color: var(--calendar-row-rule) !important;
 }
 
-.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-floor-card__title {
-  display: inline !important;
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-floor-card {
+  display: grid !important;
+  gap: var(--calendar-floor-gap) !important;
+  padding-block: 8px !important;
+}
+
+.attendance-site [data-editorial-page="calendar"] :is(.attendance-daily-floor-card, .attendance-calendar-room-chip) {
+  --calendar-floor-ink: #59564d;
+}
+
+.attendance-site [data-editorial-page="calendar"] :is(.attendance-daily-floor-card, .attendance-calendar-room-chip)[data-floor="1"] { --calendar-floor-ink: #844d16; }
+.attendance-site [data-editorial-page="calendar"] :is(.attendance-daily-floor-card, .attendance-calendar-room-chip)[data-floor="2"] { --calendar-floor-ink: #144ac4; }
+.attendance-site [data-editorial-page="calendar"] :is(.attendance-daily-floor-card, .attendance-calendar-room-chip)[data-floor="3"] { --calendar-floor-ink: #006e64; }
+.attendance-site [data-editorial-page="calendar"] :is(.attendance-daily-floor-card, .attendance-calendar-room-chip)[data-floor="4"] { --calendar-floor-ink: #663a92; }
+
+.attendance-daily-floor-index {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: .2rem;
+  min-width: 0;
+  padding: 12px clamp(10px, 1.55vw, 24px);
+  border-inline-start: 5px solid var(--calendar-floor-ink);
+  background: color-mix(in srgb, var(--calendar-floor-ink) 12%, white);
+  color: var(--calendar-floor-ink);
+}
+
+.attendance-daily-floor-index__heading {
+  margin: 0;
+  color: inherit;
+  font: 800 clamp(.86rem, 1.55vw, 1.4rem)/1.05 Inter, "Helvetica Neue", Arial, sans-serif;
+  text-transform: uppercase;
+}
+
+.attendance-daily-floor-index__heading span {
+  display: block;
+  margin-block-start: .16em;
+  font-size: 2.7em;
+  font-weight: 900;
+  letter-spacing: -.06em;
+  font-variant-numeric: tabular-nums;
+}
+
+.attendance-daily-floor-index__count {
+  font-weight: 680;
+  font-size: clamp(.78rem, 1.2vw, 1.12rem);
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"]
+  :is(.attendance-daily-class-row > .attendance-daily-class-row__status, .attendance-daily-class-row > .attendance-daily-class-row__meta.is-room, .attendance-calendar-room-chip[data-floor]) {
+  display: inline-flex !important;
+  align-items: center;
+  gap: .5em;
+}
+
+.attendance-shell[data-editorial-page="calendar"] .attendance-calendar-room-chip[data-floor]::before,
+.attendance-shell[data-editorial-page="calendar"] .attendance-daily-class-row__meta.is-room[data-floor]::before {
+  content: "";
+  flex: 0 0 .7em;
+  height: .7em;
+  background: var(--calendar-floor-ink);
+}
+
+.attendance-shell[data-editorial-page="calendar"] .attendance-calendar-room-chip.is-active::before {
+  background: color-mix(in srgb, var(--calendar-floor-ink) 44%, white);
+}
+
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"]
+  .attendance-daily-class-row :is(.attendance-daily-class-row__teacher b, .attendance-daily-class-row__time-copy b, .attendance-daily-class-row__status-label) {
   color: var(--attendance-ink) !important;
-  font-size: clamp(.9rem, 1.45vw, 1.3rem) !important;
-  font-weight: 850 !important;
-  padding: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
+  font-weight: 560 !important;
+}
+
+.attendance-shell[data-editorial-page="calendar"] .attendance-daily-class-row__status::before {
+  content: "";
+  flex: 0 0 .55em;
+  height: .55em;
+  border-radius: 50%;
+  background: #aa7100;
+}
+
+.attendance-shell[data-editorial-page="calendar"] .attendance-daily-class-row__status.is-completed::before { background: #176345; }
+.attendance-shell[data-editorial-page="calendar"] .attendance-daily-class-row__status.is-cancelled::before { background: var(--attendance-red); }
+
+@media (min-width: 851px) {
+  .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-floor-card {
+    grid-template-columns: var(--calendar-floor-width) minmax(0, 1fr);
+  }
+
+  .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-floor-card__rows {
+    display: grid !important;
+    grid-auto-rows: 1fr;
+  }
+
+  .attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-editorial-page="calendar"] .attendance-daily-table-header {
+    padding-inline-start: calc(var(--calendar-floor-width) + var(--calendar-floor-gap) + var(--calendar-cell-pad)) !important;
+  }
+}
+
+@media (max-width: 850px) {
+  .attendance-daily-floor-index {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .attendance-daily-floor-index__heading span {
+    display: inline;
+    margin: 0;
+    font-size: inherit;
+    letter-spacing: normal;
+  }
 }
 
 /* History */
