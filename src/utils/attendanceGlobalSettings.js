@@ -2,6 +2,41 @@ export const DEFAULT_ATTENDANCE_GLOBAL_SETTINGS = Object.freeze({
   allowTeacherPeriodSelection: false,
 });
 
+export const DEFAULT_ATTENDANCE_DISPLAY = Object.freeze({ opacity: 15, clearSurfaces: true });
+export const MAX_ATTENDANCE_WALLPAPER_OPACITY = 40;
+const DISPLAY_COLUMNS = 'display_wallpaper_opacity,display_clear_surfaces';
+
+function attendanceDisplayFromRow(row) {
+  return {
+    opacity: row.display_wallpaper_opacity,
+    clearSurfaces: row.display_clear_surfaces,
+  };
+}
+
+export async function loadAttendanceDisplay(client) {
+  const { data, error } = await client
+    .from('bes_attendance_global_settings')
+    .select(DISPLAY_COLUMNS)
+    .eq('id', true)
+    .single();
+  if (error) throw error;
+  return attendanceDisplayFromRow(data);
+}
+
+export async function saveAttendanceDisplay(client, display) {
+  const { data, error } = await client
+    .from('bes_attendance_global_settings')
+    .update({
+      display_wallpaper_opacity: display.opacity,
+      display_clear_surfaces: display.clearSurfaces,
+    })
+    .eq('id', true)
+    .select(DISPLAY_COLUMNS)
+    .single();
+  if (error) throw error;
+  return attendanceDisplayFromRow(data);
+}
+
 export function normalizeAttendanceGlobalSettings(row = {}) {
   return {
     allowTeacherPeriodSelection: row?.allow_teacher_period_selection === true
