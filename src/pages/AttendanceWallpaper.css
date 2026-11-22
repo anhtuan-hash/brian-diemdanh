@@ -1,4 +1,4 @@
-.attendance-site:has(.attendance-shell.is-standalone:is([data-editorial-page="calendar"], [data-attendance-editorial-view="manage"])) {
+.attendance-site:has(.attendance-shell.is-standalone:is([data-attendance-wallpaper], .bes-supplemental-admin-open)) {
   isolation: isolate;
 }
 
@@ -7,7 +7,7 @@
   opacity: .4;
 }
 
-.attendance-site:has(.attendance-shell.is-standalone:is([data-editorial-page="calendar"], [data-attendance-editorial-view="manage"])) > .attendance-wallpaper {
+.attendance-site:has(.attendance-shell.is-standalone:is([data-attendance-wallpaper], .bes-supplemental-admin-open)) > .attendance-wallpaper {
   display: block;
   position: fixed;
   inset: 0;
@@ -16,9 +16,11 @@
   background: url("../assets/ngo-mon-hue-wallpaper.webp") center / cover no-repeat;
 }
 
-.attendance-site .attendance-workspace-page:has(.attendance-shell.is-standalone[data-attendance-editorial-view="manage"]),
-.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-attendance-editorial-view="manage"],
-.attendance-site .attendance-workspace-page .attendance-shell.is-standalone[data-attendance-editorial-view="manage"] > .attendance-content {
+.attendance-site .attendance-workspace-page:has(.attendance-shell.is-standalone:is([data-attendance-wallpaper], .bes-supplemental-admin-open)),
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone:is([data-attendance-wallpaper], .bes-supplemental-admin-open),
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone:is([data-attendance-wallpaper], .bes-supplemental-admin-open) > .attendance-content,
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone #bes-supplemental-learning-admin.bes-supplemental-workspace-host,
+.attendance-site .attendance-workspace-page .attendance-shell.is-standalone #bes-supplemental-learning-admin .attendance-editorial-supplemental {
   background: transparent !important;
 }
 
@@ -26,7 +28,7 @@
   display: none;
 }
 
-.attendance-workspace-page:has(.attendance-shell.is-standalone:is([data-editorial-page="calendar"], [data-attendance-editorial-view="manage"])) > .attendance-wallpaper-credit {
+.attendance-workspace-page:has(.attendance-shell.is-standalone:is([data-attendance-wallpaper], .bes-supplemental-admin-open)) > .attendance-wallpaper-credit {
   display: block;
   max-width: max-content;
   margin: 20px 0 0 auto;
